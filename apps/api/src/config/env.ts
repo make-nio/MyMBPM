@@ -1,6 +1,8 @@
 type EnvConfig = {
   port: number;
   databaseUrl: string;
+  jwtSecret: string;
+  jwtExpiresIn: string;
 };
 
 function requireEnv(name: string): string {
@@ -16,6 +18,8 @@ function requireEnv(name: string): string {
 export function getEnv(): EnvConfig {
   return {
     port: Number(process.env.PORT) || 3001,
-    databaseUrl: requireEnv("DATABASE_URL")
+    databaseUrl: requireEnv("DATABASE_URL"),
+    jwtSecret: requireEnv("JWT_SECRET"),
+    jwtExpiresIn: process.env.JWT_EXPIRES_IN || "8h"
   };
 }
