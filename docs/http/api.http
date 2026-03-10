@@ -2,7 +2,7 @@
 # Para ejecutar un request, abri este archivo y hace click en "Send Request" arriba de cada bloque.
 # El token puede completarse manualmente en @token o capturarse automaticamente ejecutando primero el login.
 
-@baseUrl = http://localhost:3000
+@baseUrl = http://localhost:3001
 @token =
 
 ### Health
