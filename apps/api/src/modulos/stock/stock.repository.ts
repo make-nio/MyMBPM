@@ -98,5 +98,33 @@ export const stockRepository = {
     return prismaOrTx.itemCatalogo.findUnique({
       where: { idItemCatalogo }
     });
+  },
+
+  listarItemsParaBajoStock(prismaOrTx: PrismaOrTx, filtros: { activo?: boolean; limit: number; offset: number }) {
+    return prismaOrTx.itemCatalogo.findMany({
+      where: {
+        stockMinimo: {
+          gt: 0
+        },
+        activo: filtros.activo
+      },
+      include: {
+        categoria: true,
+        estadosStock: {
+          where: {
+            tipoStock: "PRODUCTO"
+          },
+          orderBy: {
+            idEstadoStock: "desc"
+          },
+          take: 1
+        }
+      },
+      orderBy: {
+        idItemCatalogo: "desc"
+      },
+      skip: filtros.offset,
+      take: filtros.limit
+    });
   }
 };

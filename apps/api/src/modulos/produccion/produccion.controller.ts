@@ -6,9 +6,11 @@ import { validar } from "../../compartido/validaciones/validar";
 import {
   accionProduccionSchema,
   actualizarEstadoProduccionSchema,
+  actualizarDetalleProduccionSchema,
   agregarDetalleProduccionSchema,
   crearOrdenProduccionSchema,
   listarOrdenesProduccionQuerySchema,
+  ordenProduccionDetalleParamsSchema,
   ordenProduccionParamsSchema
 } from "./produccion.schemas";
 import { produccionService } from "./produccion.service";
@@ -41,6 +43,21 @@ export const produccionController = {
     const orden = await produccionService.agregarDetalle(params.id, body);
 
     responderExito(response, orden, 201);
+  },
+
+  async actualizarDetalle(request: Request, response: Response) {
+    const params = validar(ordenProduccionDetalleParamsSchema, request.params);
+    const body = validar(actualizarDetalleProduccionSchema, request.body);
+    const orden = await produccionService.actualizarDetalle(params.id, params.detalleId, body);
+
+    responderExito(response, orden);
+  },
+
+  async eliminarDetalle(request: Request, response: Response) {
+    const params = validar(ordenProduccionDetalleParamsSchema, request.params);
+    const orden = await produccionService.eliminarDetalle(params.id, params.detalleId);
+
+    responderExito(response, orden);
   },
 
   async actualizarEstado(request: Request, response: Response) {

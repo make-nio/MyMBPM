@@ -5,6 +5,7 @@ import { validar } from "../../compartido/validaciones/validar";
 import { prisma } from "../../lib/prisma";
 
 import {
+  bajoStockQuerySchema,
   crearAjusteStockSchema,
   historialStockQuerySchema,
   stockActualQuerySchema
@@ -31,5 +32,12 @@ export const stockController = {
     const movimiento = await stockService.registrarAjusteManual(prisma, body);
 
     responderExito(response, movimiento, 201);
+  },
+
+  async obtenerBajoStock(request: Request, response: Response) {
+    const query = validar(bajoStockQuerySchema, request.query);
+    const items = await stockService.obtenerBajoStock(prisma, query);
+
+    responderExito(response, items);
   }
 };

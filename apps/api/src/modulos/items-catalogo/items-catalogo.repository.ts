@@ -1,5 +1,6 @@
 import { TipoItem } from "../../compartido/dominio/enums";
 import { prisma } from "../../lib/prisma";
+import { Prisma } from "@prisma/client";
 
 type FiltrosItemsCatalogo = {
   tipoItem?: TipoItem;
@@ -64,6 +65,14 @@ export const itemsCatalogoRepository = {
       where: { idItemCatalogo },
       include: {
         categoria: true,
+        componentesComoPadre: {
+          include: {
+            itemCatalogoComponente: true
+          },
+          orderBy: {
+            idItemCatalogoComponente: "asc"
+          }
+        },
         imagenes: {
           orderBy: {
             orden: "asc"
@@ -115,6 +124,89 @@ export const itemsCatalogoRepository = {
   eliminarImagen(idItemCatalogoImagen: bigint) {
     return prisma.itemCatalogoImagen.delete({
       where: { idItemCatalogoImagen }
+    });
+  },
+
+  listarComponentes(idItemCatalogoPadre: bigint) {
+    return prisma.itemCatalogoComponente.findMany({
+      where: {
+        idItemCatalogoPadre
+      },
+      include: {
+        itemCatalogoComponente: true
+      },
+      orderBy: {
+        idItemCatalogoComponente: "asc"
+      }
+    });
+  },
+
+  obtenerComponente(idItemCatalogoComponente: bigint) {
+    return prisma.itemCatalogoComponente.findUnique({
+      where: { idItemCatalogoComponente },
+      include: {
+        itemCatalogoComponente: true
+      }
+    });
+  },
+
+  buscarComponentePorPadreEHijo(
+    idItemCatalogoPadre: bigint,
+    idItemCatalogoHijo: bigint,
+    excluirIdItemCatalogoComponente?: bigint
+  ) {
+    const where: Prisma.ItemCatalogoComponenteWhereInput = {
+      idItemCatalogoPadre,
+      idItemCatalogoHijo
+    };
+
+    if (excluirIdItemCatalogoComponente) {
+      where.NOT = {
+        idItemCatalogoComponente: excluirIdItemCatalogoComponente
+      };
+    }
+
+    return prisma.itemCatalogoComponente.findFirst({ where });
+  },
+
+  crearComponente(data: {
+    idItemCatalogoPadre: bigint;
+    idItemCatalogoHijo: bigint;
+    cantidadRequerida: number;
+    unidadMedida: string;
+    activo?: boolean;
+  }) {
+    return prisma.itemCatalogoComponente.create({
+      data: {
+        ...data
+      },
+      include: {
+        itemCatalogoComponente: true
+      }
+    });
+  },
+
+  actualizarComponente(
+    idItemCatalogoComponente: bigint,
+    data: Partial<{
+      idItemCatalogoHijo: bigint;
+      cantidadRequerida: number;
+      unidadMedida: string;
+      activo: boolean;
+    }>
+  ) {
+    return prisma.itemCatalogoComponente.update({
+      where: { idItemCatalogoComponente },
+      data,
+      include: {
+        itemCatalogoComponente: true
+      }
+    });
+  },
+
+  eliminarComponente(idItemCatalogoComponente: bigint) {
+    return prisma.itemCatalogoComponente.delete({
+      where: { idItemCatalogoComponente }
     });
   }
 };

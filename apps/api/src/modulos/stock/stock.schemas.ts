@@ -19,6 +19,13 @@ export const historialStockQuerySchema = paginacionSchema.extend({
   tipoStock: z.enum(TIPOS_STOCK).optional()
 });
 
+export const bajoStockQuerySchema = paginacionSchema.extend({
+  activo: z
+    .enum(["true", "false"])
+    .transform((value) => value === "true")
+    .optional()
+});
+
 export const crearAjusteStockSchema = z.object({
   idItemCatalogo: idSchema,
   idUsuario: idSchema.optional(),

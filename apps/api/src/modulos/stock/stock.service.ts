@@ -55,6 +55,29 @@ export const stockService = {
     return stockRepository.listarHistorial(prismaOrTx, filtros);
   },
 
+  async obtenerBajoStock(
+    prismaOrTx: PrismaOrTx,
+    filtros: { activo?: boolean; limit: number; offset: number }
+  ) {
+    const items = await stockRepository.listarItemsParaBajoStock(prismaOrTx, filtros);
+
+    return items
+      .map((item) => {
+        const ultimoEstado = item.estadosStock[0] ?? null;
+        const stockActual = ultimoEstado?.stockActual ?? new Prisma.Decimal(0);
+
+        return {
+          idItemCatalogo: item.idItemCatalogo,
+          nombre: item.nombre,
+          tipoItem: item.tipoItem,
+          stockMinimo: item.stockMinimo,
+          stockActual,
+          categoria: item.categoria
+        };
+      })
+      .filter((item) => item.stockActual.lessThanOrEqualTo(new Prisma.Decimal(item.stockMinimo)));
+  },
+
   async validarItemExiste(prismaOrTx: PrismaOrTx, idItemCatalogo: bigint) {
     const item = await stockRepository.obtenerItem(prismaOrTx, idItemCatalogo);
 

@@ -75,6 +75,32 @@ export const produccionRepository = {
     });
   },
 
+  obtenerDetalle(prismaOrTx: PrismaOrTx, idOrdenProduccionDetalle: bigint) {
+    return prismaOrTx.ordenProduccionDetalle.findUnique({
+      where: { idOrdenProduccionDetalle }
+    });
+  },
+
+  actualizarDetalle(
+    prismaOrTx: PrismaOrTx,
+    idOrdenProduccionDetalle: bigint,
+    data: Partial<{
+      cantidad: Prisma.Decimal;
+      observaciones?: string;
+    }>
+  ) {
+    return prismaOrTx.ordenProduccionDetalle.update({
+      where: { idOrdenProduccionDetalle },
+      data
+    });
+  },
+
+  eliminarDetalle(prismaOrTx: PrismaOrTx, idOrdenProduccionDetalle: bigint) {
+    return prismaOrTx.ordenProduccionDetalle.delete({
+      where: { idOrdenProduccionDetalle }
+    });
+  },
+
   actualizar(
     prismaOrTx: PrismaOrTx,
     idOrdenProduccion: bigint,

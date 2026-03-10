@@ -109,6 +109,32 @@ export const pedidosRepository = {
     });
   },
 
+  obtenerDetalle(prismaOrTx: PrismaOrTx, idPedidoDetalle: bigint) {
+    return prismaOrTx.pedidoDetalle.findUnique({
+      where: { idPedidoDetalle }
+    });
+  },
+
+  actualizarDetalle(
+    prismaOrTx: PrismaOrTx,
+    idPedidoDetalle: bigint,
+    data: Partial<{
+      cantidad: Prisma.Decimal;
+      subtotal: Prisma.Decimal;
+    }>
+  ) {
+    return prismaOrTx.pedidoDetalle.update({
+      where: { idPedidoDetalle },
+      data
+    });
+  },
+
+  eliminarDetalle(prismaOrTx: PrismaOrTx, idPedidoDetalle: bigint) {
+    return prismaOrTx.pedidoDetalle.delete({
+      where: { idPedidoDetalle }
+    });
+  },
+
   obtenerItemCatalogo(prismaOrTx: PrismaOrTx, idItemCatalogo: bigint) {
     return prismaOrTx.itemCatalogo.findUnique({
       where: { idItemCatalogo }

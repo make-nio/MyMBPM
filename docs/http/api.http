@@ -3,15 +3,24 @@
 # El token puede completarse manualmente en @token o capturarse automaticamente ejecutando primero el login.
 # Este archivo apunta a la API Express. No usar el puerto del frontend Next.js.
 # Puerto por defecto de la API: 3002. Si cambias PORT en apps/api/.env, actualiza @baseUrl.
+# Cada seccion incluye un curl equivalente comentado para poder probar desde terminal si hace falta.
 
 @baseUrl = http://localhost:3002
 @token =
+@itemId = 1
+@componenteId = 1
+@pedidoId = 1
+@pedidoDetalleId = 1
+@produccionId = 1
+@produccionDetalleId = 1
 
 ### Health
+# curl http://localhost:3002/api/health
 GET {{baseUrl}}/api/health
 
 ### Login
 # @name login
+# curl -X POST http://localhost:3002/api/autenticacion/login -H "Content-Type: application/json" -d "{\"identificador\":\"test\",\"password\":\"12345678\"}"
 POST {{baseUrl}}/api/autenticacion/login
 Content-Type: application/json
 
@@ -24,14 +33,17 @@ Content-Type: application/json
 @token = {{login.response.body.data.token}}
 
 ### Me
+# curl http://localhost:3002/api/autenticacion/me -H "Authorization: Bearer TU_TOKEN"
 GET {{baseUrl}}/api/autenticacion/me
 Authorization: Bearer {{token}}
 
 ### Usuarios
+# curl http://localhost:3002/api/usuarios -H "Authorization: Bearer TU_TOKEN"
 GET {{baseUrl}}/api/usuarios
 Authorization: Bearer {{token}}
 
 ###
+# curl -X POST http://localhost:3002/api/usuarios -H "Authorization: Bearer TU_TOKEN" -H "Content-Type: application/json" -d "{\"nombre\":\"Usuario Test\",\"apellido\":\"Local\",\"email\":\"test@local.dev\",\"usuario\":\"test\",\"password\":\"12345678\"}"
 POST {{baseUrl}}/api/usuarios
 Content-Type: application/json
 Authorization: Bearer {{token}}
@@ -45,29 +57,103 @@ Authorization: Bearer {{token}}
 }
 
 ### Categorias
+# curl http://localhost:3002/api/categorias -H "Authorization: Bearer TU_TOKEN"
 GET {{baseUrl}}/api/categorias
 Authorization: Bearer {{token}}
 
 ### Items Catalogo
+# curl http://localhost:3002/api/items-catalogo -H "Authorization: Bearer TU_TOKEN"
 GET {{baseUrl}}/api/items-catalogo
 Authorization: Bearer {{token}}
 
+### Componentes Item Catalogo
+# curl http://localhost:3002/api/items-catalogo/1/componentes -H "Authorization: Bearer TU_TOKEN"
+GET {{baseUrl}}/api/items-catalogo/{{itemId}}/componentes
+Authorization: Bearer {{token}}
+
+###
+# curl -X POST http://localhost:3002/api/items-catalogo/1/componentes -H "Authorization: Bearer TU_TOKEN" -H "Content-Type: application/json" -d "{\"idItemCatalogoHijo\":2,\"cantidadRequerida\":1.5,\"unidadMedida\":\"UN\"}"
+POST {{baseUrl}}/api/items-catalogo/{{itemId}}/componentes
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "idItemCatalogoHijo": 2,
+  "cantidadRequerida": 1.5,
+  "unidadMedida": "UN"
+}
+
+###
+# curl -X PATCH http://localhost:3002/api/items-catalogo/1/componentes/1 -H "Authorization: Bearer TU_TOKEN" -H "Content-Type: application/json" -d "{\"cantidadRequerida\":2}"
+PATCH {{baseUrl}}/api/items-catalogo/{{itemId}}/componentes/{{componenteId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "cantidadRequerida": 2
+}
+
+###
+# curl -X DELETE http://localhost:3002/api/items-catalogo/1/componentes/1 -H "Authorization: Bearer TU_TOKEN"
+DELETE {{baseUrl}}/api/items-catalogo/{{itemId}}/componentes/{{componenteId}}
+Authorization: Bearer {{token}}
+
 ### Clientes
+# curl http://localhost:3002/api/clientes -H "Authorization: Bearer TU_TOKEN"
 GET {{baseUrl}}/api/clientes
 Authorization: Bearer {{token}}
 
 ### Stock
+# curl "http://localhost:3002/api/stock/actual?idItemCatalogo=1" -H "Authorization: Bearer TU_TOKEN"
 GET {{baseUrl}}/api/stock/actual?idItemCatalogo=1
 Authorization: Bearer {{token}}
 
+###
+# curl "http://localhost:3002/api/stock/bajo-stock?limit=20&offset=0" -H "Authorization: Bearer TU_TOKEN"
+GET {{baseUrl}}/api/stock/bajo-stock?limit=20&offset=0
+Authorization: Bearer {{token}}
+
 ### Pedidos
+# curl http://localhost:3002/api/pedidos -H "Authorization: Bearer TU_TOKEN"
 GET {{baseUrl}}/api/pedidos
 Authorization: Bearer {{token}}
 
+###
+# curl -X PATCH http://localhost:3002/api/pedidos/1/detalles/1 -H "Authorization: Bearer TU_TOKEN" -H "Content-Type: application/json" -d "{\"cantidad\":3}"
+PATCH {{baseUrl}}/api/pedidos/{{pedidoId}}/detalles/{{pedidoDetalleId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "cantidad": 3
+}
+
+###
+# curl -X DELETE http://localhost:3002/api/pedidos/1/detalles/1 -H "Authorization: Bearer TU_TOKEN"
+DELETE {{baseUrl}}/api/pedidos/{{pedidoId}}/detalles/{{pedidoDetalleId}}
+Authorization: Bearer {{token}}
+
 ### Produccion
+# curl http://localhost:3002/api/produccion -H "Authorization: Bearer TU_TOKEN"
 GET {{baseUrl}}/api/produccion
 Authorization: Bearer {{token}}
 
+###
+# curl -X PATCH http://localhost:3002/api/produccion/1/detalles/1 -H "Authorization: Bearer TU_TOKEN" -H "Content-Type: application/json" -d "{\"cantidad\":4}"
+PATCH {{baseUrl}}/api/produccion/{{produccionId}}/detalles/{{produccionDetalleId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "cantidad": 4
+}
+
+###
+# curl -X DELETE http://localhost:3002/api/produccion/1/detalles/1 -H "Authorization: Bearer TU_TOKEN"
+DELETE {{baseUrl}}/api/produccion/{{produccionId}}/detalles/{{produccionDetalleId}}
+Authorization: Bearer {{token}}
+
 ### Solicitudes Especiales
+# curl http://localhost:3002/api/solicitudes-especiales -H "Authorization: Bearer TU_TOKEN"
 GET {{baseUrl}}/api/solicitudes-especiales
 Authorization: Bearer {{token}}

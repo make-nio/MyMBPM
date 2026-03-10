@@ -14,6 +14,11 @@ export const itemCatalogoImagenParamsSchema = z.object({
   imagenId: idSchema
 });
 
+export const itemCatalogoComponenteParamsSchema = z.object({
+  id: idSchema,
+  componenteId: idSchema
+});
+
 export const crearItemCatalogoSchema = z.object({
   idCategoria: idSchema,
   tipoItem: z.enum(TIPOS_ITEM),
@@ -59,3 +64,19 @@ export const crearImagenAdicionalSchema = z.object({
   orden: z.coerce.number().int().positive().optional(),
   activo: z.boolean().optional()
 });
+
+export const crearComponenteItemCatalogoSchema = z.object({
+  idItemCatalogoHijo: idSchema,
+  cantidadRequerida: z.coerce.number().positive(),
+  unidadMedida: z.string().min(1).max(30),
+  activo: z.boolean().optional()
+});
+
+export const actualizarComponenteItemCatalogoSchema = z
+  .object({
+    idItemCatalogoHijo: idSchema.optional(),
+    cantidadRequerida: z.coerce.number().positive().optional(),
+    unidadMedida: z.string().min(1).max(30).optional(),
+    activo: z.boolean().optional()
+  })
+  .refine((data) => Object.keys(data).length > 0, "Debe enviar al menos un campo para actualizar");
