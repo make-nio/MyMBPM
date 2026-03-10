@@ -1,0 +1,71 @@
+# Requiere la extension "REST Client" de VSCode.
+# Para ejecutar un request, abri este archivo y hace click en "Send Request" arriba de cada bloque.
+# El token puede completarse manualmente en @token o capturarse automaticamente ejecutando primero el login.
+
+@baseUrl = http://localhost:3000
+@token =
+
+### Health
+GET {{baseUrl}}/api/health
+
+### Login
+# @name login
+POST {{baseUrl}}/api/autenticacion/login
+Content-Type: application/json
+
+{
+  "identificador": "admin",
+  "password": "admin123"
+}
+
+###
+@token = {{login.response.body.data.token}}
+
+### Me
+GET {{baseUrl}}/api/autenticacion/me
+Authorization: Bearer {{token}}
+
+### Usuarios
+GET {{baseUrl}}/api/usuarios
+Authorization: Bearer {{token}}
+
+###
+POST {{baseUrl}}/api/usuarios
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "nombre": "Usuario Test",
+  "apellido": "Local",
+  "email": "test@local.dev",
+  "usuario": "test",
+  "password": "12345678"
+}
+
+### Categorias
+GET {{baseUrl}}/api/categorias
+Authorization: Bearer {{token}}
+
+### Items Catalogo
+GET {{baseUrl}}/api/items-catalogo
+Authorization: Bearer {{token}}
+
+### Clientes
+GET {{baseUrl}}/api/clientes
+Authorization: Bearer {{token}}
+
+### Stock
+GET {{baseUrl}}/api/stock/actual?idItemCatalogo=1
+Authorization: Bearer {{token}}
+
+### Pedidos
+GET {{baseUrl}}/api/pedidos
+Authorization: Bearer {{token}}
+
+### Produccion
+GET {{baseUrl}}/api/produccion
+Authorization: Bearer {{token}}
+
+### Solicitudes Especiales
+GET {{baseUrl}}/api/solicitudes-especiales
+Authorization: Bearer {{token}}
