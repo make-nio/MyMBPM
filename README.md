@@ -81,6 +81,13 @@ npm run build
 npm run check
 ```
 
+## Testing HTTP desde VSCode
+
+- instala la extension `REST Client`
+- abri [docs/http/api.http](d:/CodexAgentProjects/MyFirstProject/docs/http/api.http)
+- ejecuta cada request con `Send Request`
+- primero corre el login para capturar el token automaticamente o completa `@token` manualmente
+
 ## Variables de entorno
 
 - `.env.example`
