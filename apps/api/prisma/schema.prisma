@@ -8,9 +8,257 @@ datasource db {
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
-model Healthcheck {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Usuario {
+  idUsuario         BigInt   @id @default(autoincrement()) @map("ID_USUARIO") @db.BigInt
+  nombre            String   @map("NOMBRE") @db.NVarChar(100)
+  apellido          String   @map("APELLIDO") @db.NVarChar(100)
+  email             String   @map("EMAIL") @db.VarChar(150)
+  usuario           String   @map("USUARIO") @db.VarChar(100)
+  claveHash         String   @map("CLAVE_HASH") @db.VarChar(255)
+  activo            Boolean  @default(true) @map("ACTIVO")
+  fechaAlta         DateTime @default(now()) @map("FECHA_ALTA") @db.DateTime2
+  fechaModificacion DateTime    @updatedAt @map("FECHA_MODIFICACION") @db.DateTime2
+  estadosStock      EstadoStock[]
+
+  @@unique([email], map: "UQ_USUARIO_EMAIL")
+  @@unique([usuario], map: "UQ_USUARIO_USUARIO")
+  @@map("USUARIO")
 }
 
+model Categoria {
+  idCategoria       BigInt         @id @default(autoincrement()) @map("ID_CATEGORIA") @db.BigInt
+  nombre            String         @map("NOMBRE") @db.NVarChar(120)
+  slug              String         @map("SLUG") @db.VarChar(160)
+  descripcion       String?        @map("DESCRIPCION") @db.NVarChar(1000)
+  activo            Boolean        @default(true) @map("ACTIVO")
+  fechaAlta         DateTime       @default(now()) @map("FECHA_ALTA") @db.DateTime2
+  fechaModificacion DateTime       @updatedAt @map("FECHA_MODIFICACION") @db.DateTime2
+  itemsCatalogo     ItemCatalogo[]
+
+  @@unique([slug], map: "UQ_CATEGORIA_SLUG")
+  @@map("CATEGORIA")
+}
+
+model ItemCatalogo {
+  idItemCatalogo          BigInt                   @id @default(autoincrement()) @map("ID_ITEM_CATALOGO") @db.BigInt
+  idCategoria             BigInt                   @map("ID_CATEGORIA") @db.BigInt
+  tipoItem                String                   @map("TIPO_ITEM") @db.VarChar(30)
+  nombre                  String                   @map("NOMBRE") @db.NVarChar(150)
+  slug                    String                   @map("SLUG") @db.VarChar(180)
+  codigo                  String?                  @map("CODIGO") @db.VarChar(80)
+  descripcionCorta        String?                  @map("DESCRIPCION_CORTA") @db.NVarChar(300)
+  descripcionCompleta     String?                  @map("DESCRIPCION_COMPLETA") @db.NVarChar(4000)
+  observacionesInternas   String?                  @map("OBSERVACIONES_INTERNAS") @db.NVarChar(2000)
+  precio                  Decimal?                 @map("PRECIO") @db.Decimal(18, 2)
+  costo                   Decimal?                 @map("COSTO") @db.Decimal(18, 2)
+  tipoMaterial            String?                  @map("TIPO_MATERIAL") @db.NVarChar(100)
+  color                   String?                  @map("COLOR") @db.NVarChar(100)
+  imagenPrincipal         String?                  @map("IMAGEN_PRINCIPAL") @db.VarChar(500)
+  stockMinimo             Int                      @default(0) @map("STOCK_MINIMO")
+  activo                  Boolean                  @default(true) @map("ACTIVO")
+  publico                 Boolean                  @default(false) @map("PUBLICO")
+  fechaAlta               DateTime                 @default(now()) @map("FECHA_ALTA") @db.DateTime2
+  fechaModificacion       DateTime                 @updatedAt @map("FECHA_MODIFICACION") @db.DateTime2
+  categoria               Categoria                @relation(fields: [idCategoria], references: [idCategoria], onDelete: NoAction, onUpdate: NoAction)
+  imagenes                ItemCatalogoImagen[]
+  detallesPedido          PedidoDetalle[]
+  estadosStock            EstadoStock[]
+  detallesOrdenProduccion OrdenProduccionDetalle[]
+  consumosProduccion      OrdenProduccionConsumo[]
+  componentesComoPadre    ItemCatalogoComponente[] @relation("ITEM_CATALOGO_PADRE")
+  componentesComoHijo     ItemCatalogoComponente[] @relation("ITEM_CATALOGO_COMPONENTE")
+
+  @@unique([slug], map: "UQ_ITEM_CATALOGO_SLUG")
+  @@index([idCategoria], map: "IX_ITEM_CATALOGO_ID_CATEGORIA")
+  @@index([tipoItem], map: "IX_ITEM_CATALOGO_TIPO_ITEM")
+  @@map("ITEM_CATALOGO")
+}
+
+model ItemCatalogoImagen {
+  idItemCatalogoImagen BigInt       @id @default(autoincrement()) @map("ID_ITEM_CATALOGO_IMAGEN") @db.BigInt
+  idItemCatalogo       BigInt       @map("ID_ITEM_CATALOGO") @db.BigInt
+  urlImagen            String       @map("URL_IMAGEN") @db.VarChar(500)
+  orden                Int          @default(1) @map("ORDEN")
+  activo               Boolean      @default(true) @map("ACTIVO")
+  fechaAlta            DateTime     @default(now()) @map("FECHA_ALTA") @db.DateTime2
+  itemCatalogo         ItemCatalogo @relation(fields: [idItemCatalogo], references: [idItemCatalogo], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([idItemCatalogo], map: "IX_ITEM_CATALOGO_IMAGEN_ID_ITEM_CATALOGO")
+  @@map("ITEM_CATALOGO_IMAGEN")
+}
+
+model Cliente {
+  idCliente            BigInt               @id @default(autoincrement()) @map("ID_CLIENTE") @db.BigInt
+  nombre               String               @map("NOMBRE") @db.NVarChar(120)
+  apellido             String?              @map("APELLIDO") @db.NVarChar(120)
+  documento            String?              @map("DOCUMENTO") @db.VarChar(30)
+  telefono             String?              @map("TELEFONO") @db.VarChar(50)
+  email                String?              @map("EMAIL") @db.VarChar(150)
+  instagram            String?              @map("INSTAGRAM") @db.VarChar(150)
+  domicilio            String?              @map("DOMICILIO") @db.NVarChar(250)
+  localidad            String?              @map("LOCALIDAD") @db.NVarChar(120)
+  provincia            String?              @map("PROVINCIA") @db.NVarChar(120)
+  observaciones        String?              @map("OBSERVACIONES") @db.NVarChar(2000)
+  fechaAlta            DateTime             @default(now()) @map("FECHA_ALTA") @db.DateTime2
+  activo               Boolean              @default(true) @map("ACTIVO")
+  fechaModificacion    DateTime             @updatedAt @map("FECHA_MODIFICACION") @db.DateTime2
+  pedidos              Pedido[]
+  solicitudesEspeciales SolicitudEspecial[]
+
+  @@index([telefono], map: "IX_CLIENTE_TELEFONO")
+  @@index([instagram], map: "IX_CLIENTE_INSTAGRAM")
+  @@map("CLIENTE")
+}
+
+model Pedido {
+  idPedido               BigInt         @id @default(autoincrement()) @map("ID_PEDIDO") @db.BigInt
+  idCliente              BigInt         @map("ID_CLIENTE") @db.BigInt
+  numeroPedido           String?        @map("NUMERO_PEDIDO") @db.VarChar(32)
+  origenPedido           String         @map("ORIGEN_PEDIDO") @db.VarChar(30)
+  estadoPedido           String         @default("PENDIENTE") @map("ESTADO_PEDIDO") @db.VarChar(30)
+  estadoCobro            String         @default("PENDIENTE") @map("ESTADO_COBRO") @db.VarChar(30)
+  observacionesCliente   String?        @map("OBSERVACIONES_CLIENTE") @db.NVarChar(2000)
+  observacionesInternas  String?        @map("OBSERVACIONES_INTERNAS") @db.NVarChar(2000)
+  subtotal               Decimal        @default(0) @map("SUBTOTAL") @db.Decimal(18, 2)
+  total                  Decimal        @map("TOTAL") @db.Decimal(18, 2)
+  fechaAlta              DateTime       @default(now()) @map("FECHA_ALTA") @db.DateTime2
+  fechaConfirmacion      DateTime?      @map("FECHA_CONFIRMACION") @db.DateTime2
+  fechaEntrega           DateTime?      @map("FECHA_ENTREGA") @db.DateTime2
+  activo                 Boolean        @default(true) @map("ACTIVO")
+  fechaModificacion      DateTime       @updatedAt @map("FECHA_MODIFICACION") @db.DateTime2
+  cliente                Cliente        @relation(fields: [idCliente], references: [idCliente], onDelete: NoAction, onUpdate: NoAction)
+  detalles               PedidoDetalle[]
+
+  @@index([idCliente], map: "IX_PEDIDO_ID_CLIENTE")
+  @@index([numeroPedido], map: "IX_PEDIDO_NUMERO_PEDIDO")
+  @@index([estadoPedido], map: "IX_PEDIDO_ESTADO_PEDIDO")
+  @@index([estadoCobro], map: "IX_PEDIDO_ESTADO_COBRO")
+  @@index([fechaAlta], map: "IX_PEDIDO_FECHA_ALTA")
+  @@map("PEDIDO")
+}
+
+model PedidoDetalle {
+  idPedidoDetalle      BigInt       @id @default(autoincrement()) @map("ID_PEDIDO_DETALLE") @db.BigInt
+  idPedido             BigInt       @map("ID_PEDIDO") @db.BigInt
+  idItemCatalogo       BigInt       @map("ID_ITEM_CATALOGO") @db.BigInt
+  nombreItemSnapshot   String       @map("NOMBRE_ITEM_SNAPSHOT") @db.NVarChar(150)
+  cantidad             Decimal      @map("CANTIDAD") @db.Decimal(18, 3)
+  precioUnitario       Decimal      @map("PRECIO_UNITARIO") @db.Decimal(18, 2)
+  costoUnitario        Decimal      @default(0) @map("COSTO_UNITARIO") @db.Decimal(18, 2)
+  subtotal             Decimal      @map("SUBTOTAL") @db.Decimal(18, 2)
+  fechaAlta            DateTime     @default(now()) @map("FECHA_ALTA") @db.DateTime2
+  fechaModificacion    DateTime     @updatedAt @map("FECHA_MODIFICACION") @db.DateTime2
+  pedido               Pedido       @relation(fields: [idPedido], references: [idPedido], onDelete: NoAction, onUpdate: NoAction)
+  itemCatalogo         ItemCatalogo @relation(fields: [idItemCatalogo], references: [idItemCatalogo], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([idPedido], map: "IX_PEDIDO_DETALLE_ID_PEDIDO")
+  @@index([idItemCatalogo], map: "IX_PEDIDO_DETALLE_ID_ITEM_CATALOGO")
+  @@map("PEDIDO_DETALLE")
+}
+
+model SolicitudEspecial {
+  idSolicitudEspecial  BigInt    @id @default(autoincrement()) @map("ID_SOLICITUD_ESPECIAL") @db.BigInt
+  idCliente            BigInt?   @map("ID_CLIENTE") @db.BigInt
+  nombreSolicitante    String    @map("NOMBRE_SOLICITANTE") @db.NVarChar(150)
+  telefono             String?   @map("TELEFONO") @db.VarChar(50)
+  email                String?   @map("EMAIL") @db.VarChar(150)
+  descripcion          String    @map("DESCRIPCION") @db.NVarChar(4000)
+  estadoSolicitud      String    @default("PENDIENTE") @map("ESTADO_SOLICITUD") @db.VarChar(30)
+  observaciones        String?   @map("OBSERVACIONES") @db.NVarChar(2000)
+  fechaAlta            DateTime  @default(now()) @map("FECHA_ALTA") @db.DateTime2
+  fechaModificacion    DateTime  @updatedAt @map("FECHA_MODIFICACION") @db.DateTime2
+  cliente              Cliente?  @relation(fields: [idCliente], references: [idCliente], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([idCliente], map: "IX_SOLICITUD_ESPECIAL_ID_CLIENTE")
+  @@index([estadoSolicitud], map: "IX_SOLICITUD_ESPECIAL_ESTADO_SOLICITUD")
+  @@map("SOLICITUD_ESPECIAL")
+}
+
+model EstadoStock {
+  idEstadoStock       BigInt       @id @default(autoincrement()) @map("ID_ESTADO_STOCK") @db.BigInt
+  idItemCatalogo      BigInt       @map("ID_ITEM_CATALOGO") @db.BigInt
+  idUsuario           BigInt?      @map("ID_USUARIO") @db.BigInt
+  tipoStock           String       @map("TIPO_STOCK") @db.VarChar(30)
+  stockActual         Decimal      @map("STOCK_ACTUAL") @db.Decimal(18, 3)
+  stockAnterior       Decimal      @map("STOCK_ANTERIOR") @db.Decimal(18, 3)
+  tipoMovimiento      String       @map("TIPO_MOVIMIENTO") @db.VarChar(40)
+  cantidadMovimiento  Decimal      @map("CANTIDAD_MOVIMIENTO") @db.Decimal(18, 3)
+  origenMovimiento    String       @map("ORIGEN_MOVIMIENTO") @db.VarChar(30)
+  idReferenciaOrigen  BigInt?      @map("ID_REFERENCIA_ORIGEN") @db.BigInt
+  idReferenciaDetalle BigInt?      @map("ID_REFERENCIA_DETALLE") @db.BigInt
+  observaciones       String?      @map("OBSERVACIONES") @db.NVarChar(2000)
+  fechaAlta           DateTime     @default(now()) @map("FECHA_ALTA") @db.DateTime2
+  itemCatalogo        ItemCatalogo @relation(fields: [idItemCatalogo], references: [idItemCatalogo], onDelete: NoAction, onUpdate: NoAction)
+  usuario             Usuario?     @relation(fields: [idUsuario], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([idItemCatalogo], map: "IX_ESTADO_STOCK_ID_ITEM_CATALOGO")
+  @@index([idUsuario], map: "IX_ESTADO_STOCK_ID_USUARIO")
+  @@index([tipoStock], map: "IX_ESTADO_STOCK_TIPO_STOCK")
+  @@index([tipoMovimiento], map: "IX_ESTADO_STOCK_TIPO_MOVIMIENTO")
+  @@index([origenMovimiento, idReferenciaOrigen, idReferenciaDetalle, idItemCatalogo, tipoMovimiento], map: "IX_ESTADO_STOCK_IDEMPOTENCIA")
+  @@map("ESTADO_STOCK")
+}
+
+model OrdenProduccion {
+  idOrdenProduccion    BigInt                   @id @default(autoincrement()) @map("ID_ORDEN_PRODUCCION") @db.BigInt
+  estadoProduccion     String                   @default("PENDIENTE") @map("ESTADO_PRODUCCION") @db.VarChar(30)
+  observaciones        String?                  @map("OBSERVACIONES") @db.NVarChar(2000)
+  fechaAlta            DateTime                 @default(now()) @map("FECHA_ALTA") @db.DateTime2
+  fechaInicio          DateTime?                @map("FECHA_INICIO") @db.DateTime2
+  fechaFin             DateTime?                @map("FECHA_FIN") @db.DateTime2
+  activo               Boolean                  @default(true) @map("ACTIVO")
+  fechaModificacion    DateTime                 @updatedAt @map("FECHA_MODIFICACION") @db.DateTime2
+  consumos             OrdenProduccionConsumo[]
+  detalles             OrdenProduccionDetalle[]
+
+  @@index([estadoProduccion], map: "IX_ORDEN_PRODUCCION_ESTADO_PRODUCCION")
+  @@map("ORDEN_PRODUCCION")
+}
+
+model OrdenProduccionDetalle {
+  idOrdenProduccionDetalle BigInt           @id @default(autoincrement()) @map("ID_ORDEN_PRODUCCION_DETALLE") @db.BigInt
+  idOrdenProduccion        BigInt           @map("ID_ORDEN_PRODUCCION") @db.BigInt
+  idItemCatalogoProducto   BigInt           @map("ID_ITEM_CATALOGO_PRODUCTO") @db.BigInt
+  cantidad                 Decimal          @map("CANTIDAD") @db.Decimal(18, 3)
+  observaciones            String?          @map("OBSERVACIONES") @db.NVarChar(2000)
+  fechaAlta                DateTime         @default(now()) @map("FECHA_ALTA") @db.DateTime2
+  fechaModificacion        DateTime         @updatedAt @map("FECHA_MODIFICACION") @db.DateTime2
+  ordenProduccion          OrdenProduccion  @relation(fields: [idOrdenProduccion], references: [idOrdenProduccion], onDelete: NoAction, onUpdate: NoAction)
+  itemCatalogoProducto     ItemCatalogo     @relation(fields: [idItemCatalogoProducto], references: [idItemCatalogo], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([idOrdenProduccion], map: "IX_ORDEN_PRODUCCION_DETALLE_ID_ORDEN_PRODUCCION")
+  @@index([idItemCatalogoProducto], map: "IX_ORDEN_PRODUCCION_DETALLE_ID_ITEM_CATALOGO_PRODUCTO")
+  @@map("ORDEN_PRODUCCION_DETALLE")
+}
+
+model OrdenProduccionConsumo {
+  idOrdenProduccionConsumo BigInt           @id @default(autoincrement()) @map("ID_ORDEN_PRODUCCION_CONSUMO") @db.BigInt
+  idOrdenProduccion        BigInt           @map("ID_ORDEN_PRODUCCION") @db.BigInt
+  idItemCatalogoInsumo     BigInt           @map("ID_ITEM_CATALOGO_INSUMO") @db.BigInt
+  cantidad                 Decimal          @map("CANTIDAD") @db.Decimal(18, 4)
+  fechaAlta                DateTime         @default(now()) @map("FECHA_ALTA") @db.DateTime2
+  ordenProduccion          OrdenProduccion  @relation(fields: [idOrdenProduccion], references: [idOrdenProduccion], onDelete: NoAction, onUpdate: NoAction)
+  itemCatalogoInsumo       ItemCatalogo     @relation(fields: [idItemCatalogoInsumo], references: [idItemCatalogo], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([idOrdenProduccion], map: "IX_ORDEN_PRODUCCION_CONSUMO_ID_ORDEN_PRODUCCION")
+  @@index([idItemCatalogoInsumo], map: "IX_ORDEN_PRODUCCION_CONSUMO_ID_ITEM_CATALOGO_INSUMO")
+  @@map("ORDEN_PRODUCCION_CONSUMO")
+}
+
+model ItemCatalogoComponente {
+  idItemCatalogoComponente   BigInt       @id @default(autoincrement()) @map("ID_ITEM_CATALOGO_COMPONENTE") @db.BigInt
+  idItemCatalogoPadre        BigInt       @map("ID_ITEM_CATALOGO_PADRE") @db.BigInt
+  idItemCatalogoHijo         BigInt       @map("ID_ITEM_CATALOGO_HIJO") @db.BigInt
+  cantidadRequerida          Decimal      @map("CANTIDAD_REQUERIDA") @db.Decimal(18, 3)
+  unidadMedida               String       @map("UNIDAD_MEDIDA") @db.VarChar(30)
+  activo                     Boolean      @default(true) @map("ACTIVO")
+  fechaAlta                  DateTime     @default(now()) @map("FECHA_ALTA") @db.DateTime2
+  fechaModificacion          DateTime     @updatedAt @map("FECHA_MODIFICACION") @db.DateTime2
+  itemCatalogoPadre          ItemCatalogo @relation("ITEM_CATALOGO_PADRE", fields: [idItemCatalogoPadre], references: [idItemCatalogo], onDelete: NoAction, onUpdate: NoAction)
+  itemCatalogoComponente     ItemCatalogo @relation("ITEM_CATALOGO_COMPONENTE", fields: [idItemCatalogoHijo], references: [idItemCatalogo], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([idItemCatalogoPadre, idItemCatalogoHijo], map: "UQ_ITEM_CATALOGO_COMPONENTE_PADRE_HIJO")
+  @@index([idItemCatalogoPadre], map: "IX_ITEM_CATALOGO_COMPONENTE_ID_ITEM_CATALOGO_PADRE")
+  @@index([idItemCatalogoHijo], map: "IX_ITEM_CATALOGO_COMPONENTE_ID_ITEM_CATALOGO_HIJO")
+  @@map("ITEM_CATALOGO_COMPONENTE")
+}

@@ -1,6 +1,8 @@
 import express from "express";
 
-import { healthRouter } from "./routes/health.routes";
+import { manejoErroresMiddleware } from "./compartido/middlewares/manejo-errores.middleware";
+import { noEncontradoMiddleware } from "./compartido/middlewares/no-encontrado.middleware";
+import { apiRouter } from "./routes";
 
 export function createApp() {
   const app = express();
@@ -13,7 +15,9 @@ export function createApp() {
     });
   });
 
-  app.use("/health", healthRouter);
+  app.use("/api", apiRouter);
+  app.use(noEncontradoMiddleware);
+  app.use(manejoErroresMiddleware);
 
   return app;
 }
