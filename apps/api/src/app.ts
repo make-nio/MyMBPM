@@ -9,7 +9,7 @@ export function createApp() {
 
   app.get("/", (_request, response) => {
     response.json({
-      message: "API running"
+      message: "BPM API running"
     });
   });
 
