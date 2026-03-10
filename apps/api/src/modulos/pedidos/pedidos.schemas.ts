@@ -13,6 +13,11 @@ export const pedidoParamsSchema = z.object({
   id: idSchema
 });
 
+export const pedidoDetalleParamsSchema = z.object({
+  id: idSchema,
+  detalleId: idSchema
+});
+
 export const listarPedidosQuerySchema = paginacionSchema.extend({
   idCliente: idSchema.optional(),
   estadoPedido: z.enum(ESTADOS_PEDIDO).optional(),
@@ -30,6 +35,10 @@ export const crearPedidoSchema = z.object({
 
 export const agregarDetallePedidoSchema = z.object({
   idItemCatalogo: idSchema,
+  cantidad: decimalPositivoSchema
+});
+
+export const actualizarDetallePedidoSchema = z.object({
   cantidad: decimalPositivoSchema
 });
 

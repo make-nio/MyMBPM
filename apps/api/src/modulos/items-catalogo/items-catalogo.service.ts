@@ -1,4 +1,5 @@
 import { TipoItem } from "../../compartido/dominio/enums";
+import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 import { prisma } from "../../lib/prisma";
 
@@ -34,6 +35,18 @@ export const itemsCatalogoService = {
     if (!categoria) {
       throw new ErrorNoEncontrado("Categoria no encontrada");
     }
+  },
+
+  async validarItemExiste(idItemCatalogo: bigint) {
+    const item = await prisma.itemCatalogo.findUnique({
+      where: { idItemCatalogo }
+    });
+
+    if (!item) {
+      throw new ErrorNoEncontrado("Item de catalogo no encontrado");
+    }
+
+    return item;
   },
 
   async crear(data: {
@@ -108,5 +121,102 @@ export const itemsCatalogoService = {
     }
 
     return itemsCatalogoRepository.eliminarImagen(idImagen);
+  },
+
+  async listarComponentes(idItemCatalogoPadre: bigint) {
+    await this.validarItemExiste(idItemCatalogoPadre);
+    return itemsCatalogoRepository.listarComponentes(idItemCatalogoPadre);
+  },
+
+  async validarComponente(
+    idItemCatalogoPadre: bigint,
+    idItemCatalogoHijo: bigint,
+    excluirIdItemCatalogoComponente?: bigint
+  ) {
+    await this.validarItemExiste(idItemCatalogoPadre);
+    await this.validarItemExiste(idItemCatalogoHijo);
+
+    if (idItemCatalogoPadre === idItemCatalogoHijo) {
+      throw new ErrorConflicto("Un item no puede apuntarse a si mismo como componente");
+    }
+
+    const duplicado = await itemsCatalogoRepository.buscarComponentePorPadreEHijo(
+      idItemCatalogoPadre,
+      idItemCatalogoHijo,
+      excluirIdItemCatalogoComponente
+    );
+
+    if (duplicado) {
+      throw new ErrorConflicto("Ya existe ese componente para el item seleccionado");
+    }
+
+    const cicloSimple = await itemsCatalogoRepository.buscarComponentePorPadreEHijo(
+      idItemCatalogoHijo,
+      idItemCatalogoPadre
+    );
+
+    if (cicloSimple) {
+      throw new ErrorConflicto("No se permite un ciclo simple entre dos items");
+    }
+  },
+
+  async agregarComponente(
+    idItemCatalogoPadre: bigint,
+    data: {
+      idItemCatalogoHijo: bigint;
+      cantidadRequerida: number;
+      unidadMedida: string;
+      activo?: boolean;
+    }
+  ) {
+    await this.validarComponente(idItemCatalogoPadre, data.idItemCatalogoHijo);
+
+    return itemsCatalogoRepository.crearComponente({
+      idItemCatalogoPadre,
+      ...data
+    });
+  },
+
+  async actualizarComponente(
+    idItemCatalogoPadre: bigint,
+    idItemCatalogoComponente: bigint,
+    data: Partial<{
+      idItemCatalogoHijo: bigint;
+      cantidadRequerida: number;
+      unidadMedida: string;
+      activo: boolean;
+    }>
+  ) {
+    await this.validarItemExiste(idItemCatalogoPadre);
+
+    const componente = await itemsCatalogoRepository.obtenerComponente(idItemCatalogoComponente);
+
+    if (!componente || componente.idItemCatalogoPadre !== idItemCatalogoPadre) {
+      throw new ErrorNoEncontrado("Componente no encontrado para el item seleccionado");
+    }
+
+    const idItemCatalogoHijo = data.idItemCatalogoHijo ?? componente.idItemCatalogoHijo;
+
+    if (data.idItemCatalogoHijo) {
+      await this.validarComponente(
+        idItemCatalogoPadre,
+        idItemCatalogoHijo,
+        idItemCatalogoComponente
+      );
+    }
+
+    return itemsCatalogoRepository.actualizarComponente(idItemCatalogoComponente, data);
+  },
+
+  async eliminarComponente(idItemCatalogoPadre: bigint, idItemCatalogoComponente: bigint) {
+    await this.validarItemExiste(idItemCatalogoPadre);
+
+    const componente = await itemsCatalogoRepository.obtenerComponente(idItemCatalogoComponente);
+
+    if (!componente || componente.idItemCatalogoPadre !== idItemCatalogoPadre) {
+      throw new ErrorNoEncontrado("Componente no encontrado para el item seleccionado");
+    }
+
+    return itemsCatalogoRepository.eliminarComponente(idItemCatalogoComponente);
   }
 };

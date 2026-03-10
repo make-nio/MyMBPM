@@ -122,6 +122,80 @@ export const pedidosService = {
     });
   },
 
+  async recalcularTotales(prismaOrTx: typeof prisma | Parameters<typeof prisma.$transaction>[0], idPedido: bigint) {
+    const pedido = await pedidosRepository.obtenerPorId(prismaOrTx as never, idPedido);
+
+    if (!pedido) {
+      throw new ErrorNoEncontrado("Pedido no encontrado");
+    }
+
+    const subtotal = pedido.detalles.reduce(
+      (acumulado, detalle) => acumulado.add(detalle.subtotal),
+      new Prisma.Decimal(0)
+    );
+
+    await pedidosRepository.actualizar(prismaOrTx as never, idPedido, {
+      subtotal,
+      total: subtotal
+    });
+  },
+
+  async actualizarDetalle(idPedido: bigint, idPedidoDetalle: bigint, data: { cantidad: number }) {
+    return prisma.$transaction(async (tx) => {
+      const pedido = await pedidosRepository.obtenerPorId(tx, idPedido);
+
+      if (!pedido) {
+        throw new ErrorNoEncontrado("Pedido no encontrado");
+      }
+
+      if (pedido.estadoPedido !== "PENDIENTE") {
+        throw new ErrorConflicto("Solo se pueden editar detalles de pedidos pendientes");
+      }
+
+      const detalle = await pedidosRepository.obtenerDetalle(tx, idPedidoDetalle);
+
+      if (!detalle || detalle.idPedido !== idPedido) {
+        throw new ErrorNoEncontrado("Detalle de pedido no encontrado");
+      }
+
+      const cantidad = aDecimal(data.cantidad);
+      const subtotal = detalle.precioUnitario.mul(cantidad);
+
+      await pedidosRepository.actualizarDetalle(tx, idPedidoDetalle, {
+        cantidad,
+        subtotal
+      });
+
+      await this.recalcularTotales(tx as never, idPedido);
+      return pedidosRepository.obtenerPorId(tx, idPedido);
+    });
+  },
+
+  async eliminarDetalle(idPedido: bigint, idPedidoDetalle: bigint) {
+    return prisma.$transaction(async (tx) => {
+      const pedido = await pedidosRepository.obtenerPorId(tx, idPedido);
+
+      if (!pedido) {
+        throw new ErrorNoEncontrado("Pedido no encontrado");
+      }
+
+      if (pedido.estadoPedido !== "PENDIENTE") {
+        throw new ErrorConflicto("Solo se pueden eliminar detalles de pedidos pendientes");
+      }
+
+      const detalle = await pedidosRepository.obtenerDetalle(tx, idPedidoDetalle);
+
+      if (!detalle || detalle.idPedido !== idPedido) {
+        throw new ErrorNoEncontrado("Detalle de pedido no encontrado");
+      }
+
+      await pedidosRepository.eliminarDetalle(tx, idPedidoDetalle);
+      await this.recalcularTotales(tx as never, idPedido);
+
+      return pedidosRepository.obtenerPorId(tx, idPedido);
+    });
+  },
+
   async actualizarEstado(
     idPedido: bigint,
     data: {

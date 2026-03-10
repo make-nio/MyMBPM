@@ -6,8 +6,11 @@ import { validar } from "../../compartido/validaciones/validar";
 import {
   actualizarItemCatalogoSchema,
   actualizarEstadoItemCatalogoSchema,
+  actualizarComponenteItemCatalogoSchema,
+  crearComponenteItemCatalogoSchema,
   crearImagenAdicionalSchema,
   crearItemCatalogoSchema,
+  itemCatalogoComponenteParamsSchema,
   itemCatalogoImagenParamsSchema,
   itemCatalogoParamsSchema,
   listarItemsCatalogoQuerySchema
@@ -63,6 +66,40 @@ export const itemsCatalogoController = {
   async eliminarImagen(request: Request, response: Response) {
     const params = validar(itemCatalogoImagenParamsSchema, request.params);
     await itemsCatalogoService.eliminarImagen(params.id, params.imagenId);
+
+    responderExito(response, { eliminado: true });
+  },
+
+  async listarComponentes(request: Request, response: Response) {
+    const params = validar(itemCatalogoParamsSchema, request.params);
+    const componentes = await itemsCatalogoService.listarComponentes(params.id);
+
+    responderExito(response, componentes);
+  },
+
+  async agregarComponente(request: Request, response: Response) {
+    const params = validar(itemCatalogoParamsSchema, request.params);
+    const body = validar(crearComponenteItemCatalogoSchema, request.body);
+    const componente = await itemsCatalogoService.agregarComponente(params.id, body);
+
+    responderExito(response, componente, 201);
+  },
+
+  async actualizarComponente(request: Request, response: Response) {
+    const params = validar(itemCatalogoComponenteParamsSchema, request.params);
+    const body = validar(actualizarComponenteItemCatalogoSchema, request.body);
+    const componente = await itemsCatalogoService.actualizarComponente(
+      params.id,
+      params.componenteId,
+      body
+    );
+
+    responderExito(response, componente);
+  },
+
+  async eliminarComponente(request: Request, response: Response) {
+    const params = validar(itemCatalogoComponenteParamsSchema, request.params);
+    await itemsCatalogoService.eliminarComponente(params.id, params.componenteId);
 
     responderExito(response, { eliminado: true });
   }
