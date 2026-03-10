@@ -1,4 +1,4 @@
-# MyFirstProject Monorepo
+# MLM BPM
 
 Base de trabajo para `MLM_BPM`, un sistema de gestion para catalogo, clientes, pedidos, stock y produccion, montado como monorepo con `npm workspaces`.
 
@@ -25,6 +25,10 @@ MyFirstProject/
 ## Estado actual
 
 Hoy el foco esta en `apps/api`.
+
+Documentacion de arquitectura backend:
+
+- [docs/arquitectura-backend.md](d:/CodexAgentProjects/MyFirstProject/docs/arquitectura-backend.md)
 
 Backend implementado hasta ahora:
 
