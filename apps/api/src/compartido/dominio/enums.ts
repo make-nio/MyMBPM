@@ -25,6 +25,15 @@ export const ESTADOS_PRODUCCION = [
 ] as const;
 export type EstadoProduccion = (typeof ESTADOS_PRODUCCION)[number];
 
+export const ESTADOS_SOLICITUD = [
+  "PENDIENTE",
+  "EN_REVISION",
+  "APROBADA",
+  "RECHAZADA",
+  "CONVERTIDA_A_PEDIDO"
+] as const;
+export type EstadoSolicitud = (typeof ESTADOS_SOLICITUD)[number];
+
 export const TIPOS_STOCK = ["PRODUCTO", "INSUMO"] as const;
 export type TipoStock = (typeof TIPOS_STOCK)[number];
 

@@ -35,12 +35,10 @@ Backend implementado hasta ahora:
 - infraestructura compartida de errores, validacion y rutas
 - modulos base: categorias, items-catalogo y clientes
 - nucleo critico: stock, pedidos y produccion
+- usuarios, autenticacion y solicitudes especiales
 
 Pendiente para la siguiente etapa:
 
-- solicitudes especiales
-- usuarios
-- autenticacion
 - frontend funcional sobre `apps/web`
 
 ## Requisitos
@@ -132,9 +130,12 @@ npm run prisma:migrate --workspace @myfirstproject/api -- --name <nombre>
 - `/api/categorias`
 - `/api/items-catalogo`
 - `/api/clientes`
+- `/api/autenticacion`
+- `/api/usuarios`
 - `/api/stock`
 - `/api/pedidos`
 - `/api/produccion`
+- `/api/solicitudes-especiales`
 
 ### Reglas importantes ya implementadas
 
