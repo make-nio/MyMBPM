@@ -1,6 +1,6 @@
 # MyFirstProject Monorepo
 
-Base inicial para un sistema BPM en arquitectura monorepo usando `npm workspaces`.
+Base de trabajo para `MLM_BPM`, un sistema de gestion para catalogo, clientes, pedidos, stock y produccion, montado como monorepo con `npm workspaces`.
 
 ## Estructura
 
@@ -19,6 +19,25 @@ MyFirstProject/
 - El frontend vive en `apps/web` con Next.js App Router.
 - La raiz del repositorio solo orquesta scripts, workspaces y documentacion.
 - La estructura queda preparada para agregar mas apps o paquetes despues.
+- La base de datos usa SQL Server con Prisma en `apps/api`.
+- El backend sigue convenciones del dominio: rutas y modulos en espanol.
+
+## Estado actual
+
+Hoy el foco esta en `apps/api`.
+
+Backend implementado hasta ahora:
+
+- infraestructura compartida de errores, validacion y rutas
+- modulos base: categorias, items-catalogo y clientes
+- nucleo critico: stock, pedidos y produccion
+
+Pendiente para la siguiente etapa:
+
+- solicitudes especiales
+- usuarios
+- autenticacion
+- frontend funcional sobre `apps/web`
 
 ## Requisitos
 
@@ -68,7 +87,7 @@ npm run check
 
 El esquema inicial esta en `apps/api/prisma/schema.prisma`.
 
-Actualmente la configuracion base del backend queda preparada para usar SQL Server via `DATABASE_URL` en `apps/api/.env`.
+Actualmente el backend esta preparado para usar SQL Server via `DATABASE_URL` en `apps/api/.env`, con `SHADOW_DATABASE_URL` para migraciones.
 
 ```bash
 npm run prisma:format --workspace @myfirstproject/api
@@ -95,8 +114,40 @@ Para generar migraciones versionadas:
 npm run prisma:migrate --workspace @myfirstproject/api -- --name <nombre>
 ```
 
-Nota importante para SQL Server:
+## Backend actual
 
-- Con las credenciales actuales, Prisma puede conectarse y hacer `db push`.
-- `prisma migrate dev` requiere crear una shadow database. Si el usuario no tiene permiso `CREATE DATABASE`, hay que usar otro usuario con ese permiso o definir una `SHADOW_DATABASE_URL` sobre una base shadow ya provisionada.
-- Mientras no tengamos eso, el camino operativo para esta etapa es `db push`.
+### Modulos disponibles
+
+- `/api/categorias`
+- `/api/items-catalogo`
+- `/api/clientes`
+- `/api/stock`
+- `/api/pedidos`
+- `/api/produccion`
+
+### Reglas importantes ya implementadas
+
+- `ESTADO_STOCK` es la unica fuente de verdad para stock.
+- Toda escritura de stock pasa por `apps/api/src/modulos/stock/stock.service.ts`.
+- `confirmar pedido`, `iniciar produccion` y `finalizar produccion` corren con `prisma.$transaction(...)`.
+- La validacion de stock se hace dentro de la misma transaccion donde se registra el egreso.
+- Los ajustes manuales solo aceptan `AJUSTE_POSITIVO` y `AJUSTE_NEGATIVO`.
+
+### Politica actual de idempotencia
+
+- La idempotencia de stock se resuelve primero como regla logica en `stock.service.ts`.
+- La clave logica usada es:
+  - `ORIGEN_MOVIMIENTO`
+  - `ID_REFERENCIA_ORIGEN`
+  - `ID_REFERENCIA_DETALLE`
+  - `ID_ITEM_CATALOGO`
+  - `TIPO_MOVIMIENTO`
+- El schema y la migracion agregan un indice para apoyar estas consultas:
+  - `IX_ESTADO_STOCK_IDEMPOTENCIA`
+- Importante: ese indice no es `UNIQUE`, asi que hoy no bloquea duplicados concurrentes a nivel base.
+- En esta etapa, la proteccion real sigue siendo logica de servicio; ante concurrencia fuerte todavia existe riesgo de duplicado.
+
+## Notas SQL Server
+
+- Con las credenciales actuales, Prisma puede conectarse y migrar usando shadow database.
+- Las migraciones versionadas viven en `apps/api/prisma/migrations`.
