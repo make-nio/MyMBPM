@@ -58,6 +58,19 @@ export function manejoErroresMiddleware(
     }
   }
 
+  if (error instanceof Prisma.PrismaClientInitializationError) {
+    console.error(error);
+
+    response.status(500).json({
+      ok: false,
+      error: {
+        codigo: "BASE_DATOS_NO_DISPONIBLE",
+        message: "No fue posible conectarse a la base de datos"
+      }
+    });
+    return;
+  }
+
   console.error(error);
 
   response.status(500).json({
