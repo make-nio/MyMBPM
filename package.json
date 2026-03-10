@@ -1,0 +1,27 @@
+{
+  "name": "myfirstproject",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo base with Next.js frontend and Node.js API.",
+  "workspaces": [
+    "apps/web",
+    "apps/api"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace @myfirstproject/web",
+    "dev:api": "npm run dev --workspace @myfirstproject/api",
+    "dev": "concurrently \"npm run dev:web\" \"npm run dev:api\"",
+    "build:web": "npm run build --workspace @myfirstproject/web",
+    "build:api": "npm run build --workspace @myfirstproject/api",
+    "build": "npm run build:web && npm run build:api",
+    "check:web": "npm run check --workspace @myfirstproject/web",
+    "check:api": "npm run check --workspace @myfirstproject/api",
+    "check": "npm run check:web && npm run check:api"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
