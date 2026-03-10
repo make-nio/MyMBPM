@@ -3,7 +3,7 @@ type EnvConfig = {
   databaseUrl: string;
   jwtSecret: string;
   jwtExpiresIn: string;
-  corsOrigin: string;
+  corsOrigins: string[];
 };
 
 function requireEnv(name: string): string {
@@ -17,11 +17,19 @@ function requireEnv(name: string): string {
 }
 
 export function getEnv(): EnvConfig {
+  const corsOrigins = (
+    process.env.CORS_ORIGIN ||
+    "http://localhost:3000,http://localhost:3003"
+  )
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+
   return {
     port: Number(process.env.PORT) || 3001,
     databaseUrl: requireEnv("DATABASE_URL"),
     jwtSecret: requireEnv("JWT_SECRET"),
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || "8h",
-    corsOrigin: process.env.CORS_ORIGIN || "http://localhost:3000"
+    corsOrigins
   };
 }
