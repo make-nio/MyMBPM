@@ -1,8 +1,10 @@
 # Requiere la extension "REST Client" de VSCode.
 # Para ejecutar un request, abri este archivo y hace click en "Send Request" arriba de cada bloque.
 # El token puede completarse manualmente en @token o capturarse automaticamente ejecutando primero el login.
+# Este archivo apunta a la API Express. No usar el puerto del frontend Next.js.
+# Puerto por defecto de la API: 3002. Si cambias PORT en apps/api/.env, actualiza @baseUrl.
 
-@baseUrl = http://localhost:3001
+@baseUrl = http://localhost:3002
 @token =
 
 ### Health
@@ -14,8 +16,8 @@ POST {{baseUrl}}/api/autenticacion/login
 Content-Type: application/json
 
 {
-  "identificador": "admin",
-  "password": "admin123"
+  "identificador": "test",
+  "password": "12345678"
 }
 
 ###

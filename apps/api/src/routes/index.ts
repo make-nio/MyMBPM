@@ -1,7 +1,10 @@
 import { Router } from "express";
 
 import { asyncHandler } from "../compartido/http/async-handler";
-import { requerirAutenticacion } from "../compartido/middlewares/requerir-autenticacion.middleware";
+import {
+  cargarAutenticacionOpcional,
+  requerirAutenticacion
+} from "../compartido/middlewares/requerir-autenticacion.middleware";
 import { autenticacionRouter } from "../modulos/autenticacion/autenticacion.routes";
 import { healthRouter } from "./health.routes";
 import { categoriasRouter } from "../modulos/categorias/categorias.routes";
@@ -19,7 +22,7 @@ const rutasPrivadasRouter = Router();
 
 apiRouter.use("/health", healthRouter);
 apiRouter.use("/autenticacion", autenticacionRouter);
-apiRouter.post("/usuarios", asyncHandler(usuariosController.crear));
+apiRouter.post("/usuarios", cargarAutenticacionOpcional, asyncHandler(usuariosController.crear));
 
 rutasPrivadasRouter.use(requerirAutenticacion);
 rutasPrivadasRouter.use("/usuarios", usuariosRouter);

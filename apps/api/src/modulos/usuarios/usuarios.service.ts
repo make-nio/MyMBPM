@@ -36,10 +36,6 @@ export const usuariosService = {
     return prisma.$transaction(async (tx) => {
       const cantidadUsuarios = await usuariosRepository.contarUsuarios(tx);
 
-      if (cantidadUsuarios > 0 && !usuarioSolicitante) {
-        throw new ErrorAutenticacion("Debe autenticarse para crear nuevos usuarios");
-      }
-
       const duplicado = await usuariosRepository.buscarPorEmailOUsuario(tx, {
         email: data.email,
         usuario: data.usuario
@@ -47,6 +43,10 @@ export const usuariosService = {
 
       if (duplicado) {
         throw new ErrorConflicto("Ya existe un usuario con ese email o nombre de usuario");
+      }
+
+      if (cantidadUsuarios > 0 && !usuarioSolicitante) {
+        throw new ErrorAutenticacion("Debe autenticarse para crear nuevos usuarios");
       }
 
       const claveHash = await bcrypt.hash(data.password, 10);
