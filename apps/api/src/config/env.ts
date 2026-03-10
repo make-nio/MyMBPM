@@ -3,6 +3,7 @@ type EnvConfig = {
   databaseUrl: string;
   jwtSecret: string;
   jwtExpiresIn: string;
+  corsOrigin: string;
 };
 
 function requireEnv(name: string): string {
@@ -20,6 +21,7 @@ export function getEnv(): EnvConfig {
     port: Number(process.env.PORT) || 3001,
     databaseUrl: requireEnv("DATABASE_URL"),
     jwtSecret: requireEnv("JWT_SECRET"),
-    jwtExpiresIn: process.env.JWT_EXPIRES_IN || "8h"
+    jwtExpiresIn: process.env.JWT_EXPIRES_IN || "8h",
+    corsOrigin: process.env.CORS_ORIGIN || "http://localhost:3000"
   };
 }
