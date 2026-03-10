@@ -83,6 +83,9 @@ npm run check
 
 - instala la extension `REST Client`
 - abri [docs/http/api.http](d:/CodexAgentProjects/MyFirstProject/docs/http/api.http)
+- el archivo apunta por defecto a `http://localhost:3002`, que es el puerto de la API Express
+- no usar el puerto del frontend Next.js para estos requests
+- si cambias `PORT` en `apps/api/.env`, actualiza `@baseUrl` en `docs/http/api.http`
 - ejecuta cada request con `Send Request`
 - primero corre el login para capturar el token automaticamente o completa `@token` manualmente
 
