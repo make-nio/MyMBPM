@@ -7,17 +7,29 @@ const accesosPrincipales = [
   {
     href: "/panel",
     label: "Dashboard"
+  },
+  {
+    href: "/categorias",
+    label: "Categorias"
+  },
+  {
+    href: "/clientes",
+    label: "Clientes"
+  },
+  {
+    href: "/solicitudes-especiales",
+    label: "Solicitudes especiales"
+  },
+  {
+    href: "/items-catalogo",
+    label: "Items catalogo"
   }
 ];
 
 const proximosModulos = [
-  "Categorias",
-  "Items catalogo",
-  "Clientes",
   "Pedidos",
   "Produccion",
   "Stock",
-  "Solicitudes especiales",
   "Usuarios"
 ];
 
