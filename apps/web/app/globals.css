@@ -35,7 +35,9 @@ a {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -103,7 +105,20 @@ input {
   color: var(--text);
 }
 
-.campo-formulario input:focus {
+.campo-formulario select,
+.campo-formulario textarea {
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text);
+  resize: vertical;
+}
+
+.campo-formulario input:focus,
+.campo-formulario select:focus,
+.campo-formulario textarea:focus {
   outline: 2px solid rgba(179, 90, 41, 0.18);
   border-color: rgba(179, 90, 41, 0.45);
 }
@@ -307,6 +322,200 @@ input {
   font-size: 1.35rem;
 }
 
+.modulo-panel {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.encabezado-modulo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.encabezado-modulo h1,
+.bloque-estado h3,
+.tarjeta-seccion h3,
+.modal-encabezado h3 {
+  margin: 0;
+  font-size: 1.9rem;
+}
+
+.encabezado-modulo p,
+.bloque-estado p,
+.tarjeta-seccion p,
+.modal-encabezado p {
+  margin: 0.6rem 0 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.encabezado-modulo__acciones {
+  display: grid;
+  gap: 0.9rem;
+  justify-items: end;
+}
+
+.encabezado-modulo__filtros,
+.filtros-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.control-filtro {
+  min-width: 180px;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text);
+}
+
+.tabla-contenedor,
+.tarjeta-seccion,
+.bloque-estado {
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.66);
+  box-shadow: var(--shadow);
+}
+
+.tabla-contenedor {
+  overflow: auto;
+}
+
+.tabla-datos {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla-datos th,
+.tabla-datos td {
+  padding: 1rem 1.1rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(28, 22, 17, 0.08);
+  vertical-align: top;
+}
+
+.tabla-datos th {
+  font-size: 0.82rem;
+  letter-spacing: 0.08rem;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tabla-datos tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.acciones-tabla {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.bloque-estado,
+.tarjeta-seccion {
+  padding: 1.35rem;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(33, 20, 15, 0.42);
+  backdrop-filter: blur(8px);
+}
+
+.modal-contenido {
+  width: min(920px, 100%);
+  max-height: min(90vh, 920px);
+  overflow: auto;
+  padding: 1.35rem;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background: var(--surface-strong);
+  box-shadow: var(--shadow);
+}
+
+.modal-encabezado {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(28, 22, 17, 0.08);
+}
+
+.modal-cuerpo {
+  padding-top: 1rem;
+}
+
+.formulario-modulo {
+  display: grid;
+  gap: 1rem;
+}
+
+.formulario-modulo--dos-columnas {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.formulario-modulo__col-span {
+  grid-column: 1 / -1;
+}
+
+.campo-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.campo-checkbox input {
+  width: 18px;
+  height: 18px;
+}
+
+.acciones-formulario {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.seccion-receta {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 1rem;
+}
+
+.seccion-receta__columna {
+  min-width: 0;
+}
+
+.tarjeta-seccion__encabezado {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.texto-secundario--compacto {
+  margin-top: 0.5rem;
+}
+
 @media (max-width: 980px) {
   .panel-shell {
     grid-template-columns: 1fr;
@@ -315,6 +524,22 @@ input {
   .barra-lateral {
     border-right: 0;
     border-bottom: 1px solid rgba(255, 244, 235, 0.14);
+  }
+
+  .encabezado-modulo,
+  .modal-encabezado,
+  .tarjeta-seccion__encabezado {
+    flex-direction: column;
+  }
+
+  .encabezado-modulo__acciones {
+    width: 100%;
+    justify-items: stretch;
+  }
+
+  .formulario-modulo--dos-columnas,
+  .seccion-receta {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -4,6 +4,14 @@ type ApiRequestInit = RequestInit & {
   token?: string;
 };
 
+function leerTokenActual() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return window.localStorage.getItem("mlm_bpm_token");
+}
+
 export class ErrorApi extends Error {
   readonly status: number;
 
@@ -16,13 +24,14 @@ export class ErrorApi extends Error {
 
 export async function apiFetch<T>(path: string, init: ApiRequestInit = {}) {
   const headers = new Headers(init.headers);
+  const token = init.token ?? leerTokenActual();
 
   if (!headers.has("Content-Type") && init.body) {
     headers.set("Content-Type", "application/json");
   }
 
-  if (init.token) {
-    headers.set("Authorization", `Bearer ${init.token}`);
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
   }
 
   const response = await fetch(`${getApiUrl()}${path}`, {
@@ -42,4 +51,22 @@ export async function apiFetch<T>(path: string, init: ApiRequestInit = {}) {
   }
 
   return body as T;
+}
+
+export function buildQuery(
+  params: Record<string, string | number | boolean | null | undefined>
+) {
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === "") {
+      return;
+    }
+
+    searchParams.set(key, String(value));
+  });
+
+  const query = searchParams.toString();
+
+  return query ? `?${query}` : "";
 }
