@@ -10,6 +10,7 @@ import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
 import { MensajeError } from "../../../src/components/ui/mensaje-error";
 import { Modal } from "../../../src/components/ui/modal";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
+import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
 import { useModal } from "../../../src/hooks/use-modal";
 import { formatearEstado, formatearFecha, formatearMoneda } from "../../../src/lib/formato";
 import { listarClientes } from "../../../src/lib/modulos/clientes";
@@ -36,6 +37,7 @@ export default function PedidosPage() {
   const [filtroEstado, setFiltroEstado] = useState<EstadoPedido | "">("");
   const [filtroCobro, setFiltroCobro] = useState<EstadoCobro | "">("");
   const [idPedidoSeleccionado, setIdPedidoSeleccionado] = useState<string | null>(null);
+  const refDetalle = useDesplazarAlDetalle(idPedidoSeleccionado);
 
   const recargar = useCallback(async () => {
     setPedidos(
@@ -156,11 +158,13 @@ export default function PedidosPage() {
       ) : null}
 
       {idPedidoSeleccionado ? (
-        <PanelPedido
-          idPedido={idPedidoSeleccionado}
-          onCambio={() => void recargar()}
-          productos={productos}
-        />
+        <div ref={refDetalle}>
+          <PanelPedido
+            idPedido={idPedidoSeleccionado}
+            onCambio={() => void recargar()}
+            productos={productos}
+          />
+        </div>
       ) : null}
 
       <Modal

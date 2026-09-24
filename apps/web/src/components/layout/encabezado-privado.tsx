@@ -3,20 +3,35 @@ import { UsuarioAutenticado } from "../../types/auth";
 type EncabezadoPrivadoProps = {
   usuario: UsuarioAutenticado;
   onLogout: () => void;
+  menuAbierto: boolean;
+  onAlternarMenu: () => void;
 };
 
 export function EncabezadoPrivado({
   usuario,
-  onLogout
+  onLogout,
+  menuAbierto,
+  onAlternarMenu
 }: EncabezadoPrivadoProps) {
   return (
     <header className="encabezado-privado">
-      <div>
-        <p className="marca-pequena">Operacion interna</p>
-        <h2>Panel administrativo</h2>
-        <p>
-          Base privada conectada al backend para empezar a gestionar el negocio.
-        </p>
+      <div className="encabezado-privado__titulo">
+        <button
+          aria-controls="menu-principal"
+          aria-expanded={menuAbierto}
+          className="boton-secundario boton-menu"
+          onClick={onAlternarMenu}
+          type="button"
+        >
+          {menuAbierto ? "Cerrar menu" : "Menu"}
+        </button>
+        <div>
+          <p className="marca-pequena">Operacion interna</p>
+          <h2>Panel administrativo</h2>
+          <p className="encabezado-privado__descripcion">
+            Base privada conectada al backend para empezar a gestionar el negocio.
+          </p>
+        </div>
       </div>
 
       <div className="encabezado-privado__usuario">

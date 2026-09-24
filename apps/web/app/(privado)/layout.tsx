@@ -1,5 +1,8 @@
 "use client";
 
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+
 import { ProveedorSesion } from "../../src/components/auth/contexto-sesion";
 import { GuardiaRutaPrivada } from "../../src/components/auth/guardia-ruta-privada";
 import { BarraLateralPrivada } from "../../src/components/layout/barra-lateral-privada";
@@ -10,15 +13,28 @@ export default function PrivadoLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // En pantallas angostas el menu va plegado detras del boton "Menu" (ver globals.css).
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setMenuAbierto(false);
+  }, [pathname]);
+
   return (
     <GuardiaRutaPrivada>
       {({ usuario, cerrarSesion }) => (
         <ProveedorSesion usuario={usuario}>
           <div className="panel-shell">
-            <BarraLateralPrivada esAdministrador={usuario.esAdministrador} />
+            <BarraLateralPrivada abierta={menuAbierto} esAdministrador={usuario.esAdministrador} />
 
             <div className="contenido-privado">
-              <EncabezadoPrivado onLogout={cerrarSesion} usuario={usuario} />
+              <EncabezadoPrivado
+                menuAbierto={menuAbierto}
+                onAlternarMenu={() => setMenuAbierto((abierto) => !abierto)}
+                onLogout={cerrarSesion}
+                usuario={usuario}
+              />
               <main className="contenido-principal">{children}</main>
             </div>
           </div>

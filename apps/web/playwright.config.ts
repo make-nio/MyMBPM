@@ -33,7 +33,21 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
+      testIgnore: /movil\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], storageState: ARCHIVO_SESION_ADMIN }
+    },
+    {
+      // Celular chico (375 px de ancho). Chromium con viewport y touch de telefono: no hace
+      // falta instalar WebKit en el CI.
+      name: "movil",
+      testMatch: /movil\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 375, height: 812 },
+        isMobile: true,
+        hasTouch: true,
+        storageState: ARCHIVO_SESION_ADMIN
+      }
     }
   ],
   webServer: [

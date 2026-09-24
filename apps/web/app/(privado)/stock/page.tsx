@@ -11,6 +11,7 @@ import { MensajeError } from "../../../src/components/ui/mensaje-error";
 import { MensajeExito } from "../../../src/components/ui/mensaje-exito";
 import { Modal } from "../../../src/components/ui/modal";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
+import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
 import { useModal } from "../../../src/hooks/use-modal";
 import { formatearCantidad, formatearEstado, formatearFecha } from "../../../src/lib/formato";
 import { crearAjusteStock, listarExistencias } from "../../../src/lib/modulos/stock";
@@ -26,6 +27,7 @@ export default function StockPage() {
   const [soloBajoMinimo, setSoloBajoMinimo] = useState(false);
   const [busqueda, setBusqueda] = useState("");
   const [idSeleccionado, setIdSeleccionado] = useState<string | null>(null);
+  const refDetalle = useDesplazarAlDetalle(idSeleccionado);
   const [version, setVersion] = useState(0);
 
   const recargar = useCallback(async () => {
@@ -161,7 +163,11 @@ export default function StockPage() {
         />
       ) : null}
 
-      {seleccionado ? <PanelItemStock existencia={seleccionado} stockPorItem={stockPorItem} version={version} /> : null}
+      {seleccionado ? (
+        <div ref={refDetalle}>
+          <PanelItemStock existencia={seleccionado} stockPorItem={stockPorItem} version={version} />
+        </div>
+      ) : null}
 
       <Modal
         abierto={modalAjuste.abierto}

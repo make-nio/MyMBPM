@@ -46,21 +46,27 @@ const accesosAdministracion = [
   }
 ];
 
-export function BarraLateralPrivada({ esAdministrador }: { esAdministrador: boolean }) {
+export function BarraLateralPrivada({
+  esAdministrador,
+  abierta = false
+}: {
+  esAdministrador: boolean;
+  abierta?: boolean;
+}) {
   const pathname = usePathname();
   const accesos = esAdministrador
     ? [...accesosPrincipales, ...accesosAdministracion]
     : accesosPrincipales;
 
   return (
-    <aside className="barra-lateral">
+    <aside className={abierta ? "barra-lateral barra-lateral--abierta" : "barra-lateral"} id="menu-principal">
       <div className="barra-lateral__marca">
         <p className="marca-pequena">Panel privado</p>
         <h1>MLM BPM</h1>
         <p>Gestion interna del emprendimiento.</p>
       </div>
 
-      <nav className="barra-lateral__navegacion">
+      <nav aria-label="Menu principal" className="barra-lateral__navegacion">
         <section>
           <p className="barra-lateral__seccion-titulo">Modulos</p>
           <div className="barra-lateral__lista">
