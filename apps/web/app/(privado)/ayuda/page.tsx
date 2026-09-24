@@ -43,7 +43,8 @@ const guias: Paso[] = [
       "Cada producto tiene que tener su receta (en Items catalogo, boton \"Receta\"): que insumos usa y cuanto.",
       "En Produccion, toca \"Nueva orden\" y despues \"Agregar producto\" con lo que vas a fabricar.",
       "Toca \"Iniciar produccion\": te muestra que insumos se van a usar y, al confirmar, los descuenta.",
-      "Cuando termines, toca \"Finalizar produccion\": los productos fabricados se suman al stock."
+      "Cuando termines, toca \"Finalizar produccion\": los productos fabricados se suman al stock.",
+      "Atajo: en Stock, un producto bajo minimo tiene \"Crear orden de produccion\". Abre la orden nueva con ese producto y lo que falta para llegar al minimo; revisa la cantidad y toca \"Crear orden\" (hasta ahi no se crea nada)."
     ],
     ojo: "Si cancelas una orden que ya estaba en proceso, los insumos que se usaron no vuelven al stock."
   },
@@ -65,6 +66,14 @@ const guias: Paso[] = [
       "Si hay errores, corregilos en la planilla y volve a elegir el archivo. Cuando esten todas bien, toca \"Importar\"."
     ],
     ojo: "Se importa todo o nada: si una sola fila tiene un error, no se carga ninguna. Un item que ya existe con el mismo nombre no se duplica: esa fila aparece con error."
+  },
+  {
+    titulo: "Encontrar algo rapido",
+    pasos: [
+      "Toca \"Buscar\" arriba (o apreta Ctrl+K en la compu; Cmd+K en Mac) desde cualquier pantalla.",
+      "Escribi un numero de pedido (alcanza con \"755\"), el nombre o telefono de un cliente, o el nombre de un item.",
+      "Toca el resultado (o usa las flechas y Enter): el pedido se abre en Pedidos y el cliente o el item, en su ficha."
+    ]
   },
   {
     titulo: "Llevarte los datos a una planilla",

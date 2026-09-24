@@ -17,7 +17,7 @@ test("alta, busqueda sin distinguir mayusculas, edicion y desactivacion de un cl
   await expect(modal).toBeHidden();
 
   await page.getByPlaceholder(/buscar por nombre/i).fill(nombre.toUpperCase());
-  await page.getByRole("button", { name: "Buscar" }).click();
+  await page.getByRole("button", { name: "Buscar", exact: true }).click();
 
   const fila = page.getByRole("row").filter({ hasText: nombre });
   await expect(fila).toHaveCount(1);

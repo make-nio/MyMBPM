@@ -17,6 +17,7 @@ import { Modal } from "../../../src/components/ui/modal";
 import { PieListado } from "../../../src/components/ui/pie-listado";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
+import { useAbrirDesdeUrl } from "../../../src/hooks/use-abrir-desde-url";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
 import { calcularCostoReceta } from "../../../src/lib/costos";
@@ -30,7 +31,8 @@ import {
   crearItemCatalogo,
   eliminarComponenteItem,
   listarComponentesItem,
-  listarItemsCatalogo
+  listarItemsCatalogo,
+  obtenerItemCatalogo
 } from "../../../src/lib/modulos/items-catalogo";
 import { Categoria } from "../../../src/types/categorias";
 import {
@@ -108,6 +110,13 @@ export default function ItemsCatalogoPage() {
     "No fue posible cargar los items del catalogo"
   );
   const { items, cargando, error } = listado;
+
+  // /items-catalogo?item=ID (desde la busqueda global): lista filtrada por su nombre y su ficha abierta.
+  useAbrirDesdeUrl("item", obtenerItemCatalogo, (item) => {
+    setBusqueda(item.nombre);
+    setBusquedaAplicada(item.nombre);
+    modalItem.abrir(item);
+  });
 
   // Si el item de la receta cambio (o ya no esta en el listado), el panel lo refleja.
   useEffect(() => {

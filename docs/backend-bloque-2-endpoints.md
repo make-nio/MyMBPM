@@ -45,3 +45,15 @@
     costo), `porItem` (cantidad, pedidos, vendido = suma de subtotales, costo = snapshot de cada
     linea, ganancia) y `porCliente` (pedidos, vendido = suma de totales, costo, ganancia), de mayor
     a menor vendido. La web arma el CSV de cada tabla.
+
+## Busqueda global
+
+- `GET /api/busqueda?q=texto` (cualquier usuario con sesion; `q` de 2 a 100 caracteres)
+  - Hasta 5 resultados por grupo: `pedidos` (por numero, tambien solo la parte numerica, o por
+    nombre/apellido del cliente), `clientes` (nombre, apellido, telefono, email o documento) e
+    `items` (nombre, activos primero). Devuelve lo justo para mostrar y abrir cada uno.
+  - `items[].costo` solo viaja para quien puede ver costos (`puedeVerCostos`); ademas lo filtra
+    `ocultarCostosSinPermiso` como en toda ruta privada.
+  - La web la usa desde el encabezado (boton "Buscar" o Ctrl+K / Cmd+K). Pedido lleva a
+    `/pedidos?pedido=ID`, cliente a `/clientes?cliente=ID` e item a `/items-catalogo?item=ID`
+    (abren su ficha).

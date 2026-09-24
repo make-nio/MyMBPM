@@ -13,6 +13,7 @@ import { MensajeError } from "../../../src/components/ui/mensaje-error";
 import { Modal } from "../../../src/components/ui/modal";
 import { PieListado } from "../../../src/components/ui/pie-listado";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
+import { useAbrirDesdeUrl } from "../../../src/hooks/use-abrir-desde-url";
 import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
@@ -20,7 +21,8 @@ import {
   actualizarCliente,
   cambiarEstadoCliente,
   crearCliente,
-  listarClientes
+  listarClientes,
+  obtenerCliente
 } from "../../../src/lib/modulos/clientes";
 import { Cliente } from "../../../src/types/clientes";
 
@@ -49,6 +51,13 @@ export default function ClientesPage() {
   );
   const { items: clientes, cargando, error, recargar } = listado;
   const clienteFicha = clientes.find((cliente) => cliente.idCliente === idFicha) ?? null;
+
+  // /clientes?cliente=ID (desde la busqueda global): lista filtrada por su nombre y su ficha abierta.
+  useAbrirDesdeUrl("cliente", obtenerCliente, (cliente) => {
+    setBusqueda(cliente.nombre);
+    setBusquedaAplicada(cliente.nombre);
+    setIdFicha(cliente.idCliente);
+  });
 
   async function guardarCliente(payload: Parameters<typeof crearCliente>[0]) {
     if (modalCliente.contexto) {
