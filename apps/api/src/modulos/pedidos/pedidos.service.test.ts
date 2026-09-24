@@ -17,7 +17,8 @@ vi.mock("../../lib/prisma", () => ({
   }
 }));
 
-vi.mock("../stock/stock.service", () => ({
+vi.mock("../stock/stock.service", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../stock/stock.service")>()),
   stockService: {
     registrarEgreso: vi.fn()
   }
@@ -246,6 +247,14 @@ describe("pedidosService.confirmar", () => {
       1n,
       expect.objectContaining({ estadoPedido: "CONFIRMADO", fechaConfirmacion: expect.any(Date) })
     );
+  });
+
+  it("descuenta en orden de item para que los locks no se crucen entre transacciones", async () => {
+    repo.obtenerPorId.mockResolvedValue(pedido({ detalles: [detalle(11n, 9n, 1), detalle(12n, 3n, 1), detalle(13n, 5n, 1)] }));
+
+    await pedidosService.confirmar(1n);
+
+    expect(stock.registrarEgreso.mock.calls.map(([, input]) => input.idItemCatalogo)).toEqual([3n, 5n, 9n]);
   });
 
   it("no cambia el estado si falla el egreso de stock", async () => {

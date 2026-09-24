@@ -2,11 +2,14 @@ import { Prisma, PrismaClient } from "@prisma/client";
 
 import {
   OrigenMovimiento,
+  TipoItem,
   TipoMovimiento,
   TipoStock
 } from "../../compartido/dominio/enums";
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
+
+import { prisma } from "../../lib/prisma";
 
 import { stockRepository } from "./stock.repository";
 
@@ -27,6 +30,13 @@ type RegistrarMovimientoInput = {
 type RegistrarAjusteManualInput = Omit<RegistrarMovimientoInput, "origenMovimiento" | "tipoMovimiento"> & {
   tipoMovimiento: "AJUSTE_POSITIVO" | "AJUSTE_NEGATIVO";
 };
+
+// Las operaciones que mueven varios items en una transaccion deben hacerlo en este orden:
+// bloquearItem toma un lock por item y, si dos transacciones los toman en distinto orden,
+// PostgreSQL aborta una por deadlock.
+export function ordenarPorItem<T>(elementos: T[], idItem: (elemento: T) => bigint) {
+  return [...elementos].sort((a, b) => (idItem(a) < idItem(b) ? -1 : idItem(a) > idItem(b) ? 1 : 0));
+}
 
 function aDecimal(value: number | Prisma.Decimal | string) {
   return value instanceof Prisma.Decimal ? value : new Prisma.Decimal(value);
@@ -55,27 +65,46 @@ export const stockService = {
     return stockRepository.listarHistorial(prismaOrTx, filtros);
   },
 
+  // Stock vigente de cada item del catalogo: los PRODUCTO contra su stock de PRODUCTO y los
+  // INSUMO contra su stock de INSUMO.
+  async obtenerExistencias(prismaOrTx: PrismaOrTx, filtros: { tipoItem?: TipoItem; activo?: boolean }) {
+    const items = await stockRepository.listarItemsParaExistencias(prismaOrTx, filtros);
+    const ultimos = await stockRepository.listarUltimosEstados(
+      prismaOrTx,
+      items.map((item) => item.idItemCatalogo)
+    );
+    const porItemYTipo = new Map(
+      ultimos.map((estado) => [`${estado.idItemCatalogo}:${estado.tipoStock}`, estado])
+    );
+
+    return items.map((item) => {
+      const ultimo = porItemYTipo.get(`${item.idItemCatalogo}:${item.tipoItem}`) ?? null;
+      const stockActual = ultimo ? new Prisma.Decimal(ultimo.stockActual) : new Prisma.Decimal(0);
+
+      return {
+        idItemCatalogo: item.idItemCatalogo,
+        nombre: item.nombre,
+        tipoItem: item.tipoItem,
+        tipoStock: item.tipoItem,
+        activo: item.activo,
+        categoria: item.categoria,
+        stockMinimo: item.stockMinimo,
+        stockActual,
+        bajoMinimo: item.stockMinimo > 0 && stockActual.lessThanOrEqualTo(item.stockMinimo),
+        fechaUltimoMovimiento: ultimo?.fechaAlta ?? null
+      };
+    });
+  },
+
   async obtenerBajoStock(
     prismaOrTx: PrismaOrTx,
     filtros: { activo?: boolean; limit: number; offset: number }
   ) {
-    const items = await stockRepository.listarItemsParaBajoStock(prismaOrTx, filtros);
+    const existencias = await this.obtenerExistencias(prismaOrTx, { activo: filtros.activo });
 
-    return items
-      .map((item) => {
-        const ultimoEstado = item.estadosStock[0] ?? null;
-        const stockActual = ultimoEstado?.stockActual ?? new Prisma.Decimal(0);
-
-        return {
-          idItemCatalogo: item.idItemCatalogo,
-          nombre: item.nombre,
-          tipoItem: item.tipoItem,
-          stockMinimo: item.stockMinimo,
-          stockActual,
-          categoria: item.categoria
-        };
-      })
-      .filter((item) => item.stockActual.lessThanOrEqualTo(new Prisma.Decimal(item.stockMinimo)));
+    return existencias
+      .filter((item) => item.bajoMinimo)
+      .slice(filtros.offset, filtros.offset + filtros.limit);
   },
 
   async validarItemExiste(prismaOrTx: PrismaOrTx, idItemCatalogo: bigint) {
@@ -125,6 +154,7 @@ export const stockService = {
 
   async registrarIngreso(prismaOrTx: PrismaOrTx, input: RegistrarMovimientoInput) {
     await this.validarItemExiste(prismaOrTx, input.idItemCatalogo);
+    await stockRepository.bloquearItem(prismaOrTx, input.idItemCatalogo, input.tipoStock);
 
     const movimientoDuplicado = await this.validarIdempotencia(prismaOrTx, input);
 
@@ -153,6 +183,7 @@ export const stockService = {
 
   async registrarEgreso(prismaOrTx: PrismaOrTx, input: RegistrarMovimientoInput) {
     await this.validarItemExiste(prismaOrTx, input.idItemCatalogo);
+    await stockRepository.bloquearItem(prismaOrTx, input.idItemCatalogo, input.tipoStock);
 
     const movimientoDuplicado = await this.validarIdempotencia(prismaOrTx, input);
 
@@ -189,6 +220,11 @@ export const stockService = {
       ...input,
       tipoMovimiento: "REVERSO"
     });
+  },
+
+  // Ajuste manual pedido por un usuario (POST /api/stock/ajustes), en su propia transaccion.
+  crearAjusteManual(input: RegistrarAjusteManualInput) {
+    return prisma.$transaction((tx) => this.registrarAjusteManual(tx, input));
   },
 
   registrarAjusteManual(

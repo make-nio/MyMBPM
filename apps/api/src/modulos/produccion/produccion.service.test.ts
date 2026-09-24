@@ -17,7 +17,8 @@ vi.mock("../../lib/prisma", () => ({
   }
 }));
 
-vi.mock("../stock/stock.service", () => ({
+vi.mock("../stock/stock.service", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../stock/stock.service")>()),
   stockService: {
     registrarEgreso: vi.fn(),
     registrarIngreso: vi.fn()
@@ -186,14 +187,20 @@ describe("produccionService.iniciar", () => {
         idReferenciaDetalle: 21n
       })
     );
-    const cantidades = stock.registrarEgreso.mock.calls.map(([, input]) => input.cantidad.toString());
-    expect(cantidades).toEqual(["6", "8", "0.5"]);
+    // Egresos ordenados por insumo (10, 10, 11), no por detalle: el orden de los locks por item
+    // tiene que ser el mismo en todas las transacciones para no provocar deadlocks.
+    const egresos = stock.registrarEgreso.mock.calls.map(([, input]) => [input.idItemCatalogo, input.cantidad.toString()]);
+    expect(egresos).toEqual([
+      [10n, "6"],
+      [10n, "0.5"],
+      [11n, "8"]
+    ]);
 
     const consumos = repo.crearConsumos.mock.calls[0][1];
     expect(consumos.map((consumo) => [consumo.idItemCatalogoInsumo, consumo.cantidad.toString()])).toEqual([
       [10n, "6"],
-      [11n, "8"],
-      [10n, "0.5"]
+      [10n, "0.5"],
+      [11n, "8"]
     ]);
     expect(repo.actualizar).toHaveBeenCalledWith(
       tx,

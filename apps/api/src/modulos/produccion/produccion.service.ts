@@ -4,7 +4,7 @@ import { EstadoProduccion } from "../../compartido/dominio/enums";
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 import { prisma } from "../../lib/prisma";
-import { stockService } from "../stock/stock.service";
+import { ordenarPorItem, stockService } from "../stock/stock.service";
 
 import { produccionRepository } from "./produccion.repository";
 
@@ -172,6 +172,8 @@ export const produccionService = {
         cantidad: Prisma.Decimal;
       }> = [];
 
+      const egresos: Array<{ idItemCatalogoInsumo: bigint; idOrdenProduccionDetalle: bigint; cantidad: Prisma.Decimal }> = [];
+
       for (const detalle of orden.detalles) {
         const componentes = await produccionRepository.obtenerComponentesActivos(
           tx,
@@ -185,26 +187,32 @@ export const produccionService = {
         }
 
         for (const componente of componentes) {
-          const cantidadConsumo = detalle.cantidad.mul(componente.cantidadRequerida);
-
-          await stockService.registrarEgreso(tx, {
-            idItemCatalogo: componente.idItemCatalogoHijo,
-            idUsuario,
-            tipoStock: "INSUMO",
-            tipoMovimiento: "EGRESO_PRODUCCION",
-            cantidad: cantidadConsumo,
-            origenMovimiento: "PRODUCCION",
-            idReferenciaOrigen: orden.idOrdenProduccion,
-            idReferenciaDetalle: detalle.idOrdenProduccionDetalle,
-            observaciones: `Inicio de produccion ${orden.idOrdenProduccion.toString()}`
-          });
-
-          consumos.push({
-            idOrdenProduccion: orden.idOrdenProduccion,
+          egresos.push({
             idItemCatalogoInsumo: componente.idItemCatalogoHijo,
-            cantidad: cantidadConsumo
+            idOrdenProduccionDetalle: detalle.idOrdenProduccionDetalle,
+            cantidad: detalle.cantidad.mul(componente.cantidadRequerida)
           });
         }
+      }
+
+      for (const egreso of ordenarPorItem(egresos, (egreso) => egreso.idItemCatalogoInsumo)) {
+        await stockService.registrarEgreso(tx, {
+          idItemCatalogo: egreso.idItemCatalogoInsumo,
+          idUsuario,
+          tipoStock: "INSUMO",
+          tipoMovimiento: "EGRESO_PRODUCCION",
+          cantidad: egreso.cantidad,
+          origenMovimiento: "PRODUCCION",
+          idReferenciaOrigen: orden.idOrdenProduccion,
+          idReferenciaDetalle: egreso.idOrdenProduccionDetalle,
+          observaciones: `Inicio de produccion ${orden.idOrdenProduccion.toString()}`
+        });
+
+        consumos.push({
+          idOrdenProduccion: orden.idOrdenProduccion,
+          idItemCatalogoInsumo: egreso.idItemCatalogoInsumo,
+          cantidad: egreso.cantidad
+        });
       }
 
       if (consumos.length > 0) {
@@ -232,7 +240,7 @@ export const produccionService = {
         throw new ErrorConflicto("Solo se puede finalizar una orden en proceso");
       }
 
-      for (const detalle of orden.detalles) {
+      for (const detalle of ordenarPorItem(orden.detalles, (detalle) => detalle.idItemCatalogoProducto)) {
         await stockService.registrarIngreso(tx, {
           idItemCatalogo: detalle.idItemCatalogoProducto,
           idUsuario,

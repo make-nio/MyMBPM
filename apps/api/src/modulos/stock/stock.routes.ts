@@ -8,5 +8,6 @@ export const stockRouter = Router();
 
 stockRouter.get("/actual", asyncHandler(stockController.obtenerStockActual));
 stockRouter.get("/historial", asyncHandler(stockController.obtenerHistorial));
+stockRouter.get("/existencias", asyncHandler(stockController.obtenerExistencias));
 stockRouter.get("/bajo-stock", asyncHandler(stockController.obtenerBajoStock));
 stockRouter.post("/ajustes", asyncHandler(stockController.crearAjuste));

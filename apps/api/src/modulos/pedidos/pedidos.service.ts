@@ -9,7 +9,7 @@ import {
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 import { prisma } from "../../lib/prisma";
-import { stockService } from "../stock/stock.service";
+import { ordenarPorItem, stockService } from "../stock/stock.service";
 
 import { pedidosRepository } from "./pedidos.repository";
 
@@ -262,7 +262,7 @@ export const pedidosService = {
         throw new ErrorConflicto("El pedido debe tener al menos un detalle");
       }
 
-      for (const detalle of pedido.detalles) {
+      for (const detalle of ordenarPorItem(pedido.detalles, (detalle) => detalle.idItemCatalogo)) {
         await stockService.registrarEgreso(tx, {
           idItemCatalogo: detalle.idItemCatalogo,
           idUsuario,

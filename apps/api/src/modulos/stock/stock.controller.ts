@@ -7,6 +7,7 @@ import { prisma } from "../../lib/prisma";
 import {
   bajoStockQuerySchema,
   crearAjusteStockSchema,
+  existenciasQuerySchema,
   historialStockQuerySchema,
   stockActualQuerySchema
 } from "./stock.schemas";
@@ -29,9 +30,19 @@ export const stockController = {
 
   async crearAjuste(request: Request, response: Response) {
     const body = validar(crearAjusteStockSchema, request.body);
-    const movimiento = await stockService.registrarAjusteManual(prisma, body);
+    const movimiento = await stockService.crearAjusteManual({
+      ...body,
+      idUsuario: request.usuarioAutenticado?.idUsuario
+    });
 
     responderExito(response, movimiento, 201);
+  },
+
+  async obtenerExistencias(request: Request, response: Response) {
+    const query = validar(existenciasQuerySchema, request.query);
+    const existencias = await stockService.obtenerExistencias(prisma, query);
+
+    responderExito(response, existencias);
   },
 
   async obtenerBajoStock(request: Request, response: Response) {
