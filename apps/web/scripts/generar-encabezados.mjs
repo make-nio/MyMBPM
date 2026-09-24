@@ -45,7 +45,10 @@ const csp = [
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
-  "frame-ancestors 'none'"
+  "frame-ancestors 'none'",
+  // En deploy previews y branch deploys Netlify inyecta su barra de comentarios, que abre un iframe
+  // de app.netlify.com. En produccion (CONTEXT=production) no hay barra ni se permite ningun iframe.
+  ...(process.env.CONTEXT && process.env.CONTEXT !== "production" ? ["frame-src https://app.netlify.com"] : [])
 ].join("; ");
 
 const encabezados = {

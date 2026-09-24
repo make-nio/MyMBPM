@@ -241,5 +241,7 @@ para no confundirla con los pedidos de clientes.
 - El servidor de los E2E (`e2e/servidor-estatico.mjs`) aplica el mismo `_headers`: toda la suite corre
   con la CSP de produccion, y `e2e/seguridad.spec.ts` recorre las pantallas y sus altas sin
   violaciones en la consola.
-- En los deploy previews Netlify puede inyectar su barra de comentarios (un script externo): la CSP
-  la bloquea y queda un aviso en la consola del preview. Produccion no inyecta nada.
+- En los deploy previews Netlify inyecta su barra de comentarios (`/.netlify/scripts/cdp`, que abre un
+  iframe de `app.netlify.com`). Solo en esos builds (`CONTEXT` distinto de `production`) la CSP
+  suma `frame-src https://app.netlify.com`; en produccion no se permite ningun iframe.
+- Netlify reemplaza el HSTS por el suyo en `*.netlify.app` (`...; includeSubDomains; preload`).
