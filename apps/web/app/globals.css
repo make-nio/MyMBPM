@@ -105,6 +105,28 @@ textarea {
   color: var(--text);
 }
 
+.campo-buscable__ayuda {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.pie-listado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.2rem;
+  border: 1px dashed var(--border);
+  border-radius: 20px;
+  color: var(--muted);
+}
+
+.pie-listado p {
+  margin: 0;
+}
+
 .campo-formulario select,
 .campo-formulario textarea {
   width: 100%;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 
 import { PanelOrden } from "../../../src/components/modulos/produccion/panel-orden";
 import { CampoTexto } from "../../../src/components/formularios/campo-texto";
@@ -9,57 +9,35 @@ import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
 import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
 import { MensajeError } from "../../../src/components/ui/mensaje-error";
 import { Modal } from "../../../src/components/ui/modal";
+import { PieListado } from "../../../src/components/ui/pie-listado";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
+import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
 import { formatearCantidad, formatearEstado, formatearFecha } from "../../../src/lib/formato";
-import { listarItemsCatalogo } from "../../../src/lib/modulos/items-catalogo";
 import { crearOrdenProduccion, listarOrdenesProduccion } from "../../../src/lib/modulos/produccion";
-import { ItemCatalogo } from "../../../src/types/items-catalogo";
 import { ESTADOS_PRODUCCION, EstadoProduccion, OrdenProduccion } from "../../../src/types/produccion";
 
 export default function ProduccionPage() {
   const modalOrden = useModal();
-  const [ordenes, setOrdenes] = useState<OrdenProduccion[]>([]);
-  const [productos, setProductos] = useState<ItemCatalogo[]>([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [errorAlta, setErrorAlta] = useState<string | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<EstadoProduccion | "">("");
   const [idOrdenSeleccionada, setIdOrdenSeleccionada] = useState<string | null>(null);
   const refDetalle = useDesplazarAlDetalle(idOrdenSeleccionada);
   const [observaciones, setObservaciones] = useState("");
   const [creando, setCreando] = useState(false);
 
-  const recargar = useCallback(async () => {
-    setOrdenes(await listarOrdenesProduccion({ estadoProduccion: filtroEstado || undefined }));
-  }, [filtroEstado]);
-
-  useEffect(() => {
-    async function cargar() {
-      setCargando(true);
-      setError(null);
-
-      try {
-        await recargar();
-      } catch (currentError) {
-        setError(currentError instanceof Error ? currentError.message : "No fue posible cargar las ordenes");
-      } finally {
-        setCargando(false);
-      }
-    }
-
-    void cargar();
-  }, [recargar]);
-
-  useEffect(() => {
-    listarItemsCatalogo({ tipoItem: "PRODUCTO", activo: true })
-      .then(setProductos)
-      .catch(() => setError("No fue posible cargar los productos"));
-  }, []);
+  const listado = useListadoPaginado<OrdenProduccion>(
+    (limit, offset) => listarOrdenesProduccion({ estadoProduccion: filtroEstado || undefined, limit, offset }),
+    [filtroEstado],
+    "No fue posible cargar las ordenes"
+  );
+  const { items: ordenes, cargando, recargar } = listado;
+  const error = listado.error ?? errorAlta;
 
   async function crearOrden() {
     setCreando(true);
-    setError(null);
+    setErrorAlta(null);
 
     try {
       const orden = await crearOrdenProduccion({ observaciones: observaciones || undefined });
@@ -68,7 +46,7 @@ export default function ProduccionPage() {
       await recargar();
       setIdOrdenSeleccionada(orden.idOrdenProduccion);
     } catch (currentError) {
-      setError(currentError instanceof Error ? currentError.message : "No fue posible crear la orden");
+      setErrorAlta(currentError instanceof Error ? currentError.message : "No fue posible crear la orden");
     } finally {
       setCreando(false);
     }
@@ -138,9 +116,18 @@ export default function ProduccionPage() {
         />
       ) : null}
 
+      {!cargando ? (
+        <PieListado
+          cantidad={ordenes.length}
+          cargandoMas={listado.cargandoMas}
+          hayMas={listado.hayMas}
+          onCargarMas={() => void listado.cargarMas()}
+        />
+      ) : null}
+
       {idOrdenSeleccionada ? (
         <div ref={refDetalle}>
-          <PanelOrden idOrdenProduccion={idOrdenSeleccionada} onCambio={() => void recargar()} productos={productos} />
+          <PanelOrden idOrdenProduccion={idOrdenSeleccionada} onCambio={() => void recargar()} />
         </div>
       ) : null}
 

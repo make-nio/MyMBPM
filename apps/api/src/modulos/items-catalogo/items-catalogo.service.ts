@@ -7,6 +7,7 @@ import { itemsCatalogoRepository } from "./items-catalogo.repository";
 
 export const itemsCatalogoService = {
   listar(filtros: {
+    busqueda?: string;
     tipoItem?: TipoItem;
     idCategoria?: bigint;
     activo?: boolean;

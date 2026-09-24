@@ -87,7 +87,7 @@ test("pedido completo desde el celular: el detalle queda a la vista", async ({ p
   await panel.getByRole("button", { name: "Agregar item" }).click();
   const linea = page.getByRole("dialog", { name: "Agregar item" });
   const opcion = linea.getByRole("option", { name: new RegExp(`^${producto.nombre} `) });
-  await linea.getByLabel("Item").selectOption((await opcion.getAttribute("value")) ?? "");
+  await linea.getByLabel("Item", { exact: true }).selectOption((await opcion.getAttribute("value")) ?? "");
   await linea.getByLabel("Cantidad").fill("2");
   await linea.getByRole("button", { name: "Guardar item" }).click();
   await expect(linea).toBeHidden();

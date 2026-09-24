@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { TIPOS_ITEM, TIPOS_MOVIMIENTO, TIPOS_STOCK } from "../../compartido/dominio/enums";
+import { ORIGENES_MOVIMIENTO, TIPOS_ITEM, TIPOS_MOVIMIENTO, TIPOS_STOCK } from "../../compartido/dominio/enums";
 import { idSchema, paginacionSchema } from "../../compartido/validaciones/esquemas-comunes";
 
 const cantidadSchema = z.coerce.number().positive();
@@ -10,9 +10,13 @@ export const stockActualQuerySchema = z.object({
   tipoStock: z.enum(TIPOS_STOCK).default("PRODUCTO")
 });
 
+// origenMovimiento + idReferenciaOrigen: los movimientos de un pedido u orden puntual, sin
+// depender de cuantos movimientos tuvo el item despues.
 export const historialStockQuerySchema = paginacionSchema.extend({
   idItemCatalogo: idSchema,
-  tipoStock: z.enum(TIPOS_STOCK).optional()
+  tipoStock: z.enum(TIPOS_STOCK).optional(),
+  origenMovimiento: z.enum(ORIGENES_MOVIMIENTO).optional(),
+  idReferenciaOrigen: idSchema.optional()
 });
 
 export const bajoStockQuerySchema = paginacionSchema.extend({

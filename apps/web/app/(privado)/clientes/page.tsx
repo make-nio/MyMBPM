@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { FormularioCliente } from "../../../src/components/modulos/clientes/formulario-cliente";
 import { EncabezadoModulo } from "../../../src/components/ui/encabezado-modulo";
@@ -8,7 +8,9 @@ import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
 import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
 import { MensajeError } from "../../../src/components/ui/mensaje-error";
 import { Modal } from "../../../src/components/ui/modal";
+import { PieListado } from "../../../src/components/ui/pie-listado";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
+import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
 import {
   actualizarCliente,
@@ -22,56 +24,22 @@ type FiltroActivo = "todos" | "activos" | "inactivos";
 
 export default function ClientesPage() {
   const modalCliente = useModal<Cliente>();
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState("");
   const [busquedaAplicada, setBusquedaAplicada] = useState("");
   const [filtroActivo, setFiltroActivo] = useState<FiltroActivo>("todos");
 
-  useEffect(() => {
-    async function cargarClientes() {
-      setCargando(true);
-      setError(null);
-
-      try {
-        const data = await listarClientes({
-          busqueda: busquedaAplicada || undefined,
-          activo:
-            filtroActivo === "todos"
-              ? undefined
-              : filtroActivo === "activos"
-                ? true
-                : false
-        });
-
-        setClientes(data);
-      } catch (currentError) {
-        setError(
-          currentError instanceof Error
-            ? currentError.message
-            : "No fue posible cargar los clientes"
-        );
-      } finally {
-        setCargando(false);
-      }
-    }
-
-    void cargarClientes();
-  }, [busquedaAplicada, filtroActivo]);
-
-  async function recargar() {
-    const data = await listarClientes({
-      busqueda: busquedaAplicada || undefined,
-      activo:
-        filtroActivo === "todos"
-          ? undefined
-          : filtroActivo === "activos"
-            ? true
-            : false
-    });
-    setClientes(data);
-  }
+  const listado = useListadoPaginado<Cliente>(
+    (limit, offset) =>
+      listarClientes({
+        busqueda: busquedaAplicada || undefined,
+        activo: filtroActivo === "todos" ? undefined : filtroActivo === "activos",
+        limit,
+        offset
+      }),
+    [busquedaAplicada, filtroActivo],
+    "No fue posible cargar los clientes"
+  );
+  const { items: clientes, cargando, error, recargar } = listado;
 
   async function guardarCliente(payload: Parameters<typeof crearCliente>[0]) {
     if (modalCliente.contexto) {
@@ -172,6 +140,15 @@ export default function ClientesPage() {
           ]}
           data={clientes}
           keyExtractor={(cliente) => cliente.idCliente}
+        />
+      ) : null}
+
+      {!cargando ? (
+        <PieListado
+          cantidad={clientes.length}
+          cargandoMas={listado.cargandoMas}
+          hayMas={listado.hayMas}
+          onCargarMas={() => void listado.cargarMas()}
         />
       ) : null}
 

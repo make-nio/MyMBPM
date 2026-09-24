@@ -3,20 +3,19 @@
 import { FormEvent, useState } from "react";
 
 import { AccionesFormulario } from "../../formularios/acciones-formulario";
-import { CampoSelect } from "../../formularios/campo-select";
+import { CampoSelectBuscable } from "../../formularios/campo-select-buscable";
 import { CampoTexto } from "../../formularios/campo-texto";
 import { MensajeError } from "../../ui/mensaje-error";
-import { ItemCatalogo } from "../../../types/items-catalogo";
+import { buscarItemsActivos } from "../../../lib/modulos/items-catalogo";
 import { OrdenProduccionDetalle } from "../../../types/produccion";
 
 type FormularioDetalleOrdenProps = {
-  productos: ItemCatalogo[];
   detalle?: OrdenProduccionDetalle | null;
   onCancel: () => void;
   onSubmit: (payload: { idItemCatalogoProducto: string; cantidad: number; observaciones?: string }) => Promise<void>;
 };
 
-export function FormularioDetalleOrden({ productos, detalle, onCancel, onSubmit }: FormularioDetalleOrdenProps) {
+export function FormularioDetalleOrden({ detalle, onCancel, onSubmit }: FormularioDetalleOrdenProps) {
   const [idItemCatalogoProducto, setIdProducto] = useState(detalle?.idItemCatalogoProducto ?? "");
   const [cantidad, setCantidad] = useState(detalle ? String(Number(detalle.cantidad)) : "1");
   const [observaciones, setObservaciones] = useState(detalle?.observaciones ?? "");
@@ -54,14 +53,16 @@ export function FormularioDetalleOrden({ productos, detalle, onCancel, onSubmit 
       {detalle ? (
         <p className="texto-secundario">{detalle.itemCatalogoProducto?.nombre ?? "Producto"}</p>
       ) : (
-        <CampoSelect
+        <CampoSelectBuscable
+          buscar={(texto, limit) =>
+            buscarItemsActivos(texto, limit, "PRODUCTO").then((productos) =>
+              productos.map((producto) => ({ label: producto.nombre, value: producto.idItemCatalogo }))
+            )
+          }
           id="orden-producto"
           label="Producto a fabricar"
           onChange={setIdProducto}
-          options={[
-            { label: "Selecciona un producto", value: "" },
-            ...productos.map((producto) => ({ label: producto.nombre, value: producto.idItemCatalogo }))
-          ]}
+          textoVacio="Selecciona un producto"
           value={idItemCatalogoProducto}
         />
       )}

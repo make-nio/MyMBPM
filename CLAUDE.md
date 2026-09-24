@@ -32,6 +32,11 @@ En la web, cada módulo tiene su página en `apps/web/app/(privado)/<modulo>/pag
 componentes en `src/components/modulos/<modulo>/`, su acceso a la API en `src/lib/modulos/` y
 sus tipos en `src/types/`. Reusá los componentes de `src/components/ui` y `src/components/formularios`.
 
+La API devuelve como mucho 100 filas por pedido y no manda totales. Las tablas cargan de a 50 con
+`useListadoPaginado` y muestran `PieListado` ("Cargar mas" y el aviso). Para elegir un cliente o
+un ítem en un formulario usá `CampoSelectBuscable`, que busca en el servidor. Nunca precargues una
+lista entera para un `select`.
+
 ## Reglas del negocio que no se rompen
 
 Vienen de `docs/arquitectura-backend.md`. Leelo entero antes de tocar el backend.

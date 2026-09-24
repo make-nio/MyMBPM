@@ -10,8 +10,10 @@ import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
 import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
 import { MensajeError } from "../../../src/components/ui/mensaje-error";
 import { Modal } from "../../../src/components/ui/modal";
+import { PieListado } from "../../../src/components/ui/pie-listado";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
+import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
 import { listarCategorias } from "../../../src/lib/modulos/categorias";
 import {
@@ -38,12 +40,11 @@ export default function ItemsCatalogoPage() {
   const modalItem = useModal<ItemCatalogo>();
   const modalComponente = useModal<ItemCatalogoComponente>();
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [items, setItems] = useState<ItemCatalogo[]>([]);
   const [componentes, setComponentes] = useState<ItemCatalogoComponente[]>([]);
   const [itemSeleccionado, setItemSeleccionado] = useState<ItemCatalogo | null>(null);
   const refReceta = useDesplazarAlDetalle(itemSeleccionado?.idItemCatalogo ?? null);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [busqueda, setBusqueda] = useState("");
+  const [busquedaAplicada, setBusquedaAplicada] = useState("");
   const [tipoFiltro, setTipoFiltro] = useState<string>("todos");
   const [categoriaFiltro, setCategoriaFiltro] = useState<string>("todas");
   const [activoFiltro, setActivoFiltro] = useState<FiltroTriestado>("todos");
@@ -53,50 +54,27 @@ export default function ItemsCatalogoPage() {
     void listarCategorias({ limit: 100 }).then(setCategorias).catch(() => undefined);
   }, []);
 
-  useEffect(() => {
-    async function cargarItems() {
-      setCargando(true);
-      setError(null);
-
-      try {
-        const data = await listarItemsCatalogo({
+  const listado = useListadoPaginado<ItemCatalogo>(
+    (limit, offset) => listarItemsCatalogo({
+          busqueda: busquedaAplicada || undefined,
           tipoItem: tipoFiltro === "todos" ? undefined : (tipoFiltro as TipoItem),
           idCategoria: categoriaFiltro === "todas" ? undefined : categoriaFiltro,
-          activo:
-            activoFiltro === "todos"
-              ? undefined
-              : activoFiltro === "si"
-                ? true
-                : false,
-          publico:
-            publicoFiltro === "todos"
-              ? undefined
-              : publicoFiltro === "si"
-                ? true
-                : false
-        });
+          activo: activoFiltro === "todos" ? undefined : activoFiltro === "si",
+          publico: publicoFiltro === "todos" ? undefined : publicoFiltro === "si",
+          limit,
+          offset
+        }),
+    [busquedaAplicada, tipoFiltro, categoriaFiltro, activoFiltro, publicoFiltro],
+    "No fue posible cargar los items del catalogo"
+  );
+  const { items, cargando, error } = listado;
 
-        setItems(data);
-
-        if (itemSeleccionado) {
-          const itemActualizado = data.find(
-            (item) => item.idItemCatalogo === itemSeleccionado.idItemCatalogo
-          );
-          setItemSeleccionado(itemActualizado ?? null);
-        }
-      } catch (currentError) {
-        setError(
-          currentError instanceof Error
-            ? currentError.message
-            : "No fue posible cargar los items del catalogo"
-        );
-      } finally {
-        setCargando(false);
-      }
-    }
-
-    void cargarItems();
-  }, [tipoFiltro, categoriaFiltro, activoFiltro, publicoFiltro]);
+  // Si el item de la receta cambio (o ya no esta en el listado), el panel lo refleja.
+  useEffect(() => {
+    setItemSeleccionado((actual) =>
+      actual ? (items.find((item) => item.idItemCatalogo === actual.idItemCatalogo) ?? null) : null
+    );
+  }, [items]);
 
   useEffect(() => {
     async function cargarComponentes() {
@@ -117,31 +95,7 @@ export default function ItemsCatalogoPage() {
   }, [itemSeleccionado]);
 
   async function recargarItems() {
-    const data = await listarItemsCatalogo({
-      tipoItem: tipoFiltro === "todos" ? undefined : (tipoFiltro as TipoItem),
-      idCategoria: categoriaFiltro === "todas" ? undefined : categoriaFiltro,
-      activo:
-        activoFiltro === "todos"
-          ? undefined
-          : activoFiltro === "si"
-            ? true
-            : false,
-      publico:
-        publicoFiltro === "todos"
-          ? undefined
-          : publicoFiltro === "si"
-            ? true
-            : false
-    });
-
-    setItems(data);
-
-    if (itemSeleccionado) {
-      const itemActualizado = data.find(
-        (item) => item.idItemCatalogo === itemSeleccionado.idItemCatalogo
-      );
-      setItemSeleccionado(itemActualizado ?? null);
-    }
+    await listado.recargar();
   }
 
   async function recargarComponentes() {
@@ -212,7 +166,21 @@ export default function ItemsCatalogoPage() {
         botonLabel="Nuevo item"
         descripcion="Gestiona los productos e insumos del catalogo y su receta de componentes."
         filtros={
-          <div className="filtros-inline">
+          <form
+            className="filtros-inline"
+            onSubmit={(event) => {
+              event.preventDefault();
+              setBusquedaAplicada(busqueda.trim());
+            }}
+          >
+            <input
+              aria-label="Buscar item"
+              className="control-filtro"
+              onChange={(event) => setBusqueda(event.target.value)}
+              placeholder="Buscar por nombre o codigo"
+              type="search"
+              value={busqueda}
+            />
             <select
               className="control-filtro"
               onChange={(event) => setTipoFiltro(event.target.value)}
@@ -255,7 +223,10 @@ export default function ItemsCatalogoPage() {
               <option value="si">Publicos</option>
               <option value="no">No publicos</option>
             </select>
-          </div>
+            <button className="boton-secundario" type="submit">
+              Buscar
+            </button>
+          </form>
         }
         onCrear={() => modalItem.abrir(null)}
         titulo="Items catalogo"
@@ -297,6 +268,15 @@ export default function ItemsCatalogoPage() {
           ]}
           data={items}
           keyExtractor={(item) => item.idItemCatalogo}
+        />
+      ) : null}
+
+      {!cargando ? (
+        <PieListado
+          cantidad={items.length}
+          cargandoMas={listado.cargandoMas}
+          hayMas={listado.hayMas}
+          onCargarMas={() => void listado.cargarMas()}
         />
       ) : null}
 
@@ -390,7 +370,6 @@ export default function ItemsCatalogoPage() {
           <FormularioComponenteItem
             componente={modalComponente.contexto}
             itemPadreId={itemSeleccionado.idItemCatalogo}
-            itemsDisponibles={items}
             onCancel={modalComponente.cerrar}
             onSubmit={guardarComponente}
           />

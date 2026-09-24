@@ -3,6 +3,7 @@ import { prisma } from "../../lib/prisma";
 import { Prisma } from "@prisma/client";
 
 type FiltrosItemsCatalogo = {
+  busqueda?: string;
   tipoItem?: TipoItem;
   idCategoria?: bigint;
   activo?: boolean;
@@ -39,7 +40,15 @@ export const itemsCatalogoRepository = {
         tipoItem: filtros.tipoItem,
         idCategoria: filtros.idCategoria,
         activo: filtros.activo,
-        publico: filtros.publico
+        publico: filtros.publico,
+        ...(filtros.busqueda
+          ? {
+              OR: [
+                { nombre: { contains: filtros.busqueda, mode: "insensitive" } },
+                { codigo: { contains: filtros.busqueda, mode: "insensitive" } }
+              ]
+            }
+          : {})
       },
       skip: filtros.offset,
       take: filtros.limit,
