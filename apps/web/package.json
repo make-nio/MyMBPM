@@ -5,11 +5,12 @@
   "description": "Frontend for the BPM system.",
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node scripts/generar-encabezados.mjs",
+    "build": "next build && node scripts/generar-encabezados.mjs && node scripts/generar-version.mjs",
     "start": "next start",
     "check": "tsc --noEmit",
     "test:e2e": "playwright test --project=chromium --project=movil",
     "test:rendimiento": "playwright test --project=rendimiento",
+    "test:humo": "playwright test -c playwright.humo.config.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   },
