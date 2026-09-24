@@ -9,6 +9,7 @@ import {
   cambiarClaveUsuarioSchema,
   crearUsuarioSchema,
   listarUsuariosQuerySchema,
+  restablecerClaveUsuarioSchema,
   usuarioParamsSchema
 } from "./usuarios.schemas";
 import { usuariosService } from "./usuarios.service";
@@ -47,6 +48,14 @@ export const usuariosController = {
     const params = validar(usuarioParamsSchema, request.params);
     const body = validar(actualizarEstadoUsuarioSchema, request.body);
     const usuario = await usuariosService.cambiarEstado(params.id, body.activo);
+
+    responderExito(response, usuario);
+  },
+
+  async restablecerClave(request: Request, response: Response) {
+    const params = validar(usuarioParamsSchema, request.params);
+    const body = validar(restablecerClaveUsuarioSchema, request.body);
+    const usuario = await usuariosService.restablecerClave(params.id, body.passwordNueva);
 
     responderExito(response, usuario);
   },

@@ -120,6 +120,7 @@ export const usuariosRepository = {
       usuario: string;
       claveHash: string;
       activo: boolean;
+      esAdministrador: boolean;
     }>
   ) {
     return prismaOrTx.usuario.update({

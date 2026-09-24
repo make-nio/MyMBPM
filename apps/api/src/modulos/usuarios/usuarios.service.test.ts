@@ -158,3 +158,83 @@ describe("usuariosService.cambiarEstado", () => {
     expect(repo.actualizar).toHaveBeenCalledWith(tx, 3n, { activo: false });
   });
 });
+
+describe("usuariosService.actualizar", () => {
+  const unicoAdmin = { idUsuario: 1n, esAdministrador: true, activo: true } as never;
+
+  beforeEach(() => {
+    repo.obtenerPorId.mockResolvedValue(unicoAdmin);
+    repo.contarAdministradoresActivos.mockResolvedValue(1);
+  });
+
+  it("no permite desactivar al unico administrador por PATCH /:id (misma regla que /estado)", async () => {
+    await expect(usuariosService.actualizar(1n, { activo: false })).rejects.toBeInstanceOf(ErrorConflicto);
+    expect(repo.actualizar).not.toHaveBeenCalled();
+  });
+
+  it("no permite quitarle el rol al unico administrador activo", async () => {
+    await expect(usuariosService.actualizar(1n, { esAdministrador: false })).rejects.toBeInstanceOf(
+      ErrorConflicto
+    );
+    expect(repo.actualizar).not.toHaveBeenCalled();
+  });
+
+  it("permite quitarle el rol si queda otro administrador activo", async () => {
+    repo.contarAdministradoresActivos.mockResolvedValue(2);
+
+    await usuariosService.actualizar(1n, { esAdministrador: false });
+
+    expect(repo.actualizar).toHaveBeenCalledWith(tx, 1n, { esAdministrador: false });
+  });
+
+  it("edita datos del unico administrador sin tocar su rol", async () => {
+    await usuariosService.actualizar(1n, { nombre: "Mariano" });
+
+    expect(repo.contarAdministradoresActivos).not.toHaveBeenCalled();
+    expect(repo.actualizar).toHaveBeenCalledWith(tx, 1n, { nombre: "Mariano" });
+  });
+
+  it("promueve a un operador a administrador", async () => {
+    repo.obtenerPorId.mockResolvedValue({ idUsuario: 2n, esAdministrador: false, activo: true } as never);
+
+    await usuariosService.actualizar(2n, { esAdministrador: true });
+
+    expect(repo.actualizar).toHaveBeenCalledWith(tx, 2n, { esAdministrador: true });
+  });
+
+  it("rechaza email o usuario duplicados", async () => {
+    repo.buscarPorEmailOUsuario.mockResolvedValue({ idUsuario: 9n } as never);
+
+    await expect(usuariosService.actualizar(1n, { email: "otro@mym.dev" })).rejects.toBeInstanceOf(
+      ErrorConflicto
+    );
+    expect(repo.buscarPorEmailOUsuario).toHaveBeenCalledWith(tx, {
+      email: "otro@mym.dev",
+      usuario: undefined,
+      excluirIdUsuario: 1n
+    });
+  });
+});
+
+describe("usuariosService.restablecerClave", () => {
+  it("guarda el hash de la clave nueva, nunca la clave en claro", async () => {
+    repo.obtenerPorId.mockResolvedValue({ idUsuario: 2n } as never);
+
+    await usuariosService.restablecerClave(2n, "clave-nueva-123");
+
+    const [, idUsuario, cambios] = repo.actualizar.mock.calls[0];
+    expect(idUsuario).toBe(2n);
+    expect(Object.keys(cambios)).toEqual(["claveHash"]);
+    expect(cambios.claveHash).not.toBe("clave-nueva-123");
+    expect(cambios.claveHash).toMatch(/^\$2[aby]\$/);
+  });
+
+  it("falla si el usuario no existe", async () => {
+    repo.obtenerPorId.mockResolvedValue(null);
+
+    await expect(usuariosService.restablecerClave(99n, "clave-nueva-123")).rejects.toBeInstanceOf(
+      ErrorNoEncontrado
+    );
+    expect(repo.actualizar).not.toHaveBeenCalled();
+  });
+});
