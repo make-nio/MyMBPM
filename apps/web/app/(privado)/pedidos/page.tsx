@@ -16,6 +16,7 @@ import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detal
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
 import { generarCsv, numeroCsv } from "../../../src/lib/csv";
+import { ENCABEZADOS_MODULO } from "../../../src/lib/encabezados-modulo";
 import { formatearDia, formatearEstado, formatearFecha, formatearMoneda } from "../../../src/lib/formato";
 import { crearPedido, listarPedidos } from "../../../src/lib/modulos/pedidos";
 import { cargarTodo } from "../../../src/lib/paginacion";
@@ -91,8 +92,8 @@ export default function PedidosPage() {
   return (
     <section className="modulo-panel">
       <EncabezadoModulo
+        {...ENCABEZADOS_MODULO["/pedidos"]}
         botonLabel="Nuevo pedido"
-        descripcion="Carga pedidos, confirmalos para descontar stock y segui su preparacion y cobro."
         filtros={
           <div className="filtros-inline">
             <select
@@ -145,7 +146,6 @@ export default function PedidosPage() {
           </div>
         }
         onCrear={() => modalPedido.abrir(null)}
-        titulo="Pedidos"
       />
 
       {rangoInvertido ? <MensajeError mensaje="La fecha desde es posterior a la fecha hasta: no se aplica el rango." /> : null}

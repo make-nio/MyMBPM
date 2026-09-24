@@ -15,6 +15,7 @@ import { PieListado } from "../../../src/components/ui/pie-listado";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
+import { ENCABEZADOS_MODULO } from "../../../src/lib/encabezados-modulo";
 import {
   actualizarUsuario,
   cambiarEstadoUsuario,
@@ -128,8 +129,8 @@ function GestionUsuarios({ idUsuarioActual }: { idUsuarioActual: string }) {
   return (
     <section className="modulo-panel">
       <EncabezadoModulo
+        {...ENCABEZADOS_MODULO["/usuarios"]}
         botonLabel="Nuevo usuario"
-        descripcion="Gestiona quienes pueden ingresar al panel y quienes administran usuarios."
         filtros={
           <select
             aria-label="Filtrar por estado"
@@ -143,7 +144,6 @@ function GestionUsuarios({ idUsuarioActual }: { idUsuarioActual: string }) {
           </select>
         }
         onCrear={() => modalUsuario.abrir(null)}
-        titulo="Usuarios"
       />
 
       {error ? <MensajeError mensaje={error} /> : null}

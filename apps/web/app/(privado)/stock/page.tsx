@@ -17,6 +17,7 @@ import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
+import { ENCABEZADOS_MODULO } from "../../../src/lib/encabezados-modulo";
 import { formatearCantidad, formatearEstado, formatearFecha } from "../../../src/lib/formato";
 import { generarCsv, numeroCsv } from "../../../src/lib/csv";
 import { crearAjusteStock, listarExistencias } from "../../../src/lib/modulos/stock";
@@ -123,7 +124,7 @@ export default function StockPage() {
   return (
     <section className="modulo-panel">
       <EncabezadoModulo
-        descripcion="Existencias de productos e insumos, sus movimientos y ajustes manuales."
+        {...ENCABEZADOS_MODULO["/stock"]}
         filtros={
           <div className="filtros-inline">
             <input
@@ -155,7 +156,6 @@ export default function StockPage() {
             <BotonExportarCsv generar={exportarStock} nombre="stock" />
           </div>
         }
-        titulo="Stock"
       />
 
       {error ? <MensajeError mensaje={error} /> : null}

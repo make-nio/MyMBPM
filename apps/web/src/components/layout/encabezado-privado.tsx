@@ -13,7 +13,9 @@ const AvisosEncabezado = dynamic(() => import("./avisos-encabezado").then((modul
 });
 
 type EncabezadoPrivadoProps = {
-  usuario: UsuarioAutenticado;
+  // null mientras se valida la sesion: el encabezado se ve igual, sin el usuario ni lo que consulta
+  // la API (busqueda, avisos), con los mismos lugares reservados para que nada se corra al llegar.
+  usuario: UsuarioAutenticado | null;
   onLogout: () => void;
   menuAbierto: boolean;
   onAlternarMenu: () => void;
@@ -46,16 +48,29 @@ export function EncabezadoPrivado({
         </div>
       </div>
 
-      <div className="encabezado-privado__usuario">
-        <BusquedaGlobal />
-        <AvisosEncabezado />
-        <span className="encabezado-privado__chip">
-          {usuario.nombre} {usuario.apellido ?? ""}
-        </span>
-        <button className="boton-secundario" onClick={onLogout} type="button">
-          Cerrar sesion
-        </button>
-      </div>
+      {usuario ? (
+        <div className="encabezado-privado__usuario">
+          <BusquedaGlobal />
+          <AvisosEncabezado />
+          <span className="encabezado-privado__chip" title={`${usuario.nombre} ${usuario.apellido ?? ""}`.trim()}>
+            {usuario.nombre} {usuario.apellido ?? ""}
+          </span>
+          <button className="boton-secundario" onClick={onLogout} type="button">
+            Cerrar sesion
+          </button>
+        </div>
+      ) : (
+        <div aria-hidden="true" className="encabezado-privado__usuario encabezado-privado__usuario--validando">
+          <button className="boton-secundario boton-busqueda" disabled tabIndex={-1} type="button">
+            Buscar <kbd>Ctrl K</kbd>
+          </button>
+          <MarcadorAvisos />
+          <span className="encabezado-privado__chip">&nbsp;</span>
+          <button className="boton-secundario" disabled tabIndex={-1} type="button">
+            Cerrar sesion
+          </button>
+        </div>
+      )}
     </header>
   );
 }

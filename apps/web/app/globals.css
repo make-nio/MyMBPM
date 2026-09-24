@@ -408,12 +408,21 @@ textarea {
   gap: 1rem;
 }
 
+/* Ancho fijo: mientras se valida la sesion el nombre todavia no esta, y el encabezado tiene que
+   medir lo mismo con y sin el (si no, la pantalla se corre al llegar). Los nombres largos se
+   recortan con "..." y el completo queda en el title. */
 .encabezado-privado__chip {
+  box-sizing: border-box;
+  width: 11rem;
+  overflow: hidden;
   padding: 0.55rem 0.85rem;
   border-radius: 999px;
   background: rgba(179, 90, 41, 0.1);
   color: var(--accent-strong);
   font-size: 0.92rem;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .contenido-principal {

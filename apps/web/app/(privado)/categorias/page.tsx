@@ -12,6 +12,7 @@ import { PieListado } from "../../../src/components/ui/pie-listado";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
+import { ENCABEZADOS_MODULO } from "../../../src/lib/encabezados-modulo";
 import {
   actualizarCategoria,
   cambiarEstadoCategoria,
@@ -62,8 +63,8 @@ export default function CategoriasPage() {
   return (
     <section className="modulo-panel">
       <EncabezadoModulo
+        {...ENCABEZADOS_MODULO["/categorias"]}
         botonLabel="Nueva categoria"
-        descripcion="Gestiona altas, ediciones y activacion de categorias del catalogo."
         filtros={
           <select
             aria-label="Filtrar por estado"
@@ -77,7 +78,6 @@ export default function CategoriasPage() {
           </select>
         }
         onCrear={() => modalCategoria.abrir(null)}
-        titulo="Categorias"
       />
 
       {error ? <MensajeError mensaje={error} /> : null}

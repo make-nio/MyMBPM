@@ -12,11 +12,16 @@ type GuardiaRutaPrivadaProps = {
     usuario: UsuarioAutenticado;
     cerrarSesion: () => void;
   }) => ReactNode;
+  // Lo que se ve mientras se valida la sesion: solo el marco de la pantalla (menu, encabezado,
+  // titulo), sin ningun dato. Sale en el HTML estatico, asi que se pinta antes de que cargue el JS.
+  marco?: ReactNode;
 };
 
-export function GuardiaRutaPrivada({ children }: GuardiaRutaPrivadaProps) {
+export function GuardiaRutaPrivada({ children, marco }: GuardiaRutaPrivadaProps) {
   const router = useRouter();
   const [cargando, setCargando] = useState(true);
+  // Sin sesion valida se redirige al ingreso sin dejar nada pintado, ni siquiera el marco.
+  const [redirigiendo, setRedirigiendo] = useState(false);
   const [usuario, setUsuario] = useState<UsuarioAutenticado | null>(null);
   const [errorConexion, setErrorConexion] = useState(false);
   const [intento, setIntento] = useState(0);
@@ -44,6 +49,7 @@ export function GuardiaRutaPrivada({ children }: GuardiaRutaPrivadaProps) {
       }
 
       if (!sesion) {
+        setRedirigiendo(true);
         router.replace(habiaToken ? RUTA_SESION_CERRADA : "/ingresar");
         return;
       }
@@ -85,6 +91,14 @@ export function GuardiaRutaPrivada({ children }: GuardiaRutaPrivadaProps) {
         </div>
       </div>
     );
+  }
+
+  if (redirigiendo) {
+    return null;
+  }
+
+  if ((cargando || !usuario) && marco) {
+    return <>{marco}</>;
   }
 
   if (cargando || !usuario) {

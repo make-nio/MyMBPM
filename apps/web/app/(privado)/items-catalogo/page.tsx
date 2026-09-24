@@ -22,6 +22,7 @@ import { useAbrirDesdeUrl } from "../../../src/hooks/use-abrir-desde-url";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
 import { calcularCostoReceta } from "../../../src/lib/costos";
+import { ENCABEZADOS_MODULO } from "../../../src/lib/encabezados-modulo";
 import { formatearMoneda } from "../../../src/lib/formato";
 import { listarCategorias } from "../../../src/lib/modulos/categorias";
 import {
@@ -219,8 +220,8 @@ export default function ItemsCatalogoPage() {
   return (
     <section className="modulo-panel">
       <EncabezadoModulo
+        {...ENCABEZADOS_MODULO["/items-catalogo"]}
         botonLabel="Nuevo item"
-        descripcion="Gestiona los productos e insumos del catalogo y su receta de componentes."
         filtros={
           <form
             className="filtros-inline"
@@ -289,7 +290,6 @@ export default function ItemsCatalogoPage() {
           </form>
         }
         onCrear={() => modalItem.abrir(null)}
-        titulo="Items catalogo"
       />
 
       {esAdministrador ? (

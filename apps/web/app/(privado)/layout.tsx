@@ -7,6 +7,7 @@ import { ProveedorSesion } from "../../src/components/auth/contexto-sesion";
 import { GuardiaRutaPrivada } from "../../src/components/auth/guardia-ruta-privada";
 import { BarraLateralPrivada } from "../../src/components/layout/barra-lateral-privada";
 import { EncabezadoPrivado } from "../../src/components/layout/encabezado-privado";
+import { MarcoPrivado } from "../../src/components/layout/marco-privado";
 
 export default function PrivadoLayout({
   children
@@ -22,7 +23,9 @@ export default function PrivadoLayout({
   }, [pathname]);
 
   return (
-    <GuardiaRutaPrivada>
+    <GuardiaRutaPrivada
+      marco={<MarcoPrivado menuAbierto={menuAbierto} onAlternarMenu={() => setMenuAbierto((abierto) => !abierto)} />}
+    >
       {({ usuario, cerrarSesion }) => (
         <ProveedorSesion usuario={usuario}>
           <div className="panel-shell">

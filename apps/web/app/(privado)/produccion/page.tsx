@@ -15,6 +15,7 @@ import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
+import { ENCABEZADOS_MODULO } from "../../../src/lib/encabezados-modulo";
 import { formatearCantidad, formatearEstado, formatearFecha } from "../../../src/lib/formato";
 import { obtenerItemCatalogo } from "../../../src/lib/modulos/items-catalogo";
 import { agregarDetalleOrden, crearOrdenProduccion, listarOrdenesProduccion } from "../../../src/lib/modulos/produccion";
@@ -137,8 +138,8 @@ export default function ProduccionPage() {
   return (
     <section className="modulo-panel">
       <EncabezadoModulo
+        {...ENCABEZADOS_MODULO["/produccion"]}
         botonLabel="Nueva orden"
-        descripcion="Planifica que fabricar, inicia la produccion para consumir insumos y finalizala para ingresar productos."
         filtros={
           <div className="filtros-inline">
             <div aria-label="Vista" className="selector-vista" role="group">
@@ -175,7 +176,6 @@ export default function ProduccionPage() {
           setProductoPropuesto(null);
           modalOrden.abrir(null);
         }}
-        titulo="Produccion"
       />
 
       {vista === "tablero" && errorAlta && !modalOrden.abierto ? <MensajeError mensaje={errorAlta} /> : null}

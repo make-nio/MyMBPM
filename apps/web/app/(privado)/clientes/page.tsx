@@ -19,6 +19,7 @@ import { useAbrirDesdeUrl } from "../../../src/hooks/use-abrir-desde-url";
 import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
+import { ENCABEZADOS_MODULO } from "../../../src/lib/encabezados-modulo";
 import {
   actualizarCliente,
   cambiarEstadoCliente,
@@ -82,8 +83,8 @@ export default function ClientesPage() {
   return (
     <section className="modulo-panel">
       <EncabezadoModulo
+        {...ENCABEZADOS_MODULO["/clientes"]}
         botonLabel="Nuevo cliente"
-        descripcion="Gestiona la cartera de clientes y sus datos principales."
         filtros={
           <div className="filtros-inline">
             <input
@@ -109,7 +110,6 @@ export default function ClientesPage() {
           </div>
         }
         onCrear={() => modalCliente.abrir(null)}
-        titulo="Clientes"
       />
 
       {esAdministrador ? (

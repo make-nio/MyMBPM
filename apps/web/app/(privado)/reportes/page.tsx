@@ -10,6 +10,7 @@ import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
 import { MensajeError } from "../../../src/components/ui/mensaje-error";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { generarCsv, numeroCsv } from "../../../src/lib/csv";
+import { ENCABEZADOS_MODULO } from "../../../src/lib/encabezados-modulo";
 import { diaArgentina, formatearCantidad, formatearMoneda } from "../../../src/lib/formato";
 import { GraficoVentas } from "../../../src/components/modulos/reportes/grafico-ventas";
 import { obtenerVentasDelMes, obtenerVentasPorMes } from "../../../src/lib/modulos/reportes";
@@ -96,7 +97,7 @@ function ReporteVentas() {
   return (
     <section className="modulo-panel">
       <EncabezadoModulo
-        descripcion="Lo vendido en el mes por item y por cliente: pedidos confirmados en el mes, sin cancelados (el mismo criterio del panel)."
+        {...ENCABEZADOS_MODULO["/reportes"]}
         filtros={
           <div className="filtros-inline">
             <label className="campo-filtro-fecha" htmlFor="reporte-mes">
@@ -111,7 +112,6 @@ function ReporteVentas() {
             </label>
           </div>
         }
-        titulo="Reportes"
       />
 
       {errorMeses ? <MensajeError mensaje={errorMeses} /> : null}
