@@ -5,6 +5,7 @@ import { ErrorAutenticacion } from "../../compartido/errores/error-autenticacion
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 import { ErrorProhibido } from "../../compartido/errores/error-prohibido";
+import { ErrorValidacion } from "../../compartido/errores/error-validacion";
 import { prisma } from "../../lib/prisma";
 
 import { usuariosRepository } from "./usuarios.repository";
@@ -192,10 +193,10 @@ export const usuariosService = {
     data: { passwordActual?: string; passwordNueva: string },
     usuarioSolicitante: { idUsuario: bigint }
   ) {
+    // 403 y no 401: la sesion es valida, lo que no puede es tocar la clave de otro usuario (para eso
+    // un administrador usa "Restablecer clave").
     if (usuarioSolicitante.idUsuario !== idUsuario) {
-      throw new ErrorAutenticacion(
-        "Solo puede cambiar la contraseña del usuario autenticado"
-      );
+      throw new ErrorProhibido("Solo podes cambiar tu propia clave");
     }
 
     const usuario = await usuariosRepository.obtenerPorIdConClave(prisma, idUsuario);
@@ -204,14 +205,19 @@ export const usuariosService = {
       throw new ErrorNoEncontrado("Usuario no encontrado");
     }
 
+    // 400 y no 401: un 401 le dice a la web que la sesion vencio y la cierra.
     if (!data.passwordActual) {
-      throw new ErrorAutenticacion("Debe informar la clave actual para cambiar la contraseña");
+      throw new ErrorValidacion("Falta la clave actual: escribila para poder cambiarla", [
+        { path: "passwordActual", message: "Falta la clave actual" }
+      ]);
     }
 
     const passwordValida = await bcrypt.compare(data.passwordActual, usuario.claveHash);
 
     if (!passwordValida) {
-      throw new ErrorAutenticacion("La clave actual es incorrecta");
+      throw new ErrorValidacion("La clave actual no es correcta: revisala y volve a intentar", [
+        { path: "passwordActual", message: "La clave actual no es correcta" }
+      ]);
     }
 
     const claveHash = await bcrypt.hash(data.passwordNueva, 10);

@@ -1,9 +1,11 @@
+import bcrypt from "bcryptjs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ErrorAutenticacion } from "../../compartido/errores/error-autenticacion";
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 import { ErrorProhibido } from "../../compartido/errores/error-prohibido";
+import { ErrorValidacion } from "../../compartido/errores/error-validacion";
 import { prisma } from "../../lib/prisma";
 
 import { usuariosRepository } from "./usuarios.repository";
@@ -25,7 +27,8 @@ vi.mock("./usuarios.repository", () => ({
     obtenerPorId: vi.fn(),
     buscarPorEmailOUsuario: vi.fn(),
     crear: vi.fn(),
-    actualizar: vi.fn()
+    actualizar: vi.fn(),
+    obtenerPorIdConClave: vi.fn()
   }
 }));
 
@@ -267,5 +270,36 @@ describe("usuariosService.verificarPermisoAlta", () => {
     repo.contarUsuarios.mockResolvedValue(0);
 
     await expect(usuariosService.verificarPermisoAlta()).resolves.toBeUndefined();
+  });
+});
+
+describe("usuariosService.cambiarClave", () => {
+  const propio = { idUsuario: 7n };
+
+  it("la clave de otro usuario responde 403, no 401 (la sesion es valida)", async () => {
+    await expect(usuariosService.cambiarClave(8n, { passwordActual: "clave-actual", passwordNueva: "clave-nueva-1" }, propio))
+      .rejects.toBeInstanceOf(ErrorProhibido);
+    expect(repo.actualizar).not.toHaveBeenCalled();
+  });
+
+  it("sin la clave actual o con una incorrecta responde 400, para que la web no cierre la sesion", async () => {
+    repo.obtenerPorIdConClave.mockResolvedValue({ idUsuario: 7n, claveHash: await bcrypt.hash("clave-actual", 4) } as never);
+
+    await expect(usuariosService.cambiarClave(7n, { passwordNueva: "clave-nueva-1" }, propio)).rejects.toBeInstanceOf(
+      ErrorValidacion
+    );
+    await expect(
+      usuariosService.cambiarClave(7n, { passwordActual: "otra-clave", passwordNueva: "clave-nueva-1" }, propio)
+    ).rejects.toMatchObject({ statusCode: 400, message: "La clave actual no es correcta: revisala y volve a intentar" });
+    expect(repo.actualizar).not.toHaveBeenCalled();
+  });
+
+  it("con la clave actual correcta guarda la nueva hasheada", async () => {
+    repo.obtenerPorIdConClave.mockResolvedValue({ idUsuario: 7n, claveHash: await bcrypt.hash("clave-actual", 4) } as never);
+
+    await usuariosService.cambiarClave(7n, { passwordActual: "clave-actual", passwordNueva: "clave-nueva-1" }, propio);
+
+    const guardado = repo.actualizar.mock.calls[0][2] as { claveHash: string };
+    expect(await bcrypt.compare("clave-nueva-1", guardado.claveHash)).toBe(true);
   });
 });

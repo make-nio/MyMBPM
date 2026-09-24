@@ -1,6 +1,11 @@
 import { Endpoint, fecha, id, lista, objeto, z } from "../base";
 import { ESTADOS_SOLICITUD } from "../../compartido/dominio/enums";
-import { actualizarEstadoSolicitudEspecialSchema } from "../../modulos/solicitudes-especiales/solicitudes-especiales.schemas";
+import {
+  actualizarEstadoSolicitudEspecialSchema,
+  actualizarSolicitudEspecialSchema,
+  crearSolicitudEspecialSchema,
+  listarSolicitudesEspecialesQuerySchema
+} from "../../modulos/solicitudes-especiales/solicitudes-especiales.schemas";
 import { clienteSchema } from "./clientes";
 
 const etiqueta = "solicitudes-especiales";
@@ -23,31 +28,6 @@ const solicitudEspecialSchema = objeto({
   pedido: objeto({ idPedido: id, numeroPedido: z.string().nullable() }).nullable()
 }).openapi("SolicitudEspecial");
 
-// Para la doc: los schemas de solicitudes-especiales.schemas.ts usan z.coerce.bigint (idSchema)
-// para idCliente, que zod-to-openapi no soporta. Estos son equivalentes: mismos campos y reglas.
-const idTexto = z.string().regex(/^\d+$/);
-
-const listarQuery = z.object({
-  limit: z.coerce.number().int().positive().max(100).default(20),
-  offset: z.coerce.number().int().min(0).default(0),
-  idCliente: idTexto.optional(),
-  estadoSolicitud: z.enum(ESTADOS_SOLICITUD).optional()
-});
-
-const crearBody = z.object({
-  idCliente: idTexto.optional(),
-  nombreSolicitante: z.string().min(1).max(150),
-  telefono: z.string().max(50).optional(),
-  email: z.string().email().max(150).optional(),
-  descripcion: z.string().min(1).max(4000),
-  // CONVERTIDA_A_PEDIDO se rechaza: solo se alcanza con /convertir.
-  estadoSolicitud: z.enum(ESTADOS_SOLICITUD).optional(),
-  observaciones: z.string().max(2000).optional()
-});
-
-// Al menos un campo.
-const actualizarBody = crearBody.partial();
-
 const params = objeto({ id });
 
 export const endpoints = [
@@ -57,7 +37,7 @@ export const endpoints = [
     acceso: "autenticado",
     resumen: "Lista solicitudes especiales, paginado, filtrando por cliente y estado",
     etiqueta,
-    query: listarQuery,
+    query: listarSolicitudesEspecialesQuerySchema,
     respuesta: lista(solicitudEspecialSchema)
   },
   {
@@ -75,7 +55,7 @@ export const endpoints = [
     acceso: "autenticado",
     resumen: "Registra una solicitud especial (un pedido a medida)",
     etiqueta,
-    body: crearBody,
+    body: crearSolicitudEspecialSchema,
     respuesta: solicitudEspecialSchema,
     status: 201
   },
@@ -86,7 +66,8 @@ export const endpoints = [
     resumen: "Modifica una solicitud especial",
     etiqueta,
     params,
-    body: actualizarBody,
+    // El refine (al menos un campo) no se ve en el OpenAPI: la API lo sigue aplicando.
+    body: actualizarSolicitudEspecialSchema,
     respuesta: solicitudEspecialSchema
   },
   {

@@ -19,6 +19,7 @@ import { useModal } from "../../../src/hooks/use-modal";
 import { usePrecargar } from "../../../src/hooks/use-precargar";
 import { formatearCantidad, formatearEstado, formatearFecha } from "../../../src/lib/formato";
 import { generarCsv, numeroCsv } from "../../../src/lib/csv";
+import { cargarTodo } from "../../../src/lib/paginacion";
 import { crearAjusteStock, listarExistencias } from "../../../src/lib/modulos/stock";
 import { cantidadParaReponer, rutaOrdenParaReponer } from "../../../src/lib/stock/reponer";
 import { Existencia, TipoAjuste, TipoStock } from "../../../src/types/stock";
@@ -84,20 +85,24 @@ export default function StockPage() {
 
   // Cuantos items activos estan bajo el minimo (suelen ser pocos): para el rotulo del filtro.
   useEffect(() => {
-    listarExistencias({ activo: true, soloBajoMinimo: true })
+    cargarTodo((limit, offset) => listarExistencias({ activo: true, soloBajoMinimo: true, limit, offset }))
       .then((bajos) => setCantidadBajoMinimo(bajos.length))
       .catch(() => setCantidadBajoMinimo(null));
   }, [version]);
 
-  // Sin limit la API devuelve todas las existencias con los filtros aplicados. La busqueda es la
-  // que esta escrita, aunque el listado todavia no la haya aplicado (espera a que dejes de tipear).
+  // Todas las existencias con los filtros aplicados, en tandas de 100 (el tope de la API). La
+  // busqueda es la que esta escrita, aunque el listado todavia no la haya aplicado.
   async function exportarStock() {
-    const todas = await listarExistencias({
-      activo: true,
-      tipoItem: filtroTipo || undefined,
-      soloBajoMinimo: soloBajoMinimo || undefined,
-      busqueda: busqueda.trim() || undefined
-    });
+    const todas = await cargarTodo((limit, offset) =>
+      listarExistencias({
+        activo: true,
+        tipoItem: filtroTipo || undefined,
+        soloBajoMinimo: soloBajoMinimo || undefined,
+        busqueda: busqueda.trim() || undefined,
+        limit,
+        offset
+      })
+    );
 
     return generarCsv(
       ["Item", "Tipo", "Categoria", "Stock", "Minimo", "Estado", "Ultimo movimiento"],

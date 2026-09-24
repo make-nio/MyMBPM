@@ -3309,6 +3309,7 @@
                 "null"
               ],
               "minimum": 0,
+              "maximum": 100000,
               "default": 0
             },
             "required": false,
@@ -3812,6 +3813,7 @@
                 "null"
               ],
               "minimum": 0,
+              "maximum": 100000,
               "default": 0
             },
             "required": false,
@@ -4219,6 +4221,7 @@
                 "null"
               ],
               "minimum": 0,
+              "maximum": 100000,
               "default": 0
             },
             "required": false,
@@ -4404,14 +4407,16 @@
                       "number",
                       "null"
                     ],
-                    "minimum": 0
+                    "minimum": 0,
+                    "maximum": 100000000
                   },
                   "costo": {
                     "type": [
                       "number",
                       "null"
                     ],
-                    "minimum": 0
+                    "minimum": 0,
+                    "maximum": 100000000
                   },
                   "tipoMaterial": {
                     "type": "string",
@@ -4430,7 +4435,8 @@
                       "integer",
                       "null"
                     ],
-                    "minimum": 0
+                    "minimum": 0,
+                    "maximum": 1000000
                   },
                   "activo": {
                     "type": "boolean"
@@ -4667,14 +4673,16 @@
                       "number",
                       "null"
                     ],
-                    "minimum": 0
+                    "minimum": 0,
+                    "maximum": 100000000
                   },
                   "costo": {
                     "type": [
                       "number",
                       "null"
                     ],
-                    "minimum": 0
+                    "minimum": 0,
+                    "maximum": 100000000
                   },
                   "tipoMaterial": {
                     "type": "string",
@@ -4693,7 +4701,8 @@
                       "integer",
                       "null"
                     ],
-                    "minimum": 0
+                    "minimum": 0,
+                    "maximum": 1000000
                   },
                   "activo": {
                     "type": "boolean"
@@ -4971,7 +4980,8 @@
                   },
                   "cantidadRequerida": {
                     "type": "number",
-                    "exclusiveMinimum": 0
+                    "exclusiveMinimum": 0,
+                    "maximum": 100000
                   },
                   "unidadMedida": {
                     "type": "string",
@@ -5075,7 +5085,8 @@
                   },
                   "cantidadRequerida": {
                     "type": "number",
-                    "exclusiveMinimum": 0
+                    "exclusiveMinimum": 0,
+                    "maximum": 100000
                   },
                   "unidadMedida": {
                     "type": "string",
@@ -5248,7 +5259,8 @@
                   },
                   "orden": {
                     "type": "integer",
-                    "exclusiveMinimum": 0
+                    "exclusiveMinimum": 0,
+                    "maximum": 1000
                   },
                   "activo": {
                     "type": "boolean"
@@ -5786,6 +5798,7 @@
                 "null"
               ],
               "minimum": 0,
+              "maximum": 100000,
               "default": 0
             },
             "required": false,
@@ -6867,6 +6880,7 @@
                 "null"
               ],
               "minimum": 0,
+              "maximum": 100000,
               "default": 0
             },
             "required": false,
@@ -7022,7 +7036,8 @@
             "schema": {
               "type": "integer",
               "exclusiveMinimum": 0,
-              "maximum": 100
+              "maximum": 100,
+              "default": 100
             },
             "required": false,
             "name": "limit",
@@ -7035,6 +7050,7 @@
                 "null"
               ],
               "minimum": 0,
+              "maximum": 100000,
               "default": 0
             },
             "required": false,
@@ -7116,6 +7132,7 @@
                 "null"
               ],
               "minimum": 0,
+              "maximum": 100000,
               "default": 0
             },
             "required": false,
@@ -7210,13 +7227,19 @@
                   "tipoMovimiento": {
                     "type": "string",
                     "enum": [
+                      "ALTA_INICIAL",
                       "AJUSTE_POSITIVO",
-                      "AJUSTE_NEGATIVO"
+                      "AJUSTE_NEGATIVO",
+                      "INGRESO_PRODUCCION",
+                      "EGRESO_PEDIDO",
+                      "EGRESO_PRODUCCION",
+                      "REVERSO"
                     ]
                   },
                   "cantidad": {
                     "type": "number",
-                    "exclusiveMinimum": 0
+                    "exclusiveMinimum": 0,
+                    "maximum": 100000
                   },
                   "observaciones": {
                     "type": "string",
@@ -7230,8 +7253,7 @@
                   "tipoMovimiento",
                   "cantidad",
                   "observaciones"
-                ],
-                "additionalProperties": false
+                ]
               }
             }
           }
@@ -7520,6 +7542,7 @@
                 "null"
               ],
               "minimum": 0,
+              "maximum": 100000,
               "default": 0
             },
             "required": false,
@@ -7567,7 +7590,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              "maxLength": 10
             },
             "required": false,
             "name": "desde",
@@ -7576,7 +7599,7 @@
           {
             "schema": {
               "type": "string",
-              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+              "maxLength": 10
             },
             "required": false,
             "name": "hasta",
@@ -7676,7 +7699,7 @@
                       "string",
                       "null"
                     ],
-                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    "maxLength": 10
                   },
                   "activo": {
                     "type": "boolean"
@@ -7935,7 +7958,8 @@
                   },
                   "cantidad": {
                     "type": "number",
-                    "exclusiveMinimum": 0
+                    "exclusiveMinimum": 0,
+                    "maximum": 100000
                   }
                 },
                 "required": [
@@ -8026,7 +8050,8 @@
                 "properties": {
                   "cantidad": {
                     "type": "number",
-                    "exclusiveMinimum": 0
+                    "exclusiveMinimum": 0,
+                    "maximum": 100000
                   }
                 },
                 "required": [
@@ -8202,7 +8227,8 @@
                     "type": [
                       "string",
                       "null"
-                    ]
+                    ],
+                    "maxLength": 10
                   }
                 }
               }
@@ -8576,6 +8602,7 @@
                 "null"
               ],
               "minimum": 0,
+              "maximum": 100000,
               "default": 0
             },
             "required": false,
@@ -8863,7 +8890,8 @@
                   },
                   "cantidad": {
                     "type": "number",
-                    "exclusiveMinimum": 0
+                    "exclusiveMinimum": 0,
+                    "maximum": 100000
                   },
                   "observaciones": {
                     "type": "string",
@@ -8873,8 +8901,7 @@
                 "required": [
                   "idItemCatalogoProducto",
                   "cantidad"
-                ],
-                "additionalProperties": false
+                ]
               }
             }
           }
@@ -8959,7 +8986,8 @@
                 "properties": {
                   "cantidad": {
                     "type": "number",
-                    "exclusiveMinimum": 0
+                    "exclusiveMinimum": 0,
+                    "maximum": 100000
                   },
                   "observaciones": {
                     "type": "string",
@@ -9384,6 +9412,7 @@
                 "null"
               ],
               "minimum": 0,
+              "maximum": 100000,
               "default": 0
             },
             "required": false,
@@ -9930,6 +9959,7 @@
                 "null"
               ],
               "minimum": 0,
+              "maximum": 100000,
               "default": 0
             },
             "required": false,
@@ -10032,6 +10062,7 @@
                 "null"
               ],
               "minimum": 0,
+              "maximum": 100000,
               "default": 0
             },
             "required": false,
@@ -10107,6 +10138,7 @@
           {
             "schema": {
               "type": "string",
+              "maxLength": 7,
               "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
             },
             "required": false,

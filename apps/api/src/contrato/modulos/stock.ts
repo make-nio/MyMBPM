@@ -4,7 +4,13 @@ import {
   TIPOS_MOVIMIENTO,
   TIPOS_STOCK
 } from "../../compartido/dominio/enums";
-import { bajoStockQuerySchema, existenciasQuerySchema } from "../../modulos/stock/stock.schemas";
+import {
+  bajoStockQuerySchema,
+  crearAjusteStockSchema,
+  existenciasQuerySchema,
+  historialStockQuerySchema,
+  stockActualQuerySchema
+} from "../../modulos/stock/stock.schemas";
 import { decimal, Endpoint, fecha, id, lista, objeto, z } from "../base";
 
 // Contrato del modulo stock (src/modulos/stock). Ninguna respuesta de stock trae costos.
@@ -77,35 +83,6 @@ const existenciaSchema = objeto({
   fechaUltimoMovimiento: fecha.nullable()
 }).openapi("Existencia");
 
-// Los query schemas del modulo usan idSchema (z.coerce.bigint), que zod-to-openapi no soporta:
-// estos son equivalentes para la doc.
-const paginacion = {
-  limit: z.coerce.number().int().positive().max(100).default(20),
-  offset: z.coerce.number().int().min(0).default(0)
-};
-
-const stockActualQuery = objeto({
-  idItemCatalogo: id,
-  tipoStock: z.enum(TIPOS_STOCK).default("PRODUCTO")
-});
-
-const historialQuery = objeto({
-  ...paginacion,
-  idItemCatalogo: id,
-  tipoStock: z.enum(TIPOS_STOCK).optional(),
-  origenMovimiento: z.enum(ORIGENES_MOVIMIENTO).optional(),
-  idReferenciaOrigen: id.optional()
-});
-
-// Equivalente a crearAjusteStockSchema (que usa idSchema y un refine).
-const crearAjusteBody = objeto({
-  idItemCatalogo: id,
-  tipoStock: z.enum(TIPOS_STOCK),
-  tipoMovimiento: z.enum(["AJUSTE_POSITIVO", "AJUSTE_NEGATIVO"]),
-  cantidad: z.coerce.number().positive(),
-  observaciones: z.string().trim().min(1).max(2000)
-});
-
 export const endpoints = [
   {
     metodo: "get",
@@ -113,7 +90,7 @@ export const endpoints = [
     acceso: "autenticado",
     resumen: "Stock vigente de un item y tipo de stock, con su ultimo movimiento",
     etiqueta,
-    query: stockActualQuery,
+    query: stockActualQuerySchema,
     respuesta: stockActualSchema
   },
   {
@@ -122,7 +99,7 @@ export const endpoints = [
     acceso: "autenticado",
     resumen: "Historial de movimientos de stock de un item, del mas nuevo al mas viejo",
     etiqueta,
-    query: historialQuery,
+    query: historialStockQuerySchema,
     respuesta: lista(movimientoConUsuarioSchema)
   },
   {
@@ -149,7 +126,7 @@ export const endpoints = [
     acceso: "autenticado",
     resumen: "Registra un ajuste manual de stock (positivo o negativo) con su motivo",
     etiqueta,
-    body: crearAjusteBody,
+    body: crearAjusteStockSchema,
     // El movimiento creado, sin el usuario incluido.
     respuesta: movimientoStockSchema,
     status: 201
