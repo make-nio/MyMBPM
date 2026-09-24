@@ -1,3 +1,5 @@
+import type { ClaveEndpoint, CuerpoDe, RespuestaDe } from "@contrato";
+
 type ApiRequestInit = RequestInit & {
   token?: string;
 };
@@ -71,6 +73,34 @@ export async function apiFetch<T>(path: string, init: ApiRequestInit = {}) {
   }
 
   return body as T;
+}
+
+// Parametros de ruta de un endpoint del contrato: "get /api/pedidos/{id}/detalles/{detalleId}"
+// -> "id" | "detalleId".
+type ParametrosDe<K extends string> = K extends `${string}{${infer P}}${infer Resto}` ? P | ParametrosDe<Resto> : never;
+
+type OpcionesPedido<K extends ClaveEndpoint> = {
+  consulta?: Parameters<typeof buildQuery>[0];
+  cuerpo?: CuerpoDe<K>;
+} & ([ParametrosDe<K>] extends [never] ? { params?: undefined } : { params: Record<ParametrosDe<K>, string> });
+
+// Pide un endpoint del contrato de la API (apps/api/src/contrato) por su clave, por ejemplo
+// "get /api/clientes/{id}": el metodo y la ruta salen de la clave, y los tipos de los parametros,
+// del cuerpo y de la respuesta, del contrato. Asi la web no puede separarse de lo que la API
+// recibe y devuelve (que los E2E validan contra el mismo contrato).
+export function pedirApi<K extends ClaveEndpoint>(
+  endpoint: K,
+  ...[opciones]: [ParametrosDe<K>] extends [never] ? [OpcionesPedido<K>?] : [OpcionesPedido<K>]
+) {
+  const [metodo, plantilla] = endpoint.split(" ");
+  const params: Record<string, string> = opciones?.params ?? {};
+  const ruta = plantilla.replace(/\{(\w+)\}/g, (_, nombre: string) => encodeURIComponent(params[nombre]));
+  const consulta = opciones?.consulta ? buildQuery(opciones.consulta) : "";
+
+  return apiFetch<{ ok: true; data: RespuestaDe<K> }>(`${ruta}${consulta}`, {
+    method: metodo.toUpperCase(),
+    body: opciones?.cuerpo === undefined ? undefined : JSON.stringify(opciones.cuerpo)
+  }).then((respuesta) => respuesta.data);
 }
 
 export function buildQuery(

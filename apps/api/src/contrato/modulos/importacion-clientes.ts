@@ -35,7 +35,7 @@ const previsualizacionSchema = objeto({
   })
 });
 
-export const endpoints: Endpoint[] = [
+export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/clientes/importacion/previsualizar",
@@ -53,4 +53,4 @@ export const endpoints: Endpoint[] = [
     respuesta: objeto({ creados: z.number().int() }),
     status: 201
   }
-];
+] as const satisfies readonly Endpoint[];

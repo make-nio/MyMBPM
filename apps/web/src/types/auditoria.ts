@@ -1,30 +1,12 @@
-export type EntidadAuditada = "ITEM_CATALOGO" | "CLIENTE";
-export type AccionAuditoria = "ALTA" | "MODIFICACION" | "ACTIVACION" | "DESACTIVACION";
+import type { RespuestaDe } from "@contrato";
 
-export type CambioAuditado = {
-  campo: string;
-  antes: string | null;
-  despues: string | null;
-};
+// Tipos sacados del contrato de la API (apps/api/src/contrato): no se escriben a mano.
+export type RegistroAuditoria = RespuestaDe<"get /api/auditoria">[number];
+export type EntidadAuditada = RegistroAuditoria["entidad"];
+export type AccionAuditoria = RegistroAuditoria["accion"];
+export type CambioAuditado = RegistroAuditoria["cambios"][number];
 
-export type RegistroAuditoria = {
-  idAuditoriaCambio: string;
-  entidad: EntidadAuditada;
-  idEntidad: string;
-  accion: AccionAuditoria;
-  cambios: CambioAuditado[];
-  fecha: string;
-  usuario: { idUsuario: string; nombre: string; apellido: string } | null;
-};
-
-export type ValorAuditado = { antes: string | null; despues: string | null };
-
-// Un punto de la linea de tiempo de precio y costo de un item (solo administradores).
-export type PuntoPrecio = {
-  idAuditoriaCambio: string;
-  fecha: string;
-  accion: AccionAuditoria;
-  usuario: { idUsuario: string; nombre: string; apellido: string } | null;
-  precio: ValorAuditado | null;
-  costo: ValorAuditado | null;
-};
+// Un punto de la linea de tiempo de precio y costo de un item. El costo solo llega a quien
+// puede ver costos.
+export type PuntoPrecio = RespuestaDe<"get /api/auditoria/precios">[number];
+export type ValorAuditado = NonNullable<PuntoPrecio["precio"]>;

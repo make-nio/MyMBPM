@@ -1,38 +1,10 @@
-export type Cliente = {
-  idCliente: string;
-  nombre: string;
-  apellido: string | null;
-  documento: string | null;
-  telefono: string | null;
-  email: string | null;
-  instagram: string | null;
-  domicilio: string | null;
-  localidad: string | null;
-  provincia: string | null;
-  observaciones: string | null;
-  activo: boolean;
-  fechaAlta: string;
-  fechaModificacion: string;
-};
+import type { CuerpoDe, RespuestaDe } from "@contrato";
 
-export type ClientePayload = {
-  nombre: string;
-  apellido?: string;
-  documento?: string;
-  telefono?: string;
-  email?: string;
-  instagram?: string;
-  domicilio?: string;
-  localidad?: string;
-  provincia?: string;
-  observaciones?: string;
-  activo?: boolean;
-};
+// Tipos sacados del contrato de la API (apps/api/src/contrato): no se escriben a mano.
+export type Cliente = RespuestaDe<"get /api/clientes/{id}">;
+
+export type ClientePayload = CuerpoDe<"post /api/clientes">;
 
 // GET /api/clientes/:id/resumen: lo que compro (criterio "vendido": pedidos confirmados y no
 // cancelados). Solo importes de venta, sin costos: lo ven todos.
-export type ResumenCliente = {
-  totalComprado: string;
-  pedidosComprados: number;
-  fechaUltimaCompra: string | null;
-};
+export type ResumenCliente = RespuestaDe<"get /api/clientes/{id}/resumen">;

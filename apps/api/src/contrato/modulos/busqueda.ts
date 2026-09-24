@@ -36,7 +36,7 @@ const resultadoItem = objeto({
   costo: decimal.nullable().optional()
 });
 
-export const endpoints: Endpoint[] = [
+export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/busqueda",
@@ -49,4 +49,4 @@ export const endpoints: Endpoint[] = [
       items: lista(resultadoItem)
     })
   }
-];
+] as const satisfies readonly Endpoint[];

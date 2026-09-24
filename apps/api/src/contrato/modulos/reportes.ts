@@ -57,7 +57,7 @@ const ventasPorMesSchema = objeto({
   )
 }).openapi("VentasPorMes");
 
-export const endpoints: Endpoint[] = [
+export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/reportes/ventas-mes",
@@ -73,4 +73,4 @@ export const endpoints: Endpoint[] = [
     etiqueta,
     respuesta: ventasPorMesSchema
   }
-];
+] as const satisfies readonly Endpoint[];

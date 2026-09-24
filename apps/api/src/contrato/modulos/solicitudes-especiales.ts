@@ -50,7 +50,7 @@ const actualizarBody = crearBody.partial();
 
 const params = objeto({ id });
 
-export const endpoints: Endpoint[] = [
+export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/solicitudes-especiales",
@@ -103,4 +103,4 @@ export const endpoints: Endpoint[] = [
     respuesta: objeto({ idPedido: id, numeroPedido: z.string().nullable() }),
     status: 201
   }
-];
+] as const satisfies readonly Endpoint[];

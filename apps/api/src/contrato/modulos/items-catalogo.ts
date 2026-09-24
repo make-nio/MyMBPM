@@ -71,7 +71,7 @@ const params = objeto({ id });
 const paramsComponente = objeto({ id, componenteId: id });
 const paramsImagen = objeto({ id, imagenId: id });
 
-export const endpoints: Endpoint[] = [
+export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/items-catalogo",
@@ -168,4 +168,4 @@ export const endpoints: Endpoint[] = [
     params: paramsImagen,
     respuesta: eliminado
   }
-];
+] as const satisfies readonly Endpoint[];

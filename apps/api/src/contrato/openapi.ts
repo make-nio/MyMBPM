@@ -5,7 +5,7 @@ import { endpoints } from "./endpoints";
 
 // Arma el documento OpenAPI 3.1 desde el contrato. docs/openapi.json es su salida
 // (npm run contrato:generar); una prueba falla si quedo desactualizado.
-export function generarOpenApi(lista: Endpoint[] = endpoints) {
+export function generarOpenApi(lista: readonly Endpoint[] = endpoints) {
   const registro = new OpenAPIRegistry();
   const bearer = registro.registerComponent("securitySchemes", "bearer", {
     type: "http",

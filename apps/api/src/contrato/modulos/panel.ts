@@ -114,7 +114,7 @@ const avisosSchema = objeto({
   entregasHoy: z.number().int()
 }).openapi("AvisosPanel");
 
-export const endpoints: Endpoint[] = [
+export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/panel/resumen",
@@ -130,4 +130,4 @@ export const endpoints: Endpoint[] = [
     etiqueta,
     respuesta: avisosSchema
   }
-];
+] as const satisfies readonly Endpoint[];
