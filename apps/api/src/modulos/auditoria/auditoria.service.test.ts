@@ -5,7 +5,7 @@ import { auditoriaRepository } from "./auditoria.repository";
 import { accionDeModificacion, auditoriaService, calcularCambios, valorAuditable } from "./auditoria.service";
 
 vi.mock("./auditoria.repository", () => ({
-  auditoriaRepository: { registrar: vi.fn(), registrarVarios: vi.fn(), listar: vi.fn() }
+  auditoriaRepository: { registrar: vi.fn(), registrarVarios: vi.fn(), listar: vi.fn(), listarConCampos: vi.fn() }
 }));
 
 const repo = vi.mocked(auditoriaRepository);
@@ -114,6 +114,56 @@ describe("auditoriaService.registrarAltas", () => {
           { campo: "precio", antes: null, despues: "10" }
         ],
         idUsuario: 7n
+      }
+    ]);
+  });
+});
+
+describe("auditoriaService.listarPrecios", () => {
+  it("pide solo los registros de precio o costo del item y deja de lado los otros campos", async () => {
+    const fecha = new Date("2026-09-20T12:00:00Z");
+    const usuario = { idUsuario: 8n, nombre: "Maxi", apellido: "M" };
+    repo.listarConCampos.mockResolvedValue([
+      {
+        idAuditoriaCambio: 12n,
+        fecha,
+        accion: "MODIFICACION",
+        usuario,
+        cambios: [
+          { campo: "nombre", antes: "A", despues: "B" },
+          { campo: "precio", antes: "100", despues: "120" }
+        ]
+      },
+      {
+        idAuditoriaCambio: 3n,
+        fecha,
+        accion: "ALTA",
+        usuario: null,
+        cambios: [
+          { campo: "precio", antes: null, despues: "100" },
+          { campo: "costo", antes: null, despues: "40" }
+        ]
+      }
+    ] as never);
+
+    const puntos = await auditoriaService.listarPrecios({ idItemCatalogo: 5n, limit: 50, offset: 0 });
+
+    expect(repo.listarConCampos).toHaveBeenCalledWith({
+      entidad: "ITEM_CATALOGO",
+      idEntidad: 5n,
+      campos: ["precio", "costo"],
+      limit: 50,
+      offset: 0
+    });
+    expect(puntos).toEqual([
+      { idAuditoriaCambio: 12n, fecha, accion: "MODIFICACION", usuario, precio: { antes: "100", despues: "120" }, costo: null },
+      {
+        idAuditoriaCambio: 3n,
+        fecha,
+        accion: "ALTA",
+        usuario: null,
+        precio: { antes: null, despues: "100" },
+        costo: { antes: null, despues: "40" }
       }
     ]);
   });
