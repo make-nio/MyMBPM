@@ -12,12 +12,25 @@ function leerTokenActual() {
 
 export class ErrorApi extends Error {
   readonly status: number;
+  // Codigo de la solicitud que fallo (header X-Referencia): el mismo queda en el log de la API.
+  readonly referencia: string | null;
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, referencia: string | null = null) {
     super(message);
     this.name = "ErrorApi";
     this.status = status;
+    this.referencia = referencia;
   }
+}
+
+// En un error del servidor el mensaje lleva la referencia: cualquier pantalla que muestre el
+// error la muestra, y con ella se encuentra el error en el log de Netlify.
+export function mensajeConReferencia(message: string, status: number, referencia: string | null) {
+  if (status < 500 || !referencia) {
+    return message;
+  }
+
+  return `${message}. Referencia del error: ${referencia} (pasasela a quien administra el sistema si se repite).`;
 }
 
 export async function apiFetch<T>(path: string, init: ApiRequestInit = {}) {
@@ -44,8 +57,9 @@ export async function apiFetch<T>(path: string, init: ApiRequestInit = {}) {
       body?.error?.message ||
       body?.message ||
       "No fue posible completar la solicitud";
+    const referencia: string | null = body?.error?.referencia || response.headers?.get?.("X-Referencia") || null;
 
-    throw new ErrorApi(message, response.status);
+    throw new ErrorApi(mensajeConReferencia(message, response.status, referencia), response.status, referencia);
   }
 
   return body as T;
