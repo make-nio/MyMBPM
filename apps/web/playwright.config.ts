@@ -69,7 +69,8 @@ export default defineConfig({
         PORT: String(PUERTO_API),
         NETLIFY_DATABASE_URL: BASE_DATOS_E2E,
         JWT_SECRET: "secreto-solo-para-e2e",
-        JWT_EXPIRES_IN: "1h",
+        // La corrida nocturna repite la suite y dura mas que una sesion de 1 h.
+        JWT_EXPIRES_IN: process.env.E2E_JWT_EXPIRES_IN || "1h",
         ...(COBERTURA_E2E ? { NODE_V8_COVERAGE: "coverage/e2e-raw" } : {})
       }
     },

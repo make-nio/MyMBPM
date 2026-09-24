@@ -77,3 +77,40 @@ describe("auditoriaRepository sin la tabla (deploy preview antes de migrar)", ()
     expect(tx.auditoriaCambio.create).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("auditoriaRepository.listarConCampos", () => {
+  it("filtra por entidad y por los campos tocados, los mas nuevos primero", async () => {
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([{ existe: true }] as never);
+    vi.mocked(prisma.auditoriaCambio.findMany).mockResolvedValue([]);
+
+    await auditoriaRepository.listarConCampos({
+      entidad: "ITEM_CATALOGO",
+      idEntidad: 5n,
+      campos: ["precio", "costo"],
+      limit: 20,
+      offset: 40
+    });
+
+    expect(prisma.auditoriaCambio.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          entidad: "ITEM_CATALOGO",
+          idEntidad: 5n,
+          OR: [{ cambios: { array_contains: [{ campo: "precio" }] } }, { cambios: { array_contains: [{ campo: "costo" }] } }]
+        },
+        orderBy: { idAuditoriaCambio: "desc" },
+        skip: 40,
+        take: 20
+      })
+    );
+  });
+
+  it("sin la tabla devuelve una lista vacia", async () => {
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([{ existe: false }] as never);
+
+    await expect(
+      auditoriaRepository.listarConCampos({ entidad: "CLIENTE", idEntidad: 1n, campos: ["email"], limit: 5, offset: 0 })
+    ).resolves.toEqual([]);
+    expect(prisma.auditoriaCambio.findMany).not.toHaveBeenCalled();
+  });
+});

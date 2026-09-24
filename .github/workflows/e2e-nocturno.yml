@@ -1,0 +1,101 @@
+name: E2E nocturno
+
+# Todas las noches corre la suite E2E completa 3 veces seguidas y sin reintentos, para encontrar
+# pruebas intermitentes antes de que molesten en un PR (en el CI de los PR hay 1 reintento, que las
+# tapa). Si alguna falla, el job queda en rojo y el resumen dice cual, cuantas veces y si falla
+# siempre o a veces. No abre issues ni avisa por otro medio. Ver README, "E2E nocturno".
+
+on:
+  schedule:
+    # 06:00 UTC = 03:00 en Argentina, cuando nadie usa el sistema ni hay PRs moviendose.
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      repeticiones:
+        description: "Cuantas veces correr la suite"
+        required: false
+        default: "3"
+
+concurrency:
+  group: e2e-nocturno
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: Suite E2E repetida, sin reintentos
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    services:
+      # Base propia del job, como en el CI: los E2E nunca corren contra Netlify DB (produccion).
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mymbpm_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      NETLIFY_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mymbpm_e2e
+      NETLIFY_DATABASE_URL_UNPOOLED: postgresql://postgres:postgres@localhost:5432/mymbpm_e2e
+      E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mymbpm_e2e
+      # La sesion del administrador E2E se crea una vez al principio y tiene que durar las 3 corridas.
+      E2E_JWT_EXPIRES_IN: 4h
+      REPETICIONES: ${{ github.event.inputs.repeticiones || '3' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Build (web + api)
+        run: npm run build
+
+      - name: Migraciones en la base del job
+        run: npm run prisma:migrate:deploy --workspace @myfirstproject/api
+
+      - name: Instalar Chromium para Playwright
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+
+      # Las fallas no cortan el paso: el resumen de abajo decide el resultado del job.
+      - name: E2E repetidos, sin reintentos
+        id: e2e
+        continue-on-error: true
+        working-directory: apps/web
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: e2e-nocturno.json
+        run: >-
+          npx playwright test --project=chromium --project=movil
+          --repeat-each="$REPETICIONES" --retries=0 --reporter=dot,json
+
+      - name: Resumen de pruebas intermitentes
+        if: ${{ !cancelled() }}
+        run: node scripts/resumen-e2e-nocturno.mjs apps/web/e2e-nocturno.json
+
+      - name: Guardar reporte
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-nocturno
+          path: |
+            apps/web/e2e-nocturno.json
+            apps/web/test-results
+          if-no-files-found: ignore
+          retention-days: 14

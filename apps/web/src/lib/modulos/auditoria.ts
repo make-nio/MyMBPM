@@ -1,6 +1,6 @@
 import { apiFetch, buildQuery } from "../api";
 import { formatearMoneda } from "../formato";
-import { CambioAuditado, EntidadAuditada, RegistroAuditoria } from "../../types/auditoria";
+import { CambioAuditado, EntidadAuditada, PuntoPrecio, RegistroAuditoria, ValorAuditado } from "../../types/auditoria";
 
 // Solo administradores (la API responde 403 al resto).
 export function listarHistorialCambios(entidad: EntidadAuditada, idEntidad: string, limit = 50) {
@@ -8,6 +8,33 @@ export function listarHistorialCambios(entidad: EntidadAuditada, idEntidad: stri
     `/api/auditoria${buildQuery({ entidad, idEntidad, limit })}`
   ).then((response) => response.data);
 }
+
+// Linea de tiempo de precio y costo de un item, los cambios mas nuevos primero. Solo administradores.
+export function listarHistorialPrecios(idItemCatalogo: string, limit: number, offset: number) {
+  return apiFetch<{ ok: true; data: PuntoPrecio[] }>(
+    `/api/auditoria/precios${buildQuery({ idItemCatalogo, limit, offset })}`
+  ).then((response) => response.data);
+}
+
+// "$ 100,00 → $ 120,00 (+20 %)". Sin valor anterior (alta, o antes sin cargar) solo el nuevo; sin
+// valor nuevo, "(vacio)".
+export function describirPrecio(valor: ValorAuditado) {
+  const despues = valor.despues === null ? "(vacio)" : formatearMoneda(valor.despues);
+
+  if (valor.antes === null) {
+    return despues;
+  }
+
+  const anterior = Number(valor.antes);
+  const variacion =
+    valor.despues !== null && anterior > 0
+      ? ` (${Number(valor.despues) >= anterior ? "+" : ""}${porcentaje.format((Number(valor.despues) - anterior) / anterior)})`
+      : "";
+
+  return `${formatearMoneda(valor.antes)} → ${despues}${variacion}`;
+}
+
+const porcentaje = new Intl.NumberFormat("es-AR", { style: "percent", maximumFractionDigits: 1 });
 
 const NOMBRES_CAMPO: Record<string, string> = {
   nombre: "Nombre",

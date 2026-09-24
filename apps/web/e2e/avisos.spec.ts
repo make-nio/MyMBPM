@@ -7,13 +7,28 @@ function diaDesdeHoy(dias: number) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(fecha);
 }
 
+// Pedido con entrega prometida. Se cancela al terminar la prueba: si quedaran abiertos, se
+// acumulan con cada corrida (o repeticion) y desplazan a los de otras pruebas de las listas de
+// entregas del panel, que muestran solo las mas urgentes (entregas.spec).
+const creados: string[] = [];
+async function pedidoConEntrega(idCliente: string, dias: number) {
+  const pedido = await api<{ idPedido: string }>("POST", "/api/pedidos", { idCliente, origenPedido: "WHATSAPP", fechaEntrega: diaDesdeHoy(dias) });
+  creados.push(pedido.idPedido);
+}
+
+test.afterEach(async () => {
+  for (const idPedido of creados.splice(0)) {
+    await api("PATCH", `/api/pedidos/${idPedido}/estado`, { estadoPedido: "CANCELADO" });
+  }
+});
+
 test("la campanita avisa stock bajo y entregas de hoy o atrasadas, y lleva a su pantalla", async ({ page }) => {
   const nombre = unico("PRUEBA-Aviso");
   const { idCategoria } = await crearCategoria(`${nombre}-cat`);
   await crearItem({ idCategoria, nombre, tipoItem: "INSUMO", stockMinimo: 5 });
   const { idCliente } = await crearCliente(unico("PRUEBA-ClienteAviso"));
-  await api("POST", "/api/pedidos", { idCliente, origenPedido: "WHATSAPP", fechaEntrega: diaDesdeHoy(0) });
-  await api("POST", "/api/pedidos", { idCliente, origenPedido: "WHATSAPP", fechaEntrega: diaDesdeHoy(-2) });
+  await pedidoConEntrega(idCliente, 0);
+  await pedidoConEntrega(idCliente, -2);
 
   await page.goto("/pedidos");
   const boton = page.getByRole("button", { name: /^Avisos: \d+/ });
@@ -41,7 +56,7 @@ test("la campanita avisa stock bajo y entregas de hoy o atrasadas, y lleva a su 
 
 test("las entregas del aviso llevan al panel", async ({ page }) => {
   const { idCliente } = await crearCliente(unico("PRUEBA-ClienteAvisoPanel"));
-  await api("POST", "/api/pedidos", { idCliente, origenPedido: "WHATSAPP", fechaEntrega: diaDesdeHoy(0) });
+  await pedidoConEntrega(idCliente, 0);
 
   await page.goto("/clientes");
   await page.getByRole("button", { name: /^Avisos: \d+/ }).click();
