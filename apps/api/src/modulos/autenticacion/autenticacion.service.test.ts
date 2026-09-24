@@ -6,6 +6,7 @@ import { ErrorDemasiadosIntentos } from "../../compartido/errores/error-demasiad
 
 import { autenticacionRepository } from "./autenticacion.repository";
 import { autenticacionService } from "./autenticacion.service";
+import { RETENCION_INTENTOS_MS } from "./limite-intentos";
 
 vi.mock("./autenticacion.repository", () => ({
   autenticacionRepository: {
@@ -68,6 +69,17 @@ describe("autenticacionService.login (limite de intentos)", () => {
     ).rejects.toBeInstanceOf(ErrorAutenticacion);
 
     expect(repo.registrarFallidos).toHaveBeenCalledWith(["usuario:7", "ip:203.0.113.9"], expect.any(Date));
+  });
+
+  it("al registrar un fallido pide borrar los de mas de 24 horas", async () => {
+    const antes = Date.now();
+
+    await autenticacionService.login({ ...credenciales, password: "otra-clave" }, ip).catch(() => undefined);
+
+    const corte = repo.registrarFallidos.mock.calls[0][1].getTime();
+    expect(corte).toBeGreaterThanOrEqual(antes - RETENCION_INTENTOS_MS);
+    expect(corte).toBeLessThanOrEqual(Date.now() - RETENCION_INTENTOS_MS);
+    expect(RETENCION_INTENTOS_MS).toBe(24 * 60 * 60 * 1000);
   });
 
   it("si la cuenta no existe cuenta por lo que se escribio, sin distinguir mayusculas", async () => {
