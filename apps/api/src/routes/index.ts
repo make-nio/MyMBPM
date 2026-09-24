@@ -15,6 +15,7 @@ import { itemsCatalogoRouter } from "../modulos/items-catalogo/items-catalogo.ro
 import { panelRouter } from "../modulos/panel/panel.routes";
 import { pedidosRouter } from "../modulos/pedidos/pedidos.routes";
 import { produccionRouter } from "../modulos/produccion/produccion.routes";
+import { reportesRouter } from "../modulos/reportes/reportes.routes";
 import { solicitudesEspecialesRouter } from "../modulos/solicitudes-especiales/solicitudes-especiales.routes";
 import { stockRouter } from "../modulos/stock/stock.routes";
 import { usuariosController } from "../modulos/usuarios/usuarios.controller";
@@ -39,5 +40,6 @@ rutasPrivadasRouter.use("/pedidos", pedidosRouter);
 rutasPrivadasRouter.use("/produccion", produccionRouter);
 rutasPrivadasRouter.use("/solicitudes-especiales", solicitudesEspecialesRouter);
 rutasPrivadasRouter.use("/auditoria", auditoriaRouter);
+rutasPrivadasRouter.use("/reportes", reportesRouter);
 
 apiRouter.use(rutasPrivadasRouter);

@@ -45,6 +45,10 @@ const accesosPrincipales = [
 // Solo para administradores: la API responde 403 al resto.
 const accesosAdministracion = [
   {
+    href: "/reportes",
+    label: "Reportes"
+  },
+  {
     href: "/usuarios",
     label: "Usuarios"
   }

@@ -11,7 +11,7 @@ export function requerirAdministrador(request: Request, _response: Response, nex
   }
 
   if (!request.usuarioAutenticado.esAdministrador) {
-    next(new ErrorProhibido("Solo un administrador puede gestionar usuarios"));
+    next(new ErrorProhibido("Solo un administrador puede hacer esta operacion"));
     return;
   }
 
