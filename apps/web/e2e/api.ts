@@ -74,3 +74,27 @@ export async function crearProductoConStock(nombre: string, precio: number, stoc
 
   return producto;
 }
+
+// Producto con receta de un insumo (con stock inicial de INSUMO), listo para producir.
+export async function crearProductoConReceta(input: {
+  producto: string;
+  insumo: string;
+  cantidadRequerida: number;
+  stockInsumo: number;
+}) {
+  const { idCategoria } = await crearCategoria(`${input.producto}-cat`);
+  const insumo = await crearItem({ idCategoria, nombre: input.insumo, tipoItem: "INSUMO" });
+  const producto = await crearItem({ idCategoria, nombre: input.producto, tipoItem: "PRODUCTO", precio: 1000 });
+
+  await api("POST", `/api/items-catalogo/${producto.idItemCatalogo}/componentes`, {
+    idItemCatalogoHijo: insumo.idItemCatalogo,
+    cantidadRequerida: input.cantidadRequerida,
+    unidadMedida: "KG"
+  });
+
+  if (input.stockInsumo > 0) {
+    await ajustarStock(insumo.idItemCatalogo, input.stockInsumo, "INSUMO");
+  }
+
+  return { producto, insumo, idCategoria };
+}
