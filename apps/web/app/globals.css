@@ -875,3 +875,156 @@ textarea {
 .texto-alerta {
   color: #8e2c18;
 }
+
+/* Comprobante no fiscal del pedido (/pedidos/comprobante). En pantalla, una hoja; al imprimir,
+   solo la hoja: sin menu, encabezado, franja de vista previa ni botones. */
+.pagina-comprobante {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.pagina-comprobante > .acciones-tabla a {
+  display: inline-flex;
+  align-items: center;
+}
+
+.comprobante {
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem;
+  display: grid;
+  gap: 1rem;
+  background: #fff;
+  color: #1c1611;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.comprobante p {
+  margin: 0;
+}
+
+.comprobante__encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #1c1611;
+}
+
+.comprobante__marca {
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.comprobante__subtitulo {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 400;
+}
+
+.comprobante__numero {
+  display: grid;
+  gap: 0.2rem;
+  text-align: right;
+}
+
+.comprobante__leyenda,
+.comprobante__pie {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #1c1611;
+  text-align: center;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.comprobante__cliente {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.comprobante__tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.comprobante__tabla th,
+.comprobante__tabla td {
+  padding: 0.5rem;
+  border-bottom: 1px solid rgba(28, 22, 17, 0.25);
+  text-align: left;
+}
+
+.comprobante__tabla .comprobante__numerica {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.comprobante__tabla tfoot th {
+  text-align: right;
+}
+
+.comprobante__total th,
+.comprobante__total td {
+  font-size: 1.1rem;
+  font-weight: 700;
+  border-bottom: 2px solid #1c1611;
+}
+
+@media (max-width: 640px) {
+  .comprobante {
+    padding: 1rem;
+  }
+
+  .comprobante__numero {
+    text-align: left;
+  }
+
+  .comprobante__tabla th,
+  .comprobante__tabla td {
+    padding: 0.4rem 0.25rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media print {
+  @page {
+    margin: 1.5cm;
+  }
+
+  .barra-lateral,
+  .encabezado-privado,
+  .aviso-vista-previa,
+  .no-imprimir {
+    display: none !important;
+  }
+
+  body {
+    min-height: 0;
+    background: #fff;
+  }
+
+  .panel-shell {
+    display: block;
+    min-height: 0;
+  }
+
+  .contenido-principal {
+    padding: 0;
+  }
+
+  .comprobante {
+    max-width: none;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .comprobante__tabla tr {
+    break-inside: avoid;
+  }
+}
