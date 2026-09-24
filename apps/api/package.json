@@ -14,6 +14,9 @@
     "coverage:e2e": "c8 report --temp-directory coverage/e2e-raw --reports-dir coverage/e2e --reporter=json --reporter=text-summary --src src --include \"src/**/*.ts\" --exclude \"src/**/*.test.ts\" --exclude-after-remap",
     "test:watch": "vitest",
     "postinstall": "prisma generate",
+    "respaldo:respaldar": "tsx scripts/respaldo.ts respaldar",
+    "respaldo:restaurar": "tsx scripts/respaldo.ts restaurar",
+    "respaldo:probar-ciclo": "tsx scripts/respaldo.ts probar-ciclo",
     "prisma:format": "prisma format",
     "prisma:validate": "prisma validate",
     "prisma:generate": "prisma generate",
@@ -24,6 +27,7 @@
     "prisma:db:pull": "prisma db pull"
   },
   "dependencies": {
+    "@netlify/blobs": "^11.1.0",
     "@prisma/client": "^6.5.0",
     "bcryptjs": "^3.0.2",
     "dotenv": "^16.4.7",
