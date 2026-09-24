@@ -13,6 +13,7 @@
     "test:coverage": "vitest run --coverage",
     "coverage:e2e": "c8 report --temp-directory coverage/e2e-raw --reports-dir coverage/e2e --reporter=json --reporter=text-summary --src src --include \"src/**/*.ts\" --exclude \"src/**/*.test.ts\" --exclude-after-remap",
     "test:watch": "vitest",
+    "contrato:generar": "tsx scripts/contrato-generar.ts",
     "postinstall": "prisma generate",
     "respaldo:respaldar": "tsx scripts/respaldo.ts respaldar",
     "respaldo:restaurar": "tsx scripts/respaldo.ts restaurar",
@@ -38,6 +39,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@asteasolutions/zod-to-openapi": "^7.3.4",
     "@types/express": "^5.0.1",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.13.10",
