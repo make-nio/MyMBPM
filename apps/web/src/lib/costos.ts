@@ -3,11 +3,11 @@
 
 const centavos = (valor: number) => Math.round(valor * 100) / 100;
 
-type LineaConCosto = { cantidad: string; costoUnitario: string };
+type LineaConCosto = { cantidad: string; costoUnitario?: string };
 
 // Ganancia de un pedido: su total menos el costo de cada linea, guardado al cargarla.
 export function calcularMargenPedido(total: string, lineas: LineaConCosto[]) {
-  const costo = centavos(lineas.reduce((suma, linea) => suma + Number(linea.costoUnitario) * Number(linea.cantidad), 0));
+  const costo = centavos(lineas.reduce((suma, linea) => suma + Number(linea.costoUnitario ?? 0) * Number(linea.cantidad), 0));
   const vendido = Number(total);
   const ganancia = centavos(vendido - costo);
 
@@ -16,7 +16,7 @@ export function calcularMargenPedido(total: string, lineas: LineaConCosto[]) {
     ganancia,
     // Porcentaje sobre lo vendido; sin venta no tiene sentido.
     porcentaje: vendido > 0 ? Math.round((ganancia / vendido) * 100) : null,
-    lineasSinCosto: lineas.filter((linea) => Number(linea.costoUnitario) === 0).length
+    lineasSinCosto: lineas.filter((linea) => Number(linea.costoUnitario ?? 0) === 0).length
   };
 }
 

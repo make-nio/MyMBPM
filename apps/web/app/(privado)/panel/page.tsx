@@ -91,6 +91,7 @@ export default function PanelPage() {
             />
           </div>
 
+          {resumen.ventasDelMes ? (
           <section aria-label="Este mes" className="tarjeta-seccion panel-mes">
             <p className="marca-pequena">Este mes</p>
             <dl className="panel-mes__cifras">
@@ -117,6 +118,7 @@ export default function PanelPage() {
                 : null}
             </p>
           </section>
+          ) : null}
 
           <div className="panel-secciones">
             <Seccion href="/pedidos" titulo="Para confirmar" vacio="No hay pedidos pendientes.">

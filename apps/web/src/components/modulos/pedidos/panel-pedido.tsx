@@ -10,6 +10,7 @@ import { TablaDatos } from "../../ui/tabla-datos";
 import { useModal } from "../../../hooks/use-modal";
 import { formatearCantidad, formatearEstado, formatearFecha, formatearMoneda } from "../../../lib/formato";
 import { calcularMargenPedido } from "../../../lib/costos";
+import { useUsuarioAutenticado } from "../../auth/contexto-sesion";
 import {
   actualizarDetallePedido,
   actualizarEstadoPedido,
@@ -45,6 +46,7 @@ function itemsDistintos(detalles: PedidoDetalle[]) {
 
 // Detalle de un pedido: lineas, confirmacion con su impacto en el stock y cambios de estado.
 export function PanelPedido({ idPedido, onCambio }: PanelPedidoProps) {
+  const { esAdministrador } = useUsuarioAutenticado();
   const modalLinea = useModal<PedidoDetalle>();
   const modalConfirmacion = useModal();
   const [pedido, setPedido] = useState<Pedido | null>(null);
@@ -171,7 +173,7 @@ export function PanelPedido({ idPedido, onCambio }: PanelPedidoProps) {
             <strong>{formatearEstado(pedido.estadoCobro)}</strong> · Total:{" "}
             <strong data-testid="total-pedido">{formatearMoneda(pedido.total)}</strong>
           </p>
-          {detalles.length > 0 ? (
+          {esAdministrador && detalles.length > 0 && detalles.every((detalle) => detalle.costoUnitario !== undefined) ? (
             <p className="texto-secundario texto-secundario--compacto">
               Costo: <strong data-testid="costo-pedido">{formatearMoneda(margen.costo)}</strong> · Ganancia:{" "}
               <strong data-testid="ganancia-pedido">{formatearMoneda(margen.ganancia)}</strong>

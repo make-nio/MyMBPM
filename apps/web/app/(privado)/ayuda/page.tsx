@@ -45,7 +45,7 @@ const guias: Paso[] = [
     ]
   },
   {
-    titulo: "Costos y ganancia",
+    titulo: "Costos y ganancia (administradores)",
     pasos: [
       "Carga el costo de cada insumo (por ejemplo, lo que pagaste el kilo de filamento) al editarlo, en \"Costo\".",
       "En la receta de un producto vas a ver cuanto cuesta fabricarlo. Si no coincide con su costo, toca \"Usar como costo\".",

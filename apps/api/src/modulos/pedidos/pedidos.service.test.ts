@@ -7,7 +7,7 @@ import { prisma } from "../../lib/prisma";
 import { stockService } from "../stock/stock.service";
 
 import { pedidosRepository } from "./pedidos.repository";
-import { pedidosService } from "./pedidos.service";
+import { ocultarCostos, pedidosService } from "./pedidos.service";
 
 const tx = { esTransaccion: true };
 
@@ -265,3 +265,37 @@ describe("pedidosService.confirmar", () => {
     expect(repo.actualizar).not.toHaveBeenCalled();
   });
 });
+
+describe("pedidosService.presentar (costos)", () => {
+  const conCostos = () =>
+    pedido({
+      detalles: [
+        {
+          ...detalle(1n, 2n, 3, 30),
+          costoUnitario: dec(4),
+          itemCatalogo: { idItemCatalogo: 2n, nombre: "Vela", precio: dec(10), costo: dec(4) }
+        }
+      ] as never
+    });
+
+  it("sin permiso saca el costo de cada linea y el del item, y deja precios y totales", () => {
+    const presentado = pedidosService.presentar(conCostos(), false)!;
+    const linea = presentado.detalles[0] as Record<string, unknown>;
+
+    expect(linea).not.toHaveProperty("costoUnitario");
+    expect(linea.itemCatalogo).not.toHaveProperty("costo");
+    expect(linea.itemCatalogo).toMatchObject({ nombre: "Vela" });
+    expect(linea).toHaveProperty("precioUnitario");
+  });
+
+  it("con permiso devuelve el pedido tal cual", () => {
+    const original = conCostos();
+
+    expect(pedidosService.presentar(original, true)).toBe(original);
+  });
+
+  it("tolera un pedido sin detalles cargados", () => {
+    expect(ocultarCostos(pedido({ detalles: undefined as never })).detalles).toEqual([]);
+  });
+});
+

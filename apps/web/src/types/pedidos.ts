@@ -35,7 +35,8 @@ export type PedidoDetalle = {
   nombreItemSnapshot: string;
   cantidad: string;
   precioUnitario: string;
-  costoUnitario: string;
+  // Solo llega para administradores (ver puedeVerCostos en la API).
+  costoUnitario?: string;
   subtotal: string;
   itemCatalogo?: ItemCatalogo;
 };
