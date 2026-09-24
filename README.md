@@ -134,7 +134,7 @@ resumen del job:
 
 El umbral es 70 % de lineas en cada area y es bloqueante en CI (`COBERTURA_ESTRICTA=1`).
 Aparte, `npm run test:coverage` falla si la cobertura de lineas **solo con vitest** baja del piso
-de cada workspace (`coverage.thresholds` en `vitest.config.ts`: 47 % api, 45 % web), el valor de
+de cada workspace (`coverage.thresholds` en `vitest.config.ts`: 49 % api, 56 % web), el valor de
 septiembre de 2026. Es un piso para que no retroceda; subirlo es otro trabajo.
 Para verlo en local: `E2E_COVERAGE=1 npm run build && E2E_COVERAGE=1 npm run test:e2e && npm run test:coverage && npm run coverage:report`.
 

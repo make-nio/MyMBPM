@@ -12,8 +12,8 @@ export default defineConfig({
       reportsDirectory: "coverage/unit",
       reporter: ["text-summary", "json"],
       // Piso de cobertura de lineas solo con vitest (sin E2E), para que no retroceda: el valor de
-      // septiembre de 2026 (47,4 %). El umbral bloqueante del CI es el 70 % combinado con E2E.
-      thresholds: { lines: 47 }
+      // septiembre de 2026 con Vitest 5 (49,4 %). El umbral bloqueante del CI es el 70 % combinado con E2E.
+      thresholds: { lines: 49 }
     }
   }
 });
