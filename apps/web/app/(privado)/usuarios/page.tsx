@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 
 import { useUsuarioAutenticado } from "../../../src/components/auth/contexto-sesion";
 import { FormularioRestablecerClave } from "../../../src/components/modulos/usuarios/formulario-restablecer-clave";
@@ -11,7 +11,9 @@ import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
 import { MensajeError } from "../../../src/components/ui/mensaje-error";
 import { MensajeExito } from "../../../src/components/ui/mensaje-exito";
 import { Modal } from "../../../src/components/ui/modal";
+import { PieListado } from "../../../src/components/ui/pie-listado";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
+import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
 import {
   actualizarUsuario,
@@ -48,34 +50,17 @@ export default function UsuariosPage() {
 function GestionUsuarios({ idUsuarioActual }: { idUsuarioActual: string }) {
   const modalUsuario = useModal<Usuario>();
   const modalClave = useModal<Usuario>();
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [errorAccion, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [filtroActivo, setFiltroActivo] = useState<FiltroActivo>("todos");
 
-  const recargar = useCallback(async () => {
-    setUsuarios(await listarUsuarios({ activo: filtroAParametro(filtroActivo) }));
-  }, [filtroActivo]);
-
-  useEffect(() => {
-    async function cargarUsuarios() {
-      setCargando(true);
-      setError(null);
-
-      try {
-        await recargar();
-      } catch (currentError) {
-        setError(
-          currentError instanceof Error ? currentError.message : "No fue posible cargar los usuarios"
-        );
-      } finally {
-        setCargando(false);
-      }
-    }
-
-    void cargarUsuarios();
-  }, [recargar]);
+  const listado = useListadoPaginado<Usuario>(
+    (limit, offset) => listarUsuarios({ activo: filtroAParametro(filtroActivo), limit, offset }),
+    [filtroActivo],
+    "No fue posible cargar los usuarios"
+  );
+  const { items: usuarios, cargando, recargar } = listado;
+  const error = listado.error ?? errorAccion;
 
   async function guardarUsuario(payload: UsuarioAltaPayload | UsuarioEdicionPayload) {
     if (modalUsuario.contexto) {
@@ -191,6 +176,15 @@ function GestionUsuarios({ idUsuarioActual }: { idUsuarioActual: string }) {
           ]}
           data={usuarios}
           keyExtractor={(usuario) => usuario.idUsuario}
+        />
+      ) : null}
+
+      {!cargando ? (
+        <PieListado
+          cantidad={usuarios.length}
+          cargandoMas={listado.cargandoMas}
+          hayMas={listado.hayMas}
+          onCargarMas={() => void listado.cargarMas()}
         />
       ) : null}
 

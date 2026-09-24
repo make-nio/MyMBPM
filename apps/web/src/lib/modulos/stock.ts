@@ -10,6 +10,9 @@ export function obtenerStockActual(idItemCatalogo: string, tipoStock: TipoStock 
 export function listarMovimientosStock(filtros: {
   idItemCatalogo: string;
   tipoStock?: TipoStock;
+  // Movimientos de un pedido u orden puntual.
+  origenMovimiento?: "MANUAL" | "PEDIDO" | "PRODUCCION";
+  idReferenciaOrigen?: string;
   limit?: number;
   offset?: number;
 }) {
@@ -17,6 +20,8 @@ export function listarMovimientosStock(filtros: {
     `/api/stock/historial${buildQuery({
       idItemCatalogo: filtros.idItemCatalogo,
       tipoStock: filtros.tipoStock,
+      origenMovimiento: filtros.origenMovimiento,
+      idReferenciaOrigen: filtros.idReferenciaOrigen,
       limit: filtros.limit ?? 50,
       offset: filtros.offset ?? 0
     })}`

@@ -34,6 +34,8 @@ export type UltimoEstadoStock = {
 type ListarHistorialFiltros = {
   idItemCatalogo: bigint;
   tipoStock?: string;
+  origenMovimiento?: string;
+  idReferenciaOrigen?: bigint;
   limit: number;
   offset: number;
 };
@@ -63,7 +65,9 @@ export const stockRepository = {
     return prismaOrTx.estadoStock.findMany({
       where: {
         idItemCatalogo: filtros.idItemCatalogo,
-        tipoStock: filtros.tipoStock
+        tipoStock: filtros.tipoStock,
+        origenMovimiento: filtros.origenMovimiento,
+        idReferenciaOrigen: filtros.idReferenciaOrigen
       },
       include: {
         usuario: { select: usuarioDelMovimiento }

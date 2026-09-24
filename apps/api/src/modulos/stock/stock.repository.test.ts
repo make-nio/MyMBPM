@@ -15,6 +15,29 @@ describe("stockRepository.listarHistorial", () => {
   });
 });
 
+describe("stockRepository.listarHistorial (filtro por origen)", () => {
+  it("filtra por origen y referencia para ver los movimientos de un pedido u orden", async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const cliente = { estadoStock: { findMany } } as never;
+
+    await stockRepository.listarHistorial(cliente, {
+      idItemCatalogo: 3n,
+      tipoStock: "PRODUCTO",
+      origenMovimiento: "PEDIDO",
+      idReferenciaOrigen: 42n,
+      limit: 100,
+      offset: 0
+    });
+
+    expect(findMany.mock.calls[0][0].where).toEqual({
+      idItemCatalogo: 3n,
+      tipoStock: "PRODUCTO",
+      origenMovimiento: "PEDIDO",
+      idReferenciaOrigen: 42n
+    });
+  });
+});
+
 describe("stockRepository.listarUltimosMovimientos", () => {
   it("tampoco devuelve datos sensibles del usuario", async () => {
     const findMany = vi.fn().mockResolvedValue([]);

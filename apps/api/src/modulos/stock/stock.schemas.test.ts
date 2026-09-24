@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { ErrorValidacion } from "../../compartido/errores/error-validacion";
 import { validar } from "../../compartido/validaciones/validar";
 
-import { crearAjusteStockSchema } from "./stock.schemas";
+import { crearAjusteStockSchema, historialStockQuerySchema } from "./stock.schemas";
 
 const ajuste = {
   idItemCatalogo: "1",
@@ -39,5 +39,21 @@ describe("crearAjusteStockSchema: motivo obligatorio", () => {
 
   it("sigue rechazando motivos de mas de 2000 caracteres", () => {
     expect(erroresDe({ ...ajuste, observaciones: "x".repeat(2001) })?.[0].path).toBe("observaciones");
+  });
+});
+
+describe("historialStockQuerySchema", () => {
+  it("acepta origen y referencia para filtrar los movimientos de un pedido u orden", () => {
+    const query = historialStockQuerySchema.parse({
+      idItemCatalogo: "3",
+      origenMovimiento: "PRODUCCION",
+      idReferenciaOrigen: "7"
+    });
+
+    expect(query).toMatchObject({ idItemCatalogo: 3n, origenMovimiento: "PRODUCCION", idReferenciaOrigen: 7n });
+  });
+
+  it("rechaza un origen que no existe", () => {
+    expect(historialStockQuerySchema.safeParse({ idItemCatalogo: "3", origenMovimiento: "OTRO" }).success).toBe(false);
   });
 });

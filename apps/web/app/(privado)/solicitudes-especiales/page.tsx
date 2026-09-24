@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { FormularioSolicitudEspecial } from "../../../src/components/modulos/solicitudes-especiales/formulario-solicitud-especial";
 import { EncabezadoModulo } from "../../../src/components/ui/encabezado-modulo";
@@ -8,16 +8,16 @@ import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
 import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
 import { MensajeError } from "../../../src/components/ui/mensaje-error";
 import { Modal } from "../../../src/components/ui/modal";
+import { PieListado } from "../../../src/components/ui/pie-listado";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
+import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
-import { listarClientes } from "../../../src/lib/modulos/clientes";
 import {
   actualizarSolicitudEspecial,
   cambiarEstadoSolicitudEspecial,
   crearSolicitudEspecial,
   listarSolicitudesEspeciales
 } from "../../../src/lib/modulos/solicitudes-especiales";
-import { Cliente } from "../../../src/types/clientes";
 import {
   ESTADOS_SOLICITUD,
   EstadoSolicitud,
@@ -31,49 +31,20 @@ type ContextoSolicitudModal =
 
 export default function SolicitudesEspecialesPage() {
   const modalSolicitud = useModal<ContextoSolicitudModal>();
-  const [solicitudes, setSolicitudes] = useState<SolicitudEspecial[]>([]);
-  const [clientes, setClientes] = useState<Cliente[]>([]);
   const [estadoFiltro, setEstadoFiltro] = useState<string>("todos");
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [estadoTemporal, setEstadoTemporal] = useState<EstadoSolicitud>("PENDIENTE");
 
-  useEffect(() => {
-    void listarClientes({ limit: 100 }).then(setClientes).catch(() => undefined);
-  }, []);
-
-  useEffect(() => {
-    async function cargarSolicitudes() {
-      setCargando(true);
-      setError(null);
-
-      try {
-        const data = await listarSolicitudesEspeciales({
-          estadoSolicitud:
-            estadoFiltro === "todos" ? undefined : (estadoFiltro as EstadoSolicitud)
-        });
-        setSolicitudes(data);
-      } catch (currentError) {
-        setError(
-          currentError instanceof Error
-            ? currentError.message
-            : "No fue posible cargar las solicitudes"
-        );
-      } finally {
-        setCargando(false);
-      }
-    }
-
-    void cargarSolicitudes();
-  }, [estadoFiltro]);
-
-  async function recargar() {
-    const data = await listarSolicitudesEspeciales({
-      estadoSolicitud:
-        estadoFiltro === "todos" ? undefined : (estadoFiltro as EstadoSolicitud)
-    });
-    setSolicitudes(data);
-  }
+  const listado = useListadoPaginado<SolicitudEspecial>(
+    (limit, offset) =>
+      listarSolicitudesEspeciales({
+        estadoSolicitud: estadoFiltro === "todos" ? undefined : (estadoFiltro as EstadoSolicitud),
+        limit,
+        offset
+      }),
+    [estadoFiltro],
+    "No fue posible cargar las solicitudes"
+  );
+  const { items: solicitudes, cargando, error, recargar } = listado;
 
   async function guardarSolicitud(payload: Parameters<typeof crearSolicitudEspecial>[0]) {
     const contexto = modalSolicitud.contexto;
@@ -188,6 +159,15 @@ export default function SolicitudesEspecialesPage() {
         />
       ) : null}
 
+      {!cargando ? (
+        <PieListado
+          cantidad={solicitudes.length}
+          cargandoMas={listado.cargandoMas}
+          hayMas={listado.hayMas}
+          onCargarMas={() => void listado.cargarMas()}
+        />
+      ) : null}
+
       <Modal
         abierto={
           modalSolicitud.abierto &&
@@ -203,7 +183,6 @@ export default function SolicitudesEspecialesPage() {
         }
       >
         <FormularioSolicitudEspecial
-          clientes={clientes}
           onCancel={modalSolicitud.cerrar}
           onSubmit={guardarSolicitud}
           solicitud={

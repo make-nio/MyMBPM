@@ -2,19 +2,19 @@
 
 import { FormEvent, useState } from "react";
 
-import { Cliente } from "../../../types/clientes";
+import { buscarOpcionesClientes, nombreCliente } from "../../../lib/modulos/clientes";
 import {
   ESTADOS_SOLICITUD,
   SolicitudEspecial
 } from "../../../types/solicitudes-especiales";
 import { AccionesFormulario } from "../../formularios/acciones-formulario";
 import { CampoSelect } from "../../formularios/campo-select";
+import { CampoSelectBuscable } from "../../formularios/campo-select-buscable";
 import { CampoTextarea } from "../../formularios/campo-textarea";
 import { CampoTexto } from "../../formularios/campo-texto";
 import { MensajeError } from "../../ui/mensaje-error";
 
 type FormularioSolicitudEspecialProps = {
-  clientes: Cliente[];
   solicitud?: SolicitudEspecial | null;
   onCancel: () => void;
   onSubmit: (payload: {
@@ -29,7 +29,6 @@ type FormularioSolicitudEspecialProps = {
 };
 
 export function FormularioSolicitudEspecial({
-  clientes,
   solicitud,
   onCancel,
   onSubmit
@@ -75,17 +74,17 @@ export function FormularioSolicitudEspecial({
     <form className="formulario-modulo formulario-modulo--dos-columnas" onSubmit={handleSubmit}>
       {error ? <MensajeError mensaje={error} /> : null}
 
-      <CampoSelect
+      <CampoSelectBuscable
+        buscar={buscarOpcionesClientes}
         id="solicitud-cliente"
         label="Cliente asociado"
         onChange={setIdCliente}
-        options={[
-          { label: "Sin cliente asociado", value: "" },
-          ...clientes.map((cliente) => ({
-            label: `${cliente.nombre} ${cliente.apellido ?? ""}`.trim(),
-            value: cliente.idCliente
-          }))
-        ]}
+        opcionInicial={
+          solicitud?.cliente
+            ? { value: solicitud.cliente.idCliente, label: nombreCliente(solicitud.cliente) }
+            : null
+        }
+        textoVacio="Sin cliente asociado"
         value={idCliente}
       />
       <CampoTexto

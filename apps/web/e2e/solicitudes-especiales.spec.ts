@@ -10,7 +10,7 @@ test("alta de una solicitud especial y cambio de estado", async ({ page }) => {
   await page.getByRole("button", { name: "Nueva solicitud" }).click();
 
   const modal = page.getByRole("dialog", { name: "Nueva solicitud especial" });
-  await modal.getByLabel("Cliente asociado").selectOption({ label: cliente });
+  await modal.getByLabel("Cliente asociado", { exact: true }).selectOption({ label: cliente });
   await modal.getByLabel("Nombre solicitante").fill(solicitante);
   await modal.getByLabel("Descripcion").fill("Figura a medida de 20 cm");
   await modal.getByRole("button", { name: "Guardar solicitud" }).click();

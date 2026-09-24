@@ -22,7 +22,6 @@ import {
 import { listarMovimientosStock, obtenerStockActual } from "../../../lib/modulos/stock";
 import { calcularConsumosPrevistos } from "../../../lib/produccion/consumo-insumos";
 import { calcularImpactoStock, hayStockInsuficiente, ImpactoStockItem } from "../../../lib/stock/impacto-stock";
-import { ItemCatalogo } from "../../../types/items-catalogo";
 import { OrdenProduccion, OrdenProduccionDetalle } from "../../../types/produccion";
 import { MovimientoStock, TipoStock } from "../../../types/stock";
 import { TablaImpactoStock } from "../stock/tabla-impacto-stock";
@@ -30,7 +29,6 @@ import { FormularioDetalleOrden } from "./formulario-detalle-orden";
 
 type PanelOrdenProps = {
   idOrdenProduccion: string;
-  productos: ItemCatalogo[];
   onCambio: () => void;
 };
 
@@ -43,19 +41,26 @@ async function stockPorItem(ids: string[], tipoStock: TipoStock) {
 }
 
 // Movimientos que registro esta orden (egresos de insumos al iniciar, ingresos de productos al
-// finalizar), leidos del historial de ESTADO_STOCK.
+// finalizar), leidos del historial de ESTADO_STOCK filtrado por la orden.
 async function movimientosDeOrden(idOrden: string, items: Map<string, string>, tipoStock: TipoStock) {
   const historiales = await Promise.all(
-    [...items.keys()].map((id) => listarMovimientosStock({ idItemCatalogo: id, tipoStock, limit: 100 }))
+    [...items.keys()].map((id) =>
+      listarMovimientosStock({
+        idItemCatalogo: id,
+        tipoStock,
+        origenMovimiento: "PRODUCCION",
+        idReferenciaOrigen: idOrden,
+        limit: 100
+      })
+    )
   );
 
   return historiales
     .flat()
-    .filter((movimiento) => movimiento.origenMovimiento === "PRODUCCION" && movimiento.idReferenciaOrigen === idOrden)
     .map((movimiento) => ({ ...movimiento, nombreItem: items.get(movimiento.idItemCatalogo) ?? "-" }));
 }
 
-export function PanelOrden({ idOrdenProduccion, productos, onCambio }: PanelOrdenProps) {
+export function PanelOrden({ idOrdenProduccion, onCambio }: PanelOrdenProps) {
   const modalDetalle = useModal<OrdenProduccionDetalle>();
   const modalAccion = useModal<Accion>();
   const [orden, setOrden] = useState<OrdenProduccion | null>(null);
@@ -349,7 +354,6 @@ export function PanelOrden({ idOrdenProduccion, productos, onCambio }: PanelOrde
           detalle={modalDetalle.contexto}
           onCancel={modalDetalle.cerrar}
           onSubmit={guardarDetalle}
-          productos={productos}
         />
       </Modal>
 

@@ -20,7 +20,7 @@ async function nuevaOrden(page: Page, observaciones: string) {
 async function agregarProducto(page: Page, producto: string, cantidad: string) {
   await page.getByRole("button", { name: "Agregar producto" }).click();
   const modal = page.getByRole("dialog", { name: "Agregar producto" });
-  await modal.getByLabel("Producto a fabricar").selectOption({ label: producto });
+  await modal.getByLabel("Producto a fabricar", { exact: true }).selectOption({ label: producto });
   await modal.getByLabel("Cantidad").fill(cantidad);
   await modal.getByRole("button", { name: "Guardar producto" }).click();
   await expect(modal).toBeHidden();

@@ -4,6 +4,8 @@
 
 - `GET /api/stock/actual?idItemCatalogo=1&tipoStock=PRODUCTO`
 - `GET /api/stock/historial?idItemCatalogo=1&tipoStock=PRODUCTO&limit=20&offset=0`
+  - Opcionales `origenMovimiento` (`MANUAL`, `PEDIDO`, `PRODUCCION`) e `idReferenciaOrigen`: los
+    movimientos de un pedido u orden puntual, sin depender de los ultimos N del item.
 - `POST /api/stock/ajustes` (`observaciones` obligatorio: el motivo del ajuste)
 
 ## Pedidos

@@ -60,7 +60,14 @@ export const stockService = {
 
   obtenerHistorial(
     prismaOrTx: PrismaOrTx,
-    filtros: { idItemCatalogo: bigint; tipoStock?: TipoStock; limit: number; offset: number }
+    filtros: {
+      idItemCatalogo: bigint;
+      tipoStock?: TipoStock;
+      origenMovimiento?: OrigenMovimiento;
+      idReferenciaOrigen?: bigint;
+      limit: number;
+      offset: number;
+    }
   ) {
     return stockRepository.listarHistorial(prismaOrTx, filtros);
   },
