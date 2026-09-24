@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 
+import { prisma } from "../../lib/prisma";
+
 import { stockRepository } from "./stock.repository";
 import { stockService } from "./stock.service";
 
@@ -14,7 +16,15 @@ vi.mock("./stock.repository", () => ({
     buscarMovimientoDuplicado: vi.fn(),
     crearMovimiento: vi.fn(),
     obtenerItem: vi.fn(),
-    listarItemsParaBajoStock: vi.fn()
+    listarItemsParaExistencias: vi.fn(),
+    listarUltimosEstados: vi.fn(),
+    bloquearItem: vi.fn()
+  }
+}));
+
+vi.mock("../../lib/prisma", () => ({
+  prisma: {
+    $transaction: vi.fn()
   }
 }));
 
@@ -251,18 +261,90 @@ describe("stockService.registrarReverso", () => {
   });
 });
 
-describe("stockService.obtenerBajoStock", () => {
-  it("incluye items en o por debajo del minimo y trata sin movimientos como 0", async () => {
-    repo.listarItemsParaBajoStock.mockResolvedValue([
-      { idItemCatalogo: 1n, nombre: "Bajo", tipoItem: "PRODUCTO", stockMinimo: 5, categoria: {}, estadosStock: [{ stockActual: dec(2) }] },
-      { idItemCatalogo: 2n, nombre: "Justo", tipoItem: "PRODUCTO", stockMinimo: 5, categoria: {}, estadosStock: [{ stockActual: dec(5) }] },
-      { idItemCatalogo: 3n, nombre: "Sobra", tipoItem: "PRODUCTO", stockMinimo: 5, categoria: {}, estadosStock: [{ stockActual: dec(6) }] },
-      { idItemCatalogo: 4n, nombre: "Nuevo", tipoItem: "PRODUCTO", stockMinimo: 1, categoria: {}, estadosStock: [] }
-    ] as never);
+describe("stockService.obtenerExistencias y obtenerBajoStock", () => {
+  const item = (idItemCatalogo: bigint, nombre: string, tipoItem: "PRODUCTO" | "INSUMO", stockMinimo: number) =>
+    ({ idItemCatalogo, nombre, tipoItem, stockMinimo, activo: true, categoria: { nombre: "Cat" } }) as never;
+  const estado = (idItemCatalogo: bigint, tipoStock: string, stockActual: number) => ({
+    idItemCatalogo,
+    tipoStock,
+    stockActual: dec(stockActual),
+    fechaAlta: new Date("2026-09-24T00:00:00Z")
+  });
 
-    const items = await stockService.obtenerBajoStock(tx, { limit: 20, offset: 0 });
+  beforeEach(() => {
+    repo.listarItemsParaExistencias.mockResolvedValue([
+      item(1n, "Vela", "PRODUCTO", 5),
+      item(2n, "Cera", "INSUMO", 3),
+      item(3n, "Maceta", "PRODUCTO", 0),
+      item(4n, "Nuevo", "PRODUCTO", 1)
+    ]);
+    repo.listarUltimosEstados.mockResolvedValue([
+      estado(1n, "PRODUCTO", 2),
+      // Un insumo se mide contra su stock de INSUMO, no de PRODUCTO.
+      estado(2n, "INSUMO", 10),
+      estado(2n, "PRODUCTO", 0),
+      estado(3n, "PRODUCTO", 0)
+    ]);
+  });
 
-    expect(items.map((item) => item.nombre)).toEqual(["Bajo", "Justo", "Nuevo"]);
-    expect(items[2].stockActual.toString()).toBe("0");
+  it("toma el stock del tipo que corresponde a cada item y 0 si no tiene movimientos", async () => {
+    const existencias = await stockService.obtenerExistencias(tx, {});
+
+    expect(existencias.map((e) => [e.nombre, e.tipoStock, e.stockActual.toString(), e.bajoMinimo])).toEqual([
+      ["Vela", "PRODUCTO", "2", true],
+      ["Cera", "INSUMO", "10", false],
+      ["Maceta", "PRODUCTO", "0", false],
+      ["Nuevo", "PRODUCTO", "0", true]
+    ]);
+    expect(repo.listarUltimosEstados).toHaveBeenCalledWith(tx, [1n, 2n, 3n, 4n]);
+  });
+
+  it("bajo stock no marca a un insumo con stock suficiente (antes se media contra PRODUCTO)", async () => {
+    const bajos = await stockService.obtenerBajoStock(tx, { limit: 20, offset: 0 });
+
+    expect(bajos.map((e) => e.nombre)).toEqual(["Vela", "Nuevo"]);
+  });
+
+  it("pagina despues de filtrar", async () => {
+    const segundaPagina = await stockService.obtenerBajoStock(tx, { limit: 1, offset: 1 });
+
+    expect(segundaPagina.map((e) => e.nombre)).toEqual(["Nuevo"]);
+  });
+});
+
+describe("stockService: bloqueo y transaccion", () => {
+  it("bloquea el item y tipo de stock antes de leer el stock anterior", async () => {
+    await stockService.registrarEgreso(tx, {
+      idItemCatalogo: 7n,
+      tipoStock: "INSUMO",
+      tipoMovimiento: "AJUSTE_NEGATIVO",
+      cantidad: 0,
+      origenMovimiento: "MANUAL"
+    });
+
+    expect(repo.bloquearItem).toHaveBeenCalledWith(tx, 7n, "INSUMO");
+    expect(repo.bloquearItem.mock.invocationCallOrder[0]).toBeLessThan(
+      repo.obtenerUltimoEstado.mock.invocationCallOrder[0]
+    );
+  });
+
+  it("el ajuste manual corre dentro de una transaccion", async () => {
+    const transaccion = { esTransaccion: true };
+    vi.mocked(prisma.$transaction).mockImplementation((async (callback: (client: unknown) => unknown) =>
+      callback(transaccion)) as never);
+
+    await stockService.crearAjusteManual({
+      idItemCatalogo: 1n,
+      idUsuario: 3n,
+      tipoStock: "PRODUCTO",
+      tipoMovimiento: "AJUSTE_POSITIVO",
+      cantidad: 2
+    });
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(repo.crearMovimiento).toHaveBeenCalledWith(
+      transaccion,
+      expect.objectContaining({ idUsuario: 3n, origenMovimiento: "MANUAL", tipoMovimiento: "AJUSTE_POSITIVO" })
+    );
   });
 });

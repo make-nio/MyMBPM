@@ -24,6 +24,13 @@ type CrearMovimientoInput = {
   observaciones?: string;
 };
 
+export type UltimoEstadoStock = {
+  idItemCatalogo: bigint;
+  tipoStock: string;
+  stockActual: Prisma.Decimal;
+  fechaAlta: Date;
+};
+
 type ListarHistorialFiltros = {
   idItemCatalogo: bigint;
   tipoStock?: string;
@@ -100,31 +107,43 @@ export const stockRepository = {
     });
   },
 
-  listarItemsParaBajoStock(prismaOrTx: PrismaOrTx, filtros: { activo?: boolean; limit: number; offset: number }) {
+  listarItemsParaExistencias(prismaOrTx: PrismaOrTx, filtros: { tipoItem?: string; activo?: boolean }) {
     return prismaOrTx.itemCatalogo.findMany({
       where: {
-        stockMinimo: {
-          gt: 0
-        },
+        tipoItem: filtros.tipoItem,
         activo: filtros.activo
       },
       include: {
-        categoria: true,
-        estadosStock: {
-          where: {
-            tipoStock: "PRODUCTO"
-          },
-          orderBy: {
-            idEstadoStock: "desc"
-          },
-          take: 1
-        }
+        categoria: true
       },
-      orderBy: {
-        idItemCatalogo: "desc"
-      },
-      skip: filtros.offset,
-      take: filtros.limit
+      orderBy: [{ tipoItem: "asc" }, { nombre: "asc" }]
     });
+  },
+
+  // Ultimo ESTADO_STOCK por item y tipo de stock (el stock vigente), en una sola consulta.
+  // DISTINCT ON es de PostgreSQL; usa el indice por ID_ITEM_CATALOGO.
+  listarUltimosEstados(prismaOrTx: PrismaOrTx, idsItemCatalogo: bigint[]) {
+    if (idsItemCatalogo.length === 0) {
+      return Promise.resolve([] as UltimoEstadoStock[]);
+    }
+
+    return prismaOrTx.$queryRaw<UltimoEstadoStock[]>`
+      SELECT DISTINCT ON ("ID_ITEM_CATALOGO", "TIPO_STOCK")
+        "ID_ITEM_CATALOGO" AS "idItemCatalogo",
+        "TIPO_STOCK" AS "tipoStock",
+        "STOCK_ACTUAL" AS "stockActual",
+        "FECHA_ALTA" AS "fechaAlta"
+      FROM "ESTADO_STOCK"
+      WHERE "ID_ITEM_CATALOGO" IN (${Prisma.join(idsItemCatalogo)})
+      ORDER BY "ID_ITEM_CATALOGO", "TIPO_STOCK", "ID_ESTADO_STOCK" DESC
+    `;
+  },
+
+  // Serializa los movimientos de un mismo item y tipo de stock hasta el fin de la transaccion.
+  // Sin esto, dos operaciones concurrentes leen el mismo stock anterior y se pisan (o egresan
+  // stock que no hay). Solo tiene efecto dentro de una transaccion.
+  async bloquearItem(prismaOrTx: PrismaOrTx, idItemCatalogo: bigint, tipoStock: string) {
+    const clave = `stock:${tipoStock}:${idItemCatalogo.toString()}`;
+    await prismaOrTx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${clave}, 0))`;
   }
 };

@@ -23,3 +23,18 @@ export type StockActual = {
   stockActual: string;
   ultimoMovimiento: MovimientoStock | null;
 };
+
+export type Existencia = {
+  idItemCatalogo: string;
+  nombre: string;
+  tipoItem: TipoStock;
+  tipoStock: TipoStock;
+  activo: boolean;
+  categoria?: { nombre: string } | null;
+  stockMinimo: number;
+  stockActual: string;
+  bajoMinimo: boolean;
+  fechaUltimoMovimiento: string | null;
+};
+
+export type TipoAjuste = "AJUSTE_POSITIVO" | "AJUSTE_NEGATIVO";

@@ -25,21 +25,31 @@ El modelo Prisma agrega:
 
 Ese indice mejora busqueda y consistencia operativa, pero no impone unicidad.
 
-## Limitacion actual
+## Concurrencia: lock por item
 
-Hoy no existe una restriccion `UNIQUE` en base que impida duplicados concurrentes.
+`registrarIngreso` y `registrarEgreso` toman `pg_advisory_xact_lock` sobre la clave
+`stock:<TIPO_STOCK>:<ID_ITEM_CATALOGO>` antes de verificar la idempotencia y de leer el stock
+anterior (`stockRepository.bloquearItem`). El lock se libera al terminar la transaccion. Asi:
 
-Entonces:
+- dos movimientos concurrentes del mismo item y tipo de stock se ejecutan de a uno: el segundo lee
+  el stock que dejo el primero (sin esto, en `READ COMMITTED` ambos leen el mismo stock anterior);
+- la verificacion de idempotencia y el insert tambien quedan serializados, asi que un reintento
+  concurrente no duplica el movimiento.
 
-- la idempotencia efectiva sigue siendo logica
-- ante concurrencia alta, dos transacciones podrian insertar el mismo movimiento si ambas pasan la validacion al mismo tiempo
+Medido contra PostgreSQL con dos procesos de API (como dos instancias de la function) y 10
+egresos concurrentes de 1 unidad sobre stock 1: sin el lock se aceptaban entre 7 y 9 egresos
+(ventas de stock inexistente, con el stock final en 0 igual); con el lock, exactamente 1.
 
-## Decision
+Requisitos para que funcione:
 
-Se mantiene este enfoque por ahora para no endurecer demasiado la base en esta etapa.
+- el movimiento tiene que correr dentro de una transaccion (`prisma.$transaction`); fuera de una,
+  el lock se libera al instante. Hoy todas las escrituras de stock cumplen esto;
+- las operaciones que mueven varios items (confirmar pedido, iniciar o finalizar produccion) los
+  procesan en orden de id (`ordenarPorItem`), para que dos transacciones no tomen los locks en
+  orden cruzado y PostgreSQL aborte una por deadlock.
 
-Si el sistema empieza a recibir operaciones concurrentes reales, el siguiente paso natural es evaluar:
+## Pendiente
 
-- indice unico parcial (en PostgreSQL: `CREATE UNIQUE INDEX ... WHERE "ORIGEN_MOVIMIENTO" <> 'MANUAL'`)
-- clave tecnica de idempotencia persistida
-- bloqueo transaccional mas estricto
+Sigue sin haber una restriccion `UNIQUE` en base. Si se quiere un respaldo independiente del
+codigo, el paso natural es un indice unico parcial
+(`CREATE UNIQUE INDEX ... WHERE "ORIGEN_MOVIMIENTO" <> 'MANUAL'`) en una migracion aditiva.

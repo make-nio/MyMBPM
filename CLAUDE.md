@@ -44,6 +44,9 @@ Vienen de `docs/arquitectura-backend.md`. Leelo entero antes de tocar el backend
 5. Las entidades críticas usan los enums de dominio (`src/compartido/dominio/enums.ts`).
 6. El stock tiene idempotencia (`docs/idempotencia-stock.md`): reintentar una operación no
    puede descontar dos veces.
+7. Cada movimiento toma un lock por ítem (`stockRepository.bloquearItem`) y tiene que correr en
+   transacción. Si una operación mueve varios ítems, procesalos con `ordenarPorItem` para no
+   provocar deadlocks.
 
 ## Comandos
 
@@ -111,8 +114,8 @@ La cobertura (umbral 50 % de líneas, backend y front) se publica en el resumen 
 - **Backend:** todos los módulos hechos (catálogo, clientes, pedidos, stock, producción,
   usuarios, autenticación, solicitudes especiales).
 - **Web:** ingreso, panel, y administración de categorías, ítems del catálogo, clientes,
-  solicitudes especiales, usuarios (sólo administradores), pedidos y producción (con el impacto
-  en stock antes y después de confirmar, iniciar o finalizar).
-- **Falta la web de stock.**
+  solicitudes especiales, usuarios (sólo administradores), pedidos, producción (con el impacto en
+  stock antes y después de confirmar, iniciar o finalizar) y stock (existencias, movimientos y
+  ajustes).
 - Hay pruebas de los services de stock, pedidos, producción y usuarios, E2E de las pantallas y
   CI en GitHub Actions.

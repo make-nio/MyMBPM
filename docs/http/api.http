@@ -124,6 +124,25 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/api/stock/bajo-stock?limit=20&offset=0
 Authorization: Bearer {{token}}
 
+### Existencias (stock vigente de cada item; filtros opcionales tipoItem y activo)
+# curl "http://localhost:3002/api/stock/existencias?activo=true" -H "Authorization: Bearer TU_TOKEN"
+GET {{baseUrl}}/api/stock/existencias?activo=true
+Authorization: Bearer {{token}}
+
+### Ajuste manual (el usuario sale del token; el origen es siempre MANUAL)
+# curl -X POST http://localhost:3002/api/stock/ajustes -H "Authorization: Bearer TU_TOKEN" -H "Content-Type: application/json" -d "{\"idItemCatalogo\":1,\"tipoStock\":\"INSUMO\",\"tipoMovimiento\":\"AJUSTE_POSITIVO\",\"cantidad\":5,\"observaciones\":\"Compra de filamento\"}"
+POST {{baseUrl}}/api/stock/ajustes
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "idItemCatalogo": 1,
+  "tipoStock": "INSUMO",
+  "tipoMovimiento": "AJUSTE_POSITIVO",
+  "cantidad": 5,
+  "observaciones": "Compra de filamento"
+}
+
 ### Pedidos
 # curl http://localhost:3002/api/pedidos -H "Authorization: Bearer TU_TOKEN"
 GET {{baseUrl}}/api/pedidos

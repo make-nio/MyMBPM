@@ -202,9 +202,12 @@ npm run prisma:migrate --workspace @myfirstproject/api -- --name <nombre>
 
 - `ESTADO_STOCK` es la unica fuente de verdad para stock.
 - Toda escritura de stock pasa por `apps/api/src/modulos/stock/stock.service.ts`.
-- `confirmar pedido`, `iniciar produccion` y `finalizar produccion` corren con `prisma.$transaction(...)`.
+- `confirmar pedido`, `iniciar produccion`, `finalizar produccion` y los ajustes manuales corren con `prisma.$transaction(...)`.
+- Cada ingreso o egreso toma un lock por item y tipo de stock (`pg_advisory_xact_lock`) antes de leer el stock anterior: dos operaciones concurrentes sobre el mismo item se serializan. Las operaciones con varios items los bloquean en orden de id para no provocar deadlocks.
 - La validacion de stock se hace dentro de la misma transaccion donde se registra el egreso.
-- Los ajustes manuales solo aceptan `AJUSTE_POSITIVO` y `AJUSTE_NEGATIVO`.
+- Los ajustes manuales solo aceptan `AJUSTE_POSITIVO` y `AJUSTE_NEGATIVO`; el usuario sale de la sesion y el origen es siempre `MANUAL`.
+- Los movimientos de pedidos y produccion quedan a nombre del usuario de la sesion.
+- `GET /api/stock/existencias` devuelve el stock vigente de cada item: los productos contra su stock de `PRODUCTO` y los insumos contra el de `INSUMO`.
 
 ### Politica actual de idempotencia
 
@@ -217,8 +220,7 @@ npm run prisma:migrate --workspace @myfirstproject/api -- --name <nombre>
   - `TIPO_MOVIMIENTO`
 - El schema y la migracion agregan un indice para apoyar estas consultas:
   - `IX_ESTADO_STOCK_IDEMPOTENCIA`
-- Importante: ese indice no es `UNIQUE`, asi que hoy no bloquea duplicados concurrentes a nivel base.
-- En esta etapa, la proteccion real sigue siendo logica de servicio; ante concurrencia fuerte todavia existe riesgo de duplicado.
+- Ese indice no es `UNIQUE`. La proteccion contra duplicados concurrentes la da el lock por item: la verificacion de idempotencia y el insert quedan serializados para el mismo item y tipo de stock (ver `docs/idempotencia-stock.md`).
 
 ## Notas PostgreSQL
 
