@@ -3,7 +3,7 @@ import { z } from "zod";
 import { diaArgentinaAFecha, sumarDias } from "../dominio/fecha-argentina";
 
 // Un dia ("2026-09-30") como las 00:00 de ese dia en Argentina: el comienzo de un rango.
-export const diaDesdeSchema = z.string().transform((dia, ctx) => {
+export const diaDesdeSchema = z.string().max(10).transform((dia, ctx) => {
   const fecha = diaArgentinaAFecha(dia);
 
   if (!fecha) {

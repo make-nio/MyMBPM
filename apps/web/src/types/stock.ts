@@ -1,40 +1,9 @@
-export type TipoStock = "PRODUCTO" | "INSUMO";
+import type { CuerpoDe, RespuestaDe } from "@contrato";
 
-export type MovimientoStock = {
-  idEstadoStock: string;
-  idItemCatalogo: string;
-  idUsuario: string | null;
-  tipoStock: TipoStock;
-  stockActual: string;
-  stockAnterior: string;
-  tipoMovimiento: string;
-  cantidadMovimiento: string;
-  origenMovimiento: string;
-  idReferenciaOrigen: string | null;
-  idReferenciaDetalle: string | null;
-  observaciones: string | null;
-  fechaAlta: string;
-  usuario?: { nombre: string; apellido: string } | null;
-};
+// Tipos sacados del contrato de la API (apps/api/src/contrato): no se escriben a mano.
+export type MovimientoStock = RespuestaDe<"get /api/stock/historial">[number];
+export type StockActual = RespuestaDe<"get /api/stock/actual">;
+export type Existencia = RespuestaDe<"get /api/stock/existencias">[number];
 
-export type StockActual = {
-  idItemCatalogo: string;
-  tipoStock: TipoStock;
-  stockActual: string;
-  ultimoMovimiento: MovimientoStock | null;
-};
-
-export type Existencia = {
-  idItemCatalogo: string;
-  nombre: string;
-  tipoItem: TipoStock;
-  tipoStock: TipoStock;
-  activo: boolean;
-  categoria?: { nombre: string } | null;
-  stockMinimo: number;
-  stockActual: string;
-  bajoMinimo: boolean;
-  fechaUltimoMovimiento: string | null;
-};
-
-export type TipoAjuste = "AJUSTE_POSITIVO" | "AJUSTE_NEGATIVO";
+export type TipoStock = MovimientoStock["tipoStock"];
+export type TipoAjuste = CuerpoDe<"post /api/stock/ajustes">["tipoMovimiento"];

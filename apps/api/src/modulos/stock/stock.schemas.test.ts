@@ -59,8 +59,9 @@ describe("historialStockQuerySchema", () => {
 });
 
 describe("existenciasQuerySchema", () => {
-  it("sin limit no pagina (el contrato anterior sigue igual)", () => {
-    expect(existenciasQuerySchema.parse({ activo: "true" })).toEqual({ activo: true, offset: 0 });
+  it("sin limit devuelve una pagina de 100, como el resto de los listados", () => {
+    expect(existenciasQuerySchema.parse({ activo: "true" })).toEqual({ activo: true, limit: 100, offset: 0 });
+    expect(() => existenciasQuerySchema.parse({ limit: "101" })).toThrow();
   });
 
   it("acepta busqueda, bajo minimo y pagina, con el tope de 100 de la API", () => {

@@ -1,5 +1,5 @@
-import { apiFetch, buildQuery } from "../api";
-import { Cliente, ClientePayload, ResumenCliente } from "../../types/clientes";
+import { pedirApi } from "../api";
+import { ClientePayload } from "../../types/clientes";
 
 type FiltrosClientes = {
   busqueda?: string;
@@ -9,39 +9,30 @@ type FiltrosClientes = {
 };
 
 export function listarClientes(filtros: FiltrosClientes = {}) {
-  return apiFetch<{ ok: true; data: Cliente[] }>(
-    `/api/clientes${buildQuery({
+  return pedirApi("get /api/clientes", {
+    consulta: {
       busqueda: filtros.busqueda,
       activo: filtros.activo,
       limit: filtros.limit ?? 100,
       offset: filtros.offset ?? 0
-    })}`
-  ).then((response) => response.data);
+    }
+  });
 }
 
 export function obtenerCliente(idCliente: string) {
-  return apiFetch<{ ok: true; data: Cliente }>(`/api/clientes/${idCliente}`).then((response) => response.data);
+  return pedirApi("get /api/clientes/{id}", { params: { id: idCliente } });
 }
 
 export function crearCliente(payload: ClientePayload) {
-  return apiFetch<{ ok: true; data: Cliente }>("/api/clientes", {
-    method: "POST",
-    body: JSON.stringify(payload)
-  }).then((response) => response.data);
+  return pedirApi("post /api/clientes", { cuerpo: payload });
 }
 
 export function actualizarCliente(idCliente: string, payload: Partial<ClientePayload>) {
-  return apiFetch<{ ok: true; data: Cliente }>(`/api/clientes/${idCliente}`, {
-    method: "PATCH",
-    body: JSON.stringify(payload)
-  }).then((response) => response.data);
+  return pedirApi("patch /api/clientes/{id}", { params: { id: idCliente }, cuerpo: payload });
 }
 
 export function cambiarEstadoCliente(idCliente: string, activo: boolean) {
-  return apiFetch<{ ok: true; data: Cliente }>(`/api/clientes/${idCliente}/estado`, {
-    method: "PATCH",
-    body: JSON.stringify({ activo })
-  }).then((response) => response.data);
+  return pedirApi("patch /api/clientes/{id}/estado", { params: { id: idCliente }, cuerpo: { activo } });
 }
 
 export function nombreCliente(cliente: { nombre: string; apellido?: string | null }) {
@@ -57,7 +48,5 @@ export function buscarOpcionesClientes(texto: string, limit: number) {
 
 // Total comprado y cantidad de pedidos (criterio "vendido"), para la ficha del cliente.
 export function obtenerResumenCliente(idCliente: string) {
-  return apiFetch<{ ok: true; data: ResumenCliente }>(`/api/clientes/${idCliente}/resumen`).then(
-    (response) => response.data
-  );
+  return pedirApi("get /api/clientes/{id}/resumen", { params: { id: idCliente } });
 }

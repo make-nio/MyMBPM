@@ -88,6 +88,17 @@ describe("produccionService.agregarDetalle", () => {
     expect(repo.agregarDetalle).not.toHaveBeenCalled();
   });
 
+  it("rechaza el producto 101: una orden tiene como mucho 100", async () => {
+    const detalles = Array.from({ length: 100 }, (_, i) => detalle(BigInt(i + 1), 5n, 1));
+    repo.obtenerPorId.mockResolvedValue(orden({ detalles } as never));
+
+    await expect(produccionService.agregarDetalle(1n, { idItemCatalogoProducto: 5n, cantidad: 1 })).rejects.toMatchObject({
+      statusCode: 409,
+      message: expect.stringContaining("como mucho 100 productos")
+    });
+    expect(repo.agregarDetalle).not.toHaveBeenCalled();
+  });
+
   it("solo permite agregar detalles a ordenes pendientes", async () => {
     repo.obtenerPorId.mockResolvedValue(orden({ estadoProduccion: "EN_PROCESO" }));
 

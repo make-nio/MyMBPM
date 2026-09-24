@@ -6,6 +6,7 @@ import { ErrorAutenticacion } from "../../compartido/errores/error-autenticacion
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 import { ErrorProhibido } from "../../compartido/errores/error-prohibido";
+import { ErrorValidacion } from "../../compartido/errores/error-validacion";
 import { prisma } from "../../lib/prisma";
 
 import { usuariosRepository } from "./usuarios.repository";
@@ -65,6 +66,24 @@ export const usuariosService = {
     }
 
     return usuario;
+  },
+
+  // Rechaza el alta antes de validar el cuerpo: sin permiso responde 401/403 y no deja sondear la
+  // validacion. crear() lo vuelve a comprobar dentro de la transaccion (altas concurrentes).
+  async verificarPermisoAlta(usuarioSolicitante?: { idUsuario: bigint; esAdministrador: boolean }) {
+    if (usuarioSolicitante?.esAdministrador) {
+      return;
+    }
+
+    if ((await usuariosRepository.contarUsuarios(prisma)) === 0) {
+      return;
+    }
+
+    if (!usuarioSolicitante) {
+      throw new ErrorAutenticacion("Debe autenticarse para crear nuevos usuarios");
+    }
+
+    throw new ErrorProhibido("Solo un administrador puede crear usuarios");
   },
 
   async crear(
@@ -187,10 +206,10 @@ export const usuariosService = {
     data: { passwordActual?: string; passwordNueva: string },
     usuarioSolicitante: { idUsuario: bigint }
   ) {
+    // 403 y no 401: la sesion es valida, lo que no puede es tocar la clave de otro usuario (para eso
+    // un administrador usa "Restablecer clave").
     if (usuarioSolicitante.idUsuario !== idUsuario) {
-      throw new ErrorAutenticacion(
-        "Solo puede cambiar la contraseña del usuario autenticado"
-      );
+      throw new ErrorProhibido("Solo podes cambiar tu propia clave");
     }
 
     const usuario = await usuariosRepository.obtenerPorIdConClave(prisma, idUsuario);
@@ -199,14 +218,19 @@ export const usuariosService = {
       throw new ErrorNoEncontrado("Usuario no encontrado");
     }
 
+    // 400 y no 401: un 401 le dice a la web que la sesion vencio y la cierra.
     if (!data.passwordActual) {
-      throw new ErrorAutenticacion("Debe informar la clave actual para cambiar la contraseña");
+      throw new ErrorValidacion("Falta la clave actual: escribila para poder cambiarla", [
+        { path: "passwordActual", message: "Falta la clave actual" }
+      ]);
     }
 
     const passwordValida = await bcrypt.compare(data.passwordActual, usuario.claveHash);
 
     if (!passwordValida) {
-      throw new ErrorAutenticacion("La clave actual es incorrecta");
+      throw new ErrorValidacion("La clave actual no es correcta: revisala y volve a intentar", [
+        { path: "passwordActual", message: "La clave actual no es correcta" }
+      ]);
     }
 
     const claveHash = await bcrypt.hash(data.passwordNueva, 10);

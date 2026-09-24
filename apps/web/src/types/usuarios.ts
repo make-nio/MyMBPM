@@ -1,29 +1,9 @@
-export type Usuario = {
-  idUsuario: string;
-  nombre: string;
-  apellido: string;
-  email: string;
-  usuario: string;
-  activo: boolean;
-  esAdministrador: boolean;
-  fechaAlta: string;
-  fechaModificacion: string;
-};
+import type { CuerpoDe, RespuestaDe } from "@contrato";
 
-export type UsuarioAltaPayload = {
-  nombre: string;
-  apellido: string;
-  email: string;
-  usuario: string;
-  password: string;
-  activo?: boolean;
-  esAdministrador?: boolean;
-};
+// Tipos sacados del contrato de la API (apps/api/src/contrato): no se escriben a mano.
+export type Usuario = RespuestaDe<"get /api/usuarios/{id}">;
 
-export type UsuarioEdicionPayload = Partial<{
-  nombre: string;
-  apellido: string;
-  email: string;
-  usuario: string;
-  esAdministrador: boolean;
-}>;
+export type UsuarioAltaPayload = CuerpoDe<"post /api/usuarios">;
+
+// El estado activo se cambia desde la tabla (PATCH /estado), no desde el formulario.
+export type UsuarioEdicionPayload = Omit<CuerpoDe<"patch /api/usuarios/{id}">, "activo">;

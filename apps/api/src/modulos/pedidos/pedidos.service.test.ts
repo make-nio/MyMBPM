@@ -138,6 +138,17 @@ describe("pedidosService.agregarDetalle", () => {
     expect(totales.total?.toString()).toBe("3021.5");
   });
 
+  it("rechaza la linea 101: un pedido tiene como mucho 100", async () => {
+    const lineas = Array.from({ length: 100 }, (_, i) => detalle(BigInt(i + 1), 2n, 1, 10));
+    repo.obtenerPorId.mockResolvedValue(pedido({ detalles: lineas }));
+
+    await expect(pedidosService.agregarDetalle(1n, { idItemCatalogo: 2n, cantidad: 1 })).rejects.toMatchObject({
+      statusCode: 409,
+      message: expect.stringContaining("como mucho 100 lineas")
+    });
+    expect(repo.agregarDetalle).not.toHaveBeenCalled();
+  });
+
   it("falla si el item no existe", async () => {
     repo.obtenerPorId.mockResolvedValue(pedido());
     repo.obtenerItemCatalogo.mockResolvedValue(null);
