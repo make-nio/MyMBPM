@@ -40,6 +40,14 @@ Filtros soportados en listado:
 ## Clientes
 
 - `GET /api/clientes`
+- `POST /api/clientes/importacion/previsualizar` y `POST /api/clientes/importacion` (solo
+  administradores; cuerpo hasta 2 MB, `{ filas: [...] }` de hasta 1000): el mismo circuito que la
+  importacion del catalogo. Filas como texto (`nombre` obligatorio, `apellido`, `documento`,
+  `telefono`, `email`, `instagram`, `domicilio`, `localidad`, `provincia`, `observaciones`,
+  `activo` Si/No); errores por fila y todo o nada (409 con las filas si alguna falla). Un cliente es
+  repetido, contra la base o dentro del archivo, si coincide el email (sin mayusculas), el
+  documento (solo letras y numeros) o nombre + apellido + telefono (solo digitos). Transaccion con
+  advisory lock, alta masiva y auditoria de cada alta.
 - `GET /api/clientes/:id`
 - `POST /api/clientes`
 - `PATCH /api/clientes/:id`

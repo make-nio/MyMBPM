@@ -42,7 +42,8 @@ export function generarSlug(texto: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-function texto(valor: string | undefined) {
+// Celda sin espacios de mas; undefined si esta vacia. Lo usan tambien otras importaciones.
+export function texto(valor: string | undefined) {
   const limpio = (valor ?? "").trim();
   return limpio === "" ? undefined : limpio;
 }
@@ -60,6 +61,15 @@ export function leerNumero(valor: string) {
 const TIPOS: Record<string, TipoItem> = { producto: "PRODUCTO", insumo: "INSUMO" };
 const SI = new Set(["si", "sí", "s", "true", "1", "activo", "x"]);
 const NO = new Set(["no", "n", "false", "0", "inactivo"]);
+
+// "Si"/"No" (y variantes) de una celda: undefined si esta vacia, null si no se entiende.
+export function leerSiNo(valor: string | undefined) {
+  const limpio = texto(valor)?.toLowerCase();
+  if (limpio === undefined) {
+    return undefined;
+  }
+  return SI.has(limpio) ? true : NO.has(limpio) ? false : null;
+}
 
 function validarLargo(errores: string[], campo: string, valor: string | undefined, maximo: number) {
   if (valor && valor.length > maximo) {
@@ -124,17 +134,11 @@ export function validarFilas(filas: FilaImportacion[], existentes: Existentes) {
       }
     }
 
-    const activoTexto = texto(fila.activo)?.toLowerCase();
-    let activo = true;
-    if (activoTexto !== undefined) {
-      if (SI.has(activoTexto)) {
-        activo = true;
-      } else if (NO.has(activoTexto)) {
-        activo = false;
-      } else {
-        errores.push(`Activo: "${fila.activo?.trim()}" tiene que ser Si o No`);
-      }
+    const activoLeido = leerSiNo(fila.activo);
+    if (activoLeido === null) {
+      errores.push(`Activo: "${fila.activo?.trim()}" tiene que ser Si o No`);
     }
+    const activo = activoLeido ?? true;
 
     const slug = nombre ? generarSlug(nombre) : "";
     if (nombre && !slug) {
