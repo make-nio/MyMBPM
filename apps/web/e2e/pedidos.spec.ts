@@ -40,6 +40,8 @@ test("pedido completo: items, impacto en stock, confirmacion y seguimiento", asy
   const panel = await nuevoPedido(page, cliente);
   await expect(panel.getByText("Pedido sin items")).toBeVisible();
   await expect(panel.getByRole("button", { name: "Confirmar pedido" })).toBeDisabled();
+  // Un pedido pendiente solo se confirma (descuenta stock) o se cancela: no pasa a preparacion.
+  await expect(panel.getByLabel("Estado del pedido").locator("option")).toHaveText(["Pendiente", "Cancelado"]);
 
   await agregarLinea(page, vela.nombre, "3");
   await panel.getByRole("row").filter({ hasText: vela.nombre }).first().getByRole("button", { name: "Editar" }).click();
@@ -82,6 +84,10 @@ test("pedido completo: items, impacto en stock, confirmacion y seguimiento", asy
 
   await panel.getByLabel("Estado del pedido").selectOption("CANCELADO");
   await expect(panel.getByText("no devuelve el stock descontado")).toBeVisible();
+  await panel.getByRole("button", { name: "Guardar estado" }).click();
+  await expect(panel.getByTestId("estado-pedido")).toHaveText("Cancelado");
+  // Cancelado es final.
+  await expect(panel.getByLabel("Estado del pedido")).toBeDisabled();
 });
 
 test("con stock insuficiente avisa y no deja confirmar", async ({ page }) => {

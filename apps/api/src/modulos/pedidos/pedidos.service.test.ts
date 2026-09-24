@@ -148,6 +148,47 @@ describe("pedidosService.actualizarDetalle", () => {
   });
 });
 
+describe("pedidosService.actualizarEstado (transiciones)", () => {
+  it.each([
+    ["PENDIENTE", "EN_PREPARACION"],
+    ["PENDIENTE", "ENTREGADO"],
+    ["CONFIRMADO", "PENDIENTE"],
+    ["EN_PREPARACION", "PENDIENTE"],
+    ["ENTREGADO", "CANCELADO"],
+    ["CANCELADO", "EN_PREPARACION"]
+  ] as const)("rechaza %s -> %s", async (actual, nuevo) => {
+    repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: actual }));
+
+    await expect(pedidosService.actualizarEstado(1n, { estadoPedido: nuevo })).rejects.toBeInstanceOf(
+      ErrorConflicto
+    );
+    expect(repo.actualizar).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["PENDIENTE", "CANCELADO"],
+    ["CONFIRMADO", "EN_PREPARACION"],
+    ["EN_PREPARACION", "LISTO"],
+    ["LISTO", "EN_PREPARACION"],
+    ["LISTO", "ENTREGADO"],
+    ["CONFIRMADO", "CANCELADO"]
+  ] as const)("permite %s -> %s", async (actual, nuevo) => {
+    repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: actual }));
+
+    await pedidosService.actualizarEstado(1n, { estadoPedido: nuevo });
+
+    expect(repo.actualizar).toHaveBeenCalledWith(prisma, 1n, { estadoPedido: nuevo });
+  });
+
+  it("permite cambiar solo el cobro de un pedido entregado", async () => {
+    repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: "ENTREGADO" }));
+
+    await pedidosService.actualizarEstado(1n, { estadoPedido: "ENTREGADO", estadoCobro: "PAGADO" });
+
+    expect(repo.actualizar).toHaveBeenCalledWith(prisma, 1n, { estadoPedido: "ENTREGADO", estadoCobro: "PAGADO" });
+  });
+});
+
 describe("pedidosService.actualizarEstado", () => {
   it("no permite confirmar por el endpoint generico de estado", async () => {
     repo.obtenerPorId.mockResolvedValue(pedido());

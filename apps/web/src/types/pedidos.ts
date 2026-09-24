@@ -17,14 +17,16 @@ export type EstadoCobro = (typeof ESTADOS_COBRO)[number];
 export const ORIGENES_PEDIDO = ["WEB", "INSTAGRAM", "WHATSAPP", "MANUAL"] as const;
 export type OrigenPedido = (typeof ORIGENES_PEDIDO)[number];
 
-// Estados que se eligen a mano. CONFIRMADO solo se alcanza con "Confirmar pedido",
-// que es la operacion que descuenta stock.
-export const ESTADOS_PEDIDO_EDITABLES: EstadoPedido[] = [
-  "EN_PREPARACION",
-  "LISTO",
-  "ENTREGADO",
-  "CANCELADO"
-];
+// Transiciones que acepta PATCH /api/pedidos/:id/estado (espejo de pedidos.service.ts; la API
+// es la que valida). CONFIRMADO solo se alcanza con "Confirmar pedido", que descuenta stock.
+export const TRANSICIONES_ESTADO_PEDIDO: Record<EstadoPedido, readonly EstadoPedido[]> = {
+  PENDIENTE: ["CANCELADO"],
+  CONFIRMADO: ["EN_PREPARACION", "LISTO", "ENTREGADO", "CANCELADO"],
+  EN_PREPARACION: ["LISTO", "ENTREGADO", "CANCELADO"],
+  LISTO: ["EN_PREPARACION", "ENTREGADO", "CANCELADO"],
+  ENTREGADO: [],
+  CANCELADO: []
+};
 
 export type PedidoDetalle = {
   idPedidoDetalle: string;

@@ -22,7 +22,7 @@ import { calcularImpactoStock, hayStockInsuficiente, ImpactoStockItem } from "..
 import { ItemCatalogo } from "../../../types/items-catalogo";
 import {
   ESTADOS_COBRO,
-  ESTADOS_PEDIDO_EDITABLES,
+  TRANSICIONES_ESTADO_PEDIDO,
   EstadoCobro,
   EstadoPedido,
   Pedido,
@@ -141,10 +141,7 @@ export function PanelPedido({ idPedido, productos, onCambio }: PanelPedidoProps)
   const detalles = pedido.detalles ?? [];
   const pendiente = pedido.estadoPedido === "PENDIENTE";
   const insuficiente = hayStockInsuficiente(impacto);
-  const opcionesEstado: EstadoPedido[] = [
-    pedido.estadoPedido,
-    ...ESTADOS_PEDIDO_EDITABLES.filter((estado) => estado !== pedido.estadoPedido)
-  ];
+  const opcionesEstado: EstadoPedido[] = [pedido.estadoPedido, ...TRANSICIONES_ESTADO_PEDIDO[pedido.estadoPedido]];
 
   return (
     <section aria-label={`Pedido ${pedido.numeroPedido ?? pedido.idPedido}`} className="tarjeta-seccion">
@@ -259,6 +256,7 @@ export function PanelPedido({ idPedido, productos, onCambio }: PanelPedidoProps)
         <label className="campo-formulario" htmlFor="pedido-estado">
           <span>Estado del pedido</span>
           <select
+            disabled={opcionesEstado.length === 1}
             id="pedido-estado"
             onChange={(event) => setEstadoPedido(event.target.value as EstadoPedido)}
             value={estadoPedido}
