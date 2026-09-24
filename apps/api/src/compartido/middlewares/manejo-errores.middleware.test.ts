@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ErrorConflicto } from "../errores/error-conflicto";
 
-import { manejoErroresMiddleware, mensajeDuplicado } from "./manejo-errores.middleware";
+import { columnasDuplicadas, manejoErroresMiddleware, mensajeDuplicado } from "./manejo-errores.middleware";
 import { generarReferencia, referenciaMiddleware } from "./referencia.middleware";
 
 function solicitud(extra: Partial<Request> = {}) {
@@ -143,6 +143,26 @@ describe("manejoErroresMiddleware", () => {
     expect(res.json.mock.calls[0][0].error.message).toBe(
       "Ya existe otro registro con ese slug: elegi uno distinto y volve a guardar"
     );
+  });
+
+  it("con el adapter de pg (Prisma 7) saca las columnas del nombre del indice", () => {
+    const meta = {
+      modelName: "Categoria",
+      driverAdapterError: {
+        name: "DriverAdapterError",
+        cause: { kind: "UniqueConstraintViolation", constraint: { index: "UQ_CATEGORIA_SLUG" }, table: "CATEGORIA" }
+      }
+    };
+
+    expect(columnasDuplicadas(meta)).toEqual(["SLUG"]);
+    expect(columnasDuplicadas({ driverAdapterError: { cause: { constraint: { fields: ["EMAIL"] } } } })).toEqual(["EMAIL"]);
+    expect(columnasDuplicadas({ driverAdapterError: { cause: { constraint: { index: "OTRO" } } } })).toEqual([]);
+    expect(mensajeDuplicado(meta)).toBe("Ya existe otro registro con ese slug: elegi uno distinto y volve a guardar");
+
+    const res = respuesta();
+    const duplicado = new Prisma.PrismaClientKnownRequestError("duplicado", { code: "P2002", clientVersion: "7.10.0", meta });
+    manejoErroresMiddleware(duplicado, solicitud(), res as unknown as Response, vi.fn());
+    expect(res.json.mock.calls[0][0].error.detalles.target).toEqual(["SLUG"]);
   });
 
   it("un duplicado de una columna desconocida no inventa el nombre", () => {

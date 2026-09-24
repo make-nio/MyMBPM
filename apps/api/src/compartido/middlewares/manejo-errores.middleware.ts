@@ -12,10 +12,45 @@ const NOMBRE_COLUMNA_UNICA: Record<string, string> = {
   USUARIO: "nombre de usuario"
 };
 
+// Con el adapter de pg (Prisma 7) un P2002 no trae meta.target sino el nombre del indice, en
+// meta.driverAdapterError.cause.constraint.index. Estas son sus columnas (schema.prisma, map:).
+const COLUMNAS_POR_INDICE: Record<string, string[]> = {
+  UQ_CATEGORIA_SLUG: ["SLUG"],
+  UQ_ITEM_CATALOGO_SLUG: ["SLUG"],
+  UQ_USUARIO_EMAIL: ["EMAIL"],
+  UQ_USUARIO_USUARIO: ["USUARIO"],
+  UQ_USUARIO_EMAIL_LOWER: ["EMAIL"],
+  UQ_USUARIO_USUARIO_LOWER: ["USUARIO"]
+};
+
+type MetaDuplicado = {
+  target?: unknown;
+  driverAdapterError?: { cause?: { constraint?: { index?: unknown; fields?: unknown } } };
+};
+
+// Columnas repetidas de un P2002, sea cual sea la forma de meta. [] si no se pueden saber.
+export function columnasDuplicadas(meta: unknown): string[] {
+  const datos = (meta ?? {}) as MetaDuplicado;
+  const soloTextos = (valor: unknown) =>
+    Array.isArray(valor) ? valor.filter((columna): columna is string => typeof columna === "string") : [];
+
+  const target = soloTextos(datos.target);
+  if (target.length > 0) {
+    return target;
+  }
+
+  const restriccion = datos.driverAdapterError?.cause?.constraint;
+  const campos = soloTextos(restriccion?.fields);
+  if (campos.length > 0) {
+    return campos;
+  }
+
+  return typeof restriccion?.index === "string" ? (COLUMNAS_POR_INDICE[restriccion.index] ?? []) : [];
+}
+
 // Un duplicado dice que valor se repite y como se arregla, no solo "valor unico duplicado".
 export function mensajeDuplicado(meta: unknown) {
-  const target = (meta as { target?: unknown } | null | undefined)?.target;
-  const columnas = Array.isArray(target) ? target.filter((columna): columna is string => typeof columna === "string") : [];
+  const columnas = columnasDuplicadas(meta);
   const nombres = columnas.map((columna) => NOMBRE_COLUMNA_UNICA[columna]).filter(Boolean);
 
   if (nombres.length === 0 || nombres.length !== columnas.length) {
@@ -79,7 +114,8 @@ export function manejoErroresMiddleware(
       responderError(request, response, 409, {
         codigo: "CONFLICTO",
         message: mensajeDuplicado(error.meta),
-        detalles: error.meta ?? null
+        // target con las columnas siempre, para que la web marque el campo (tambien con Prisma 7).
+        detalles: { ...(error.meta ?? {}), target: columnasDuplicadas(error.meta) }
       });
       return;
     }
