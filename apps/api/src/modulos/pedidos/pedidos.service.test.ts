@@ -35,6 +35,7 @@ vi.mock("./pedidos.repository", () => ({
     actualizarDetalle: vi.fn(),
     eliminarDetalle: vi.fn(),
     obtenerItemCatalogo: vi.fn(),
+    obtenerItemsCatalogo: vi.fn(),
     obtenerCliente: vi.fn()
   }
 }));
@@ -330,3 +331,83 @@ describe("pedidosService.presentar (costos)", () => {
   });
 });
 
+
+describe("pedidosService: repetir un pedido", () => {
+  const original = () =>
+    pedido({
+      idPedido: 7n,
+      numeroPedido: "PED-000007",
+      estadoPedido: "ENTREGADO",
+      idCliente: 3n,
+      origenPedido: "INSTAGRAM",
+      cliente: { nombre: "Ana", apellido: "Diaz" },
+      detalles: [
+        { ...detalle(1n, 100n, 2, 2000), idPedido: 7n, precioUnitario: dec(1000), nombreItemSnapshot: "Maceta (vieja)" },
+        { ...detalle(2n, 200n, 1, 500), idPedido: 7n, precioUnitario: dec(500), nombreItemSnapshot: "Vela" },
+        { ...detalle(3n, 300n, 4, 400), idPedido: 7n, precioUnitario: dec(100), nombreItemSnapshot: "Llavero" }
+      ]
+    } as never);
+  const item = (id: bigint, nombre: string, precio: number | null, activo = true, costo = 100) =>
+    ({ idItemCatalogo: id, nombre, precio: precio === null ? null : dec(precio), costo: dec(costo), activo }) as never;
+
+  it("la vista previa usa el precio de hoy y marca lo que no se puede repetir, sin crear nada", async () => {
+    repo.obtenerPorId.mockResolvedValue(original());
+    repo.obtenerItemsCatalogo.mockResolvedValue([item(100n, "Maceta", 1200), item(200n, "Vela", 500, false)]);
+
+    const vista = await pedidosService.prepararRepeticion(7n);
+
+    expect(vista.lineas.map((linea) => [linea.nombre, linea.disponible, linea.motivo, linea.precioHoy?.toString()])).toEqual([
+      ["Maceta", true, null, "1200"],
+      ["Vela", false, "El item esta inactivo", undefined],
+      ["Llavero", false, "El item ya no existe", undefined]
+    ]);
+    expect(vista.total.toString()).toBe("2400");
+    expect(vista.lineas[0]).not.toHaveProperty("item");
+    expect(repo.crear).not.toHaveBeenCalled();
+    expect(repo.agregarDetalle).not.toHaveBeenCalled();
+  });
+
+  it("repetir crea un pedido pendiente con las lineas disponibles, precio y costo de hoy", async () => {
+    repo.obtenerPorId.mockImplementation((async (_tx: unknown, id: bigint) =>
+      id === 7n ? original() : pedido({ idPedido: 8n, detalles: [detalle(9n, 100n, 2, 2400)] })) as never);
+    repo.obtenerItemsCatalogo.mockResolvedValue([item(100n, "Maceta", 1200, true, 350), item(200n, "Vela", null)]);
+    repo.obtenerCliente.mockResolvedValue({ idCliente: 3n } as never);
+    repo.crear.mockResolvedValue({ idPedido: 8n } as never);
+    repo.actualizar.mockResolvedValue({ idPedido: 8n } as never);
+
+    await pedidosService.repetir(7n);
+
+    expect(repo.crear).toHaveBeenCalledWith(tx, {
+      idCliente: 3n,
+      origenPedido: "INSTAGRAM",
+      observacionesInternas: "Repetido de PED-000007"
+    });
+    expect(repo.agregarDetalle).toHaveBeenCalledTimes(1);
+    expect(repo.agregarDetalle).toHaveBeenCalledWith(tx, {
+      idPedido: 8n,
+      idItemCatalogo: 100n,
+      nombreItemSnapshot: "Maceta",
+      cantidad: dec(2),
+      precioUnitario: dec(1200),
+      costoUnitario: dec(350),
+      subtotal: dec(2400)
+    });
+    expect(repo.actualizar).toHaveBeenCalledWith(tx, 8n, { subtotal: dec(2400), total: dec(2400) });
+    expect(stock.registrarEgreso).not.toHaveBeenCalled();
+  });
+
+  it("si ninguna linea se puede repetir, no crea el pedido", async () => {
+    repo.obtenerPorId.mockResolvedValue(original());
+    repo.obtenerItemsCatalogo.mockResolvedValue([item(100n, "Maceta", null), item(200n, "Vela", 500, false)]);
+
+    await expect(pedidosService.repetir(7n)).rejects.toThrow("Ninguna linea del pedido se puede repetir");
+    expect(repo.crear).not.toHaveBeenCalled();
+  });
+
+  it("un pedido que no existe es 404", async () => {
+    repo.obtenerPorId.mockResolvedValue(null);
+
+    await expect(pedidosService.prepararRepeticion(99n)).rejects.toThrow("Pedido no encontrado");
+    await expect(pedidosService.repetir(99n)).rejects.toThrow("Pedido no encontrado");
+  });
+});

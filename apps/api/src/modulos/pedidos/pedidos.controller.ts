@@ -38,6 +38,20 @@ export const pedidosController = {
     responderExito(response, pedido, 201);
   },
 
+  // Vista previa de "Repetir": solo precios de venta de hoy, sin costos.
+  async prepararRepeticion(request: Request, response: Response) {
+    const params = validar(pedidoParamsSchema, request.params);
+
+    responderExito(response, await pedidosService.prepararRepeticion(params.id));
+  },
+
+  async repetir(request: Request, response: Response) {
+    const params = validar(pedidoParamsSchema, request.params);
+    const pedido = await pedidosService.repetir(params.id);
+
+    responderExito(response, pedidosService.presentar(pedido, puedeVerCostos(request.usuarioAutenticado)), 201);
+  },
+
   async agregarDetalle(request: Request, response: Response) {
     const params = validar(pedidoParamsSchema, request.params);
     const body = validar(agregarDetallePedidoSchema, request.body);

@@ -125,15 +125,19 @@ tablas de `TablaDatos` se ven como tarjetas. Si sumás una pantalla, agregala a 
 - En el PR: qué hiciste, cómo lo comprobaste y qué quedó sin probar.
 - Nunca subas un `.env` ni credenciales. El repositorio es **público**.
 
-## Estado (marzo 2026)
+## Estado (septiembre 2026)
 
-- **Backend:** todos los módulos hechos (catálogo, clientes, pedidos, stock, producción,
-  usuarios, autenticación, solicitudes especiales).
-- **Web:** ingreso, panel de inicio con datos reales (pedidos, producción, stock bajo y últimos
-  movimientos), y administración de categorías, ítems del catálogo, clientes,
-  solicitudes especiales, usuarios (sólo administradores), pedidos, producción (con el impacto en
-  stock antes y después de confirmar, iniciar o finalizar) y stock (existencias, movimientos y
-  ajustes), y una página de Ayuda para el día a día (`/ayuda`; si cambia un botón o un estado,
-  actualizala).
-- Hay pruebas de los services de stock, pedidos, producción y usuarios, E2E de las pantallas y
-  CI en GitHub Actions.
+Qué hace cada pantalla y la lista de módulos de la API: `README.md` ("Que hace hoy" y "Backend
+actual"). Cómo está armado el backend (mapa de módulos, recorrido de una solicitud,
+importaciones, auditoría, costos): `docs/arquitectura-backend.md`. No lo repitas acá: si cambia,
+actualizá esos dos.
+
+- **Completo y en producción:** todos los módulos del backend y todas las pantallas del panel,
+  usables desde el celular, más búsqueda global (Ctrl+K), avisos en el encabezado, Ayuda (con guía
+  de administrador), reportes, importaciones CSV, respaldo diario y `/api/health`.
+- **Calidad:** pruebas de los services, E2E de cada pantalla (con axe y celular), presupuesto de
+  Lighthouse, prueba de humo después de cada deploy y corrida nocturna de E2E sin reintentos.
+- **Abierto:** Prisma 7 (#49) y el manejo de sesiones (#52) esperan a Mariano.
+- **Decisiones de negocio pendientes (no se construyen hasta que Maxi decida):** cancelar un
+  pedido confirmado o una orden en proceso **no** devuelve el stock; se corrige a mano con un
+  ajuste. Medios de pago y facturación tampoco están.

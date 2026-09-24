@@ -11,8 +11,9 @@ import { MensajeError } from "../../../src/components/ui/mensaje-error";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { generarCsv, numeroCsv } from "../../../src/lib/csv";
 import { diaArgentina, formatearCantidad, formatearMoneda } from "../../../src/lib/formato";
-import { obtenerVentasDelMes } from "../../../src/lib/modulos/reportes";
-import { ReporteVentasMes } from "../../../src/types/reportes";
+import { GraficoVentas } from "../../../src/components/modulos/reportes/grafico-ventas";
+import { obtenerVentasDelMes, obtenerVentasPorMes } from "../../../src/lib/modulos/reportes";
+import { ReporteVentasMes, VentaDelMes } from "../../../src/types/reportes";
 
 const COLUMNAS_CSV_ITEM = ["Item", "Cantidad", "Pedidos", "Vendido", "Costo", "Ganancia"];
 const COLUMNAS_CSV_CLIENTE = ["Cliente", "Pedidos", "Vendido", "Costo", "Ganancia"];
@@ -36,6 +37,17 @@ function ReporteVentas() {
   const [mes, setMes] = useState(() => diaArgentina(new Date()).slice(0, 7));
   const [reporte, setReporte] = useState<ReporteVentasMes | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [meses, setMeses] = useState<VentaDelMes[] | null>(null);
+  const [errorMeses, setErrorMeses] = useState<string | null>(null);
+
+  // El grafico no depende del mes elegido: se carga una vez.
+  useEffect(() => {
+    obtenerVentasPorMes()
+      .then((datos) => setMeses(datos.meses))
+      .catch((currentError) =>
+        setErrorMeses(currentError instanceof Error ? currentError.message : "No fue posible cargar el grafico")
+      );
+  }, []);
 
   useEffect(() => {
     if (!mes) {
@@ -101,6 +113,9 @@ function ReporteVentas() {
         }
         titulo="Reportes"
       />
+
+      {errorMeses ? <MensajeError mensaje={errorMeses} /> : null}
+      {errorMeses ? null : <GraficoVentas meses={meses} mesSeleccionado={mes} onElegirMes={setMes} />}
 
       {error ? <MensajeError mensaje={error} /> : null}
       {!reporte && !error ? <EstadoCargando titulo="Cargando el reporte" /> : null}
