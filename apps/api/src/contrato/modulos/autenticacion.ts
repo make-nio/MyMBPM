@@ -1,0 +1,26 @@
+import { Endpoint, objeto, z } from "../base";
+import { loginSchema } from "../../modulos/autenticacion/autenticacion.schemas";
+
+import { usuario } from "./usuarios";
+
+export const endpoints: Endpoint[] = [
+  {
+    metodo: "post",
+    ruta: "/api/autenticacion/login",
+    resumen: "Ingresa con usuario o email y clave; devuelve el token y el usuario",
+    etiqueta: "autenticacion",
+    publico: true,
+    body: loginSchema,
+    respuesta: objeto({
+      token: z.string(),
+      usuario
+    })
+  },
+  {
+    metodo: "get",
+    ruta: "/api/autenticacion/me",
+    resumen: "Devuelve el usuario de la sesion actual",
+    etiqueta: "autenticacion",
+    respuesta: usuario
+  }
+];

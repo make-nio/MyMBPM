@@ -53,6 +53,7 @@ En el encabezado: **busqueda global** (Ctrl+K / Cmd+K) de pedidos, clientes e it
 | Documento | De que trata |
 | --- | --- |
 | [docs/arquitectura-backend.md](docs/arquitectura-backend.md) | Reglas del backend, forma de un modulo, mapa de modulos, middlewares, seguridad del ingreso, auditoria, costos, importaciones |
+| [docs/contrato-api.md](docs/contrato-api.md), [docs/openapi.json](docs/openapi.json) | Contrato de la API: que devuelve cada endpoint, OpenAPI generado y como se valida en las pruebas |
 | [docs/idempotencia-stock.md](docs/idempotencia-stock.md) | Por que reintentar una operacion de stock no descuenta dos veces |
 | [docs/der-actualizado.md](docs/der-actualizado.md) | Modelo de datos |
 | [docs/despliegue-netlify.md](docs/despliegue-netlify.md) | Build, variables, migraciones y deploy previews, encabezados de seguridad (CSP), `/api/health` |

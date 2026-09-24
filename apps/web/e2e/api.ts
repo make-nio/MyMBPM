@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 
+import { revisarContratoFetch } from "./contrato";
 import { ARCHIVO_SESION_ADMIN, URL_WEB } from "./entorno";
 
 type Respuesta<T> = { ok: boolean; data: T };
@@ -18,6 +19,10 @@ export async function api<T>(method: string, path: string, body?: unknown, token
     body: body === undefined ? undefined : JSON.stringify(body)
   });
   const json = (await response.json()) as Respuesta<T>;
+  const problemas = revisarContratoFetch(method, `${URL_WEB}${path}`, response.status, json);
+  if (problemas.length > 0) {
+    throw new Error(`La respuesta no cumple el contrato de la API:\n${problemas.join("\n")}`);
+  }
 
   if (!response.ok) {
     throw new Error(`${method} ${path} -> ${response.status}: ${JSON.stringify(json)}`);
