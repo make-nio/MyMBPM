@@ -311,6 +311,27 @@ describe("stockService.obtenerExistencias y obtenerBajoStock", () => {
 
     expect(segundaPagina.map((e) => e.nombre)).toEqual(["Nuevo"]);
   });
+
+  it("existencias: sin limit devuelve todas, como antes", async () => {
+    expect(await stockService.obtenerExistencias(tx, { activo: true })).toHaveLength(4);
+  });
+
+  it("existencias: filtra bajo minimo y despues pagina", async () => {
+    const pagina = await stockService.obtenerExistencias(tx, { soloBajoMinimo: true, limit: 1, offset: 1 });
+
+    expect(pagina.map((e) => e.nombre)).toEqual(["Nuevo"]);
+  });
+
+  it("existencias: la busqueda va a la base y pagina con limit y offset", async () => {
+    const pagina = await stockService.obtenerExistencias(tx, { busqueda: "ve", limit: 2, offset: 1 });
+
+    expect(repo.listarItemsParaExistencias).toHaveBeenCalledWith(tx, {
+      tipoItem: undefined,
+      activo: undefined,
+      busqueda: "ve"
+    });
+    expect(pagina.map((e) => e.nombre)).toEqual(["Cera", "Maceta"]);
+  });
 });
 
 describe("stockService: bloqueo y transaccion", () => {

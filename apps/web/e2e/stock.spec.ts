@@ -9,6 +9,11 @@ function filaDe(page: Page, nombre: string) {
   return page.getByRole("row").filter({ has: page.getByRole("cell", { name: nombre, exact: true }) });
 }
 
+// El listado carga de a 50: se busca el item como lo haria una persona.
+async function buscar(page: Page, texto: string) {
+  await page.getByLabel("Buscar item").fill(texto);
+}
+
 // Columnas del listado: Item, Tipo, Categoria, Stock, Minimo, Estado, Ultimo movimiento, Acciones.
 async function esperarFila(page: Page, nombre: string, esperado: { stock: string; minimo: string; estado: string }) {
   const celdas = filaDe(page, nombre).getByRole("cell");
@@ -19,12 +24,14 @@ async function esperarFila(page: Page, nombre: string, esperado: { stock: string
 
 test("existencias por tipo, busqueda y filtro de bajo minimo", async ({ page }) => {
   const { idCategoria } = await crearCategoria(unico("PRUEBA-CatStock"));
-  const producto = await crearItem({ idCategoria, nombre: unico("PRUEBA-Bajo"), tipoItem: "PRODUCTO", stockMinimo: 5 });
-  const insumo = await crearItem({ idCategoria, nombre: unico("PRUEBA-InsumoOk"), tipoItem: "INSUMO", stockMinimo: 3 });
+  const lote = unico("PRUEBA-StockFiltro");
+  const producto = await crearItem({ idCategoria, nombre: `${lote}-Bajo`, tipoItem: "PRODUCTO", stockMinimo: 5 });
+  const insumo = await crearItem({ idCategoria, nombre: `${lote}-InsumoOk`, tipoItem: "INSUMO", stockMinimo: 3 });
   await ajustarStock(producto.idItemCatalogo, 2);
   await ajustarStock(insumo.idItemCatalogo, 10, "INSUMO");
 
   await page.goto("/stock");
+  await buscar(page, lote);
   const filaProducto = filaDe(page, producto.nombre);
   const filaInsumo = filaDe(page, insumo.nombre);
   await esperarFila(page, producto.nombre, { stock: "2", minimo: "5", estado: "Bajo minimo" });
@@ -41,7 +48,7 @@ test("existencias por tipo, busqueda y filtro de bajo minimo", async ({ page }) 
   await expect(filaInsumo).toBeVisible();
 
   await page.getByLabel("Filtrar por tipo").selectOption("");
-  await page.getByLabel("Buscar item").fill(producto.nombre.toLowerCase());
+  await buscar(page, producto.nombre.toLowerCase());
   await expect(page.getByRole("row")).toHaveCount(2);
 });
 
@@ -51,6 +58,7 @@ test("ajuste manual: valida stock y motivo, y queda en los movimientos con el us
   await ajustarStock(insumo.idItemCatalogo, 10, "INSUMO");
 
   await page.goto("/stock");
+  await buscar(page, insumo.nombre);
   const fila = filaDe(page, insumo.nombre);
   await fila.getByRole("button", { name: "Ajustar" }).click();
 
@@ -96,6 +104,7 @@ test("detalle de un producto: capacidad segun receta y movimientos con su origen
   await api("POST", `/api/pedidos/${pedido.idPedido}/confirmar`);
 
   await page.goto("/stock");
+  await buscar(page, producto.nombre);
   await filaDe(page, producto.nombre).getByRole("button", { name: "Movimientos" }).click();
 
   const panel = page.getByRole("region", { name: `Stock de ${producto.nombre}` });
@@ -120,4 +129,29 @@ test("el historial de stock no expone datos sensibles del usuario", async () => 
 
   expect(historial).toHaveLength(1);
   expect(Object.keys(historial[0].usuario ?? {}).sort()).toEqual(["apellido", "idUsuario", "nombre"]);
+});
+
+test("con mas de 50 items carga de a 50 y el filtro de bajo minimo pagina en el servidor", async ({ page }) => {
+  test.setTimeout(60_000);
+  const { idCategoria } = await crearCategoria(unico("PRUEBA-CatPagina"));
+  const lote = unico("PRUEBA-StockLote");
+  // stockMinimo 1 y sin stock: todos quedan bajo minimo.
+  for (let numero = 1; numero <= 55; numero++) {
+    await crearItem({ idCategoria, nombre: `${lote}-${String(numero).padStart(2, "0")}`, tipoItem: "INSUMO", stockMinimo: 1 });
+  }
+
+  await page.goto("/stock");
+  await buscar(page, lote);
+  const filas = page.getByRole("row").filter({ hasText: lote });
+  await expect(filas).toHaveCount(50);
+  await expect(page.getByRole("status").filter({ hasText: "Hay mas resultados" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Cargar mas" }).click();
+  await expect(filas).toHaveCount(55);
+  await expect(filas.last()).toContainText(`${lote}-55`);
+
+  await page.getByLabel(/Solo bajo minimo/).check();
+  await expect(filas).toHaveCount(50);
+  await page.getByRole("button", { name: "Cargar mas" }).click();
+  await expect(filas).toHaveCount(55);
 });

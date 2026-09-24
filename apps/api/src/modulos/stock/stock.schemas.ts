@@ -26,12 +26,21 @@ export const bajoStockQuerySchema = paginacionSchema.extend({
     .optional()
 });
 
+// Sin limit devuelve todas (como siempre); con limit, la pagina pedida. Los filtros se aplican antes
+// de paginar, asi "Cargar mas" sigue funcionando con busqueda y bajo minimo.
 export const existenciasQuerySchema = z.object({
   tipoItem: z.enum(TIPOS_ITEM).optional(),
   activo: z
     .enum(["true", "false"])
     .transform((value) => value === "true")
-    .optional()
+    .optional(),
+  busqueda: z.string().trim().max(150).optional(),
+  soloBajoMinimo: z
+    .enum(["true", "false"])
+    .transform((value) => value === "true")
+    .optional(),
+  limit: z.coerce.number().int().positive().max(100).optional(),
+  offset: z.coerce.number().int().min(0).default(0)
 });
 
 // El usuario sale de la sesion y el origen es siempre MANUAL: no se aceptan del body.

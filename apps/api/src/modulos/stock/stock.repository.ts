@@ -133,16 +133,28 @@ export const stockRepository = {
     });
   },
 
-  listarItemsParaExistencias(prismaOrTx: PrismaOrTx, filtros: { tipoItem?: string; activo?: boolean }) {
+  listarItemsParaExistencias(
+    prismaOrTx: PrismaOrTx,
+    filtros: { tipoItem?: string; activo?: boolean; busqueda?: string }
+  ) {
     return prismaOrTx.itemCatalogo.findMany({
       where: {
         tipoItem: filtros.tipoItem,
-        activo: filtros.activo
+        activo: filtros.activo,
+        ...(filtros.busqueda
+          ? {
+              OR: [
+                { nombre: { contains: filtros.busqueda, mode: "insensitive" } },
+                { codigo: { contains: filtros.busqueda, mode: "insensitive" } }
+              ]
+            }
+          : {})
       },
       include: {
         categoria: true
       },
-      orderBy: [{ tipoItem: "asc" }, { nombre: "asc" }]
+      // El id desempata nombres iguales: el orden tiene que ser estable para paginar.
+      orderBy: [{ tipoItem: "asc" }, { nombre: "asc" }, { idItemCatalogo: "asc" }]
     });
   },
 

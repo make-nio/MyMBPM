@@ -8,14 +8,12 @@ import { MensajeError } from "../../ui/mensaje-error";
 import { TablaDatos } from "../../ui/tabla-datos";
 import { formatearCantidad, formatearEstado, formatearFecha } from "../../../lib/formato";
 import { listarComponentesItem } from "../../../lib/modulos/items-catalogo";
-import { listarMovimientosStock } from "../../../lib/modulos/stock";
+import { listarMovimientosStock, obtenerStockActual } from "../../../lib/modulos/stock";
 import { calcularCapacidadProduccion, CapacidadComponente } from "../../../lib/stock/capacidad-produccion";
 import { Existencia, MovimientoStock } from "../../../types/stock";
 
 type PanelItemStockProps = {
   existencia: Existencia;
-  // Stock vigente de todos los items (por id), para calcular la receta sin pedirlo de nuevo.
-  stockPorItem: Record<string, string>;
   version: number;
 };
 
@@ -27,7 +25,19 @@ function describirOrigen(movimiento: MovimientoStock) {
 }
 
 // Detalle de un item: con que insumos se fabrica (y cuanto alcanza) y su historial de stock.
-export function PanelItemStock({ existencia, stockPorItem, version }: PanelItemStockProps) {
+// Stock vigente de cada componente de la receta, cada uno en su tipo de stock. Se pide aparte: el
+// listado de Stock esta paginado y un insumo puede no estar entre las filas cargadas.
+async function stockDeComponentes(componentes: Awaited<ReturnType<typeof listarComponentesItem>>) {
+  const stocks = await Promise.all(
+    componentes.map((componente) =>
+      obtenerStockActual(componente.idItemCatalogoHijo, componente.itemCatalogoComponente?.tipoItem ?? "INSUMO")
+    )
+  );
+
+  return Object.fromEntries(stocks.map((stock) => [stock.idItemCatalogo, stock.stockActual]));
+}
+
+export function PanelItemStock({ existencia, version }: PanelItemStockProps) {
   const [movimientos, setMovimientos] = useState<MovimientoStock[] | null>(null);
   const [receta, setReceta] = useState<{ porComponente: CapacidadComponente[]; unidades: number | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +51,8 @@ export function PanelItemStock({ existencia, stockPorItem, version }: PanelItemS
       listarMovimientosStock({ idItemCatalogo: existencia.idItemCatalogo, tipoStock: existencia.tipoStock, limit: 100 }),
       existencia.tipoItem === "PRODUCTO" ? listarComponentesItem(existencia.idItemCatalogo) : Promise.resolve([])
     ])
-      .then(([historial, componentes]) => {
+      .then(async ([historial, componentes]) => [historial, componentes, await stockDeComponentes(componentes)] as const)
+      .then(([historial, componentes, stockPorItem]) => {
         if (!vigente) {
           return;
         }
@@ -70,7 +81,7 @@ export function PanelItemStock({ existencia, stockPorItem, version }: PanelItemS
     return () => {
       vigente = false;
     };
-  }, [existencia, stockPorItem, version]);
+  }, [existencia, version]);
 
   return (
     <section aria-label={`Stock de ${existencia.nombre}`} className="tarjeta-seccion">
