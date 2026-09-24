@@ -42,7 +42,7 @@ test("muestra el error de la API si el slug ya existe", async ({ page }) => {
     await modal.getByRole("button", { name: "Guardar categoria" }).click();
 
     if (intento === 2) {
-      await expect(modal.getByText(/ya existe/i)).toBeVisible();
+      await expect(modal.getByLabel("Slug")).toHaveAccessibleDescription(/Ya existe otro registro con ese slug/);
     }
   }
 });

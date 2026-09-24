@@ -6,6 +6,8 @@ import { AccionesFormulario } from "../../formularios/acciones-formulario";
 import { CampoSelectBuscable } from "../../formularios/campo-select-buscable";
 import { CampoTexto } from "../../formularios/campo-texto";
 import { MensajeError } from "../../ui/mensaje-error";
+import { useValidacionFormulario } from "../../../hooks/use-validacion-formulario";
+import { largoMaximo, numeroMayorACero, requerido } from "../../../lib/validacion";
 import { buscarItemsActivos } from "../../../lib/modulos/items-catalogo";
 import { OrdenProduccionDetalle } from "../../../types/produccion";
 
@@ -21,17 +23,18 @@ export function FormularioDetalleOrden({ detalle, onCancel, onSubmit }: Formular
   const [observaciones, setObservaciones] = useState(detalle?.observaciones ?? "");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { formularioRef, validar, errorDe } = useValidacionFormulario();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!idItemCatalogoProducto) {
-      setError("Selecciona el producto a fabricar");
-      return;
-    }
-
-    if (!(Number(cantidad) > 0)) {
-      setError("La cantidad tiene que ser mayor a cero");
+    const resumen = validar({
+      "orden-producto": { valor: idItemCatalogoProducto, reglas: [requerido("el producto a fabricar: buscalo y elegilo de la lista")] },
+      "orden-cantidad": { valor: cantidad, reglas: [requerido("la cantidad"), numeroMayorACero()] },
+      "orden-observaciones": { valor: observaciones, reglas: [largoMaximo(2000)] }
+    });
+    if (resumen) {
+      setError(resumen);
       return;
     }
 
@@ -47,7 +50,7 @@ export function FormularioDetalleOrden({ detalle, onCancel, onSubmit }: Formular
   }
 
   return (
-    <form className="formulario-modulo" onSubmit={handleSubmit}>
+    <form className="formulario-modulo" noValidate onSubmit={handleSubmit} ref={formularioRef}>
       {error ? <MensajeError mensaje={error} /> : null}
 
       {detalle ? (
@@ -59,6 +62,7 @@ export function FormularioDetalleOrden({ detalle, onCancel, onSubmit }: Formular
               productos.map((producto) => ({ label: producto.nombre, value: producto.idItemCatalogo }))
             )
           }
+          error={errorDe("orden-producto", idItemCatalogoProducto)}
           id="orden-producto"
           label="Producto a fabricar"
           onChange={setIdProducto}
@@ -66,8 +70,8 @@ export function FormularioDetalleOrden({ detalle, onCancel, onSubmit }: Formular
           value={idItemCatalogoProducto}
         />
       )}
-      <CampoTexto id="orden-cantidad" label="Cantidad" onChange={setCantidad} required step="any" type="number" value={cantidad} />
-      <CampoTexto id="orden-observaciones" label="Observaciones" onChange={setObservaciones} value={observaciones} />
+      <CampoTexto error={errorDe("orden-cantidad", cantidad)} id="orden-cantidad" label="Cantidad" onChange={setCantidad} required step="any" type="number" value={cantidad} />
+      <CampoTexto error={errorDe("orden-observaciones", observaciones)} id="orden-observaciones" label="Observaciones" onChange={setObservaciones} value={observaciones} />
 
       <AccionesFormulario enviando={enviando} onCancel={onCancel} textoGuardar="Guardar producto" />
     </form>

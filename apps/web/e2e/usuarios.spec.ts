@@ -89,7 +89,7 @@ test("restablecer clave: la persona ingresa con la nueva y, como operador, no ge
   await modal.getByLabel("Clave nueva", { exact: true }).fill("clave-nueva-123");
   await modal.getByLabel("Repetir clave nueva").fill("otra-clave-999");
   await modal.getByRole("button", { name: "Restablecer clave" }).click();
-  await expect(modal.getByText("Las claves no coinciden")).toBeVisible();
+  await expect(modal.getByLabel("Repetir clave nueva")).toHaveAccessibleDescription(/No coincide con la clave nueva/);
 
   await modal.getByLabel("Repetir clave nueva").fill("clave-nueva-123");
   await modal.getByRole("button", { name: "Restablecer clave" }).click();
@@ -123,5 +123,5 @@ test("muestra el error de la API si el email ya existe", async ({ page }) => {
   await modal.getByLabel("Clave inicial").fill("clave-inicial-1");
   await modal.getByRole("button", { name: "Guardar usuario" }).click();
 
-  await expect(modal.getByText(/ya existe un usuario/i)).toBeVisible();
+  await expect(modal.getByLabel("Email")).toHaveAccessibleDescription(/Ya existe un usuario con ese email: usa otro/);
 });
