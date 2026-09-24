@@ -8,6 +8,8 @@ import { CampoSelectBuscable } from "../../formularios/campo-select-buscable";
 import { CampoTextarea } from "../../formularios/campo-textarea";
 import { CampoTexto } from "../../formularios/campo-texto";
 import { MensajeError } from "../../ui/mensaje-error";
+import { useValidacionFormulario } from "../../../hooks/use-validacion-formulario";
+import { largoMaximo, requerido } from "../../../lib/validacion";
 import { formatearEstado } from "../../../lib/formato";
 import { buscarOpcionesClientes } from "../../../lib/modulos/clientes";
 import {
@@ -33,12 +35,18 @@ export function FormularioPedido({ onCancel, onSubmit }: FormularioPedidoProps) 
   const [fechaEntrega, setFechaEntrega] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { formularioRef, validar, errorDe } = useValidacionFormulario();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!idCliente) {
-      setError("Selecciona un cliente");
+    const resumen = validar({
+      "pedido-cliente": { valor: idCliente, reglas: [requerido("el cliente: buscalo y elegilo de la lista")] },
+      "pedido-observaciones-cliente": { valor: observacionesCliente, reglas: [largoMaximo(2000)] },
+      "pedido-observaciones-internas": { valor: observacionesInternas, reglas: [largoMaximo(2000)] }
+    });
+    if (resumen) {
+      setError(resumen);
       return;
     }
 
@@ -61,11 +69,12 @@ export function FormularioPedido({ onCancel, onSubmit }: FormularioPedidoProps) 
   }
 
   return (
-    <form className="formulario-modulo" onSubmit={handleSubmit}>
+    <form className="formulario-modulo" noValidate onSubmit={handleSubmit} ref={formularioRef}>
       {error ? <MensajeError mensaje={error} /> : null}
 
       <CampoSelectBuscable
         buscar={buscarOpcionesClientes}
+        error={errorDe("pedido-cliente", idCliente)}
         id="pedido-cliente"
         label="Cliente"
         onChange={setIdCliente}
@@ -87,6 +96,7 @@ export function FormularioPedido({ onCancel, onSubmit }: FormularioPedidoProps) 
         value={estadoCobro}
       />
       <CampoTexto
+        error={errorDe("pedido-fecha-entrega", fechaEntrega)}
         id="pedido-fecha-entrega"
         label="Entrega prometida (opcional)"
         onChange={setFechaEntrega}
@@ -94,12 +104,14 @@ export function FormularioPedido({ onCancel, onSubmit }: FormularioPedidoProps) 
         value={fechaEntrega}
       />
       <CampoTextarea
+        error={errorDe("pedido-observaciones-cliente", observacionesCliente)}
         id="pedido-observaciones-cliente"
         label="Observaciones del cliente"
         onChange={setObservacionesCliente}
         value={observacionesCliente}
       />
       <CampoTextarea
+        error={errorDe("pedido-observaciones-internas", observacionesInternas)}
         id="pedido-observaciones-internas"
         label="Observaciones internas"
         onChange={setObservacionesInternas}

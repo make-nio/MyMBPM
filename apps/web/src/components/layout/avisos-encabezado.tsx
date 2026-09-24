@@ -5,22 +5,11 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { listarAvisos } from "../../lib/avisos";
+import { cuandoEsteLibre } from "../../lib/cuando-este-libre";
 import { obtenerAvisos } from "../../lib/modulos/panel";
 import { AvisosPanel } from "../../types/panel";
 
 import { IconoCampana } from "./marcador-avisos";
-
-// requestIdleCallback donde exista (Safari no lo tiene): corre la funcion cuando el navegador no
-// tiene otra cosa que hacer, o a los 2 segundos como mucho.
-function cuandoEsteLibre(funcion: () => void) {
-  if (typeof window.requestIdleCallback === "function") {
-    const id = window.requestIdleCallback(funcion, { timeout: 2000 });
-    return () => window.cancelIdleCallback(id);
-  }
-
-  const id = window.setTimeout(funcion, 200);
-  return () => window.clearTimeout(id);
-}
 
 // Campanita del encabezado: lo que falta reponer y las entregas atrasadas o de hoy. Se vuelve a
 // consultar al cambiar de pantalla; no hay notificaciones push ni mails.

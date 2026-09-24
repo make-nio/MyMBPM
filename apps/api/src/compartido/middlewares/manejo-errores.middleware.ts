@@ -5,6 +5,26 @@ import { ErrorAplicacion } from "../errores/error-aplicacion";
 
 type CuerpoError = { codigo: string; message: string; detalles?: unknown };
 
+// Columnas con indice unico, tal como las nombra Prisma en meta.target de un P2002.
+const NOMBRE_COLUMNA_UNICA: Record<string, string> = {
+  SLUG: "slug",
+  EMAIL: "email",
+  USUARIO: "nombre de usuario"
+};
+
+// Un duplicado dice que valor se repite y como se arregla, no solo "valor unico duplicado".
+export function mensajeDuplicado(meta: unknown) {
+  const target = (meta as { target?: unknown } | null | undefined)?.target;
+  const columnas = Array.isArray(target) ? target.filter((columna): columna is string => typeof columna === "string") : [];
+  const nombres = columnas.map((columna) => NOMBRE_COLUMNA_UNICA[columna]).filter(Boolean);
+
+  if (nombres.length === 0 || nombres.length !== columnas.length) {
+    return "Ya existe un registro con un valor unico duplicado: cambia ese dato y volve a guardar";
+  }
+
+  return `Ya existe otro registro con ese ${nombres.join(" y ")}: elegi uno distinto y volve a guardar`;
+}
+
 function responderError(request: Request, response: Response, status: number, error: CuerpoError) {
   response.status(status).json({ ok: false, error: { ...error, referencia: request.referencia ?? null } });
 }
@@ -58,7 +78,7 @@ export function manejoErroresMiddleware(
     if (error.code === "P2002") {
       responderError(request, response, 409, {
         codigo: "CONFLICTO",
-        message: "Ya existe un registro con un valor unico duplicado",
+        message: mensajeDuplicado(error.meta),
         detalles: error.meta ?? null
       });
       return;
