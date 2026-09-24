@@ -3,7 +3,8 @@
 ## Infraestructura compartida
 
 - `GET /`
-- `GET /api/health`
+- `GET /api/health` (publico, sin sesion): estado de la API y de la base. 200 si la base responde,
+  503 si no. Detalle y como apuntarle un monitor: `docs/despliegue-netlify.md`, "Monitoreo".
 
 ## Categorias
 
@@ -40,7 +41,18 @@ Filtros soportados en listado:
 ## Clientes
 
 - `GET /api/clientes`
+- `POST /api/clientes/importacion/previsualizar` y `POST /api/clientes/importacion` (solo
+  administradores; cuerpo hasta 2 MB, `{ filas: [...] }` de hasta 1000): el mismo circuito que la
+  importacion del catalogo. Filas como texto (`nombre` obligatorio, `apellido`, `documento`,
+  `telefono`, `email`, `instagram`, `domicilio`, `localidad`, `provincia`, `observaciones`,
+  `activo` Si/No); errores por fila y todo o nada (409 con las filas si alguna falla). Un cliente es
+  repetido, contra la base o dentro del archivo, si coincide el email (sin mayusculas), el
+  documento (solo letras y numeros) o nombre + apellido + telefono (solo digitos). Transaccion con
+  advisory lock, alta masiva y auditoria de cada alta.
 - `GET /api/clientes/:id`
+- `GET /api/clientes/:id/resumen`: `totalComprado`, `pedidosComprados` y `fechaUltimaCompra`, con el
+  criterio de "vendido" de reportes (pedidos activos, confirmados y no cancelados). Solo importes de
+  venta, sin costos: lo ve cualquier usuario. El historial se lee con `GET /api/pedidos?idCliente=`.
 - `POST /api/clientes`
 - `PATCH /api/clientes/:id`
 - `PATCH /api/clientes/:id/estado`

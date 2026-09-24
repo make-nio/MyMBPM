@@ -7,6 +7,8 @@ import { auditoriaRepository, CambioAuditado } from "./auditoria.repository";
 type PrismaOrTx = PrismaClient | Prisma.TransactionClient;
 type Registro = Record<string, unknown>;
 
+const CAMPOS_PRECIO = ["precio", "costo"] as const;
+
 // Valores comparables y guardables como texto: Decimal "1000.5", BigInt "7", fechas en ISO.
 // Vacio y null son lo mismo: si no, guardar un formulario con un campo opcional vacio parece un cambio.
 export function valorAuditable(valor: unknown): string | null {
@@ -97,5 +99,34 @@ export const auditoriaService = {
 
   listar(filtros: { entidad: EntidadAuditada; idEntidad: bigint; limit: number; offset: number }) {
     return auditoriaRepository.listar(filtros);
+  },
+
+  // Linea de tiempo de precio y costo de un item: un punto por registro que cambio alguno de los
+  // dos, con el valor anterior y el nuevo. Los demas campos del mismo registro no se muestran.
+  async listarPrecios(filtros: { idItemCatalogo: bigint; limit: number; offset: number }) {
+    const registros = await auditoriaRepository.listarConCampos({
+      entidad: "ITEM_CATALOGO",
+      idEntidad: filtros.idItemCatalogo,
+      campos: CAMPOS_PRECIO,
+      limit: filtros.limit,
+      offset: filtros.offset
+    });
+
+    return registros.map((registro) => {
+      const cambios = registro.cambios as CambioAuditado[];
+      const buscar = (campo: string) => {
+        const cambio = cambios.find((actual) => actual.campo === campo);
+        return cambio ? { antes: cambio.antes, despues: cambio.despues } : null;
+      };
+
+      return {
+        idAuditoriaCambio: registro.idAuditoriaCambio,
+        fecha: registro.fecha,
+        accion: registro.accion,
+        usuario: registro.usuario,
+        precio: buscar("precio"),
+        costo: buscar("costo")
+      };
+    });
   }
 };

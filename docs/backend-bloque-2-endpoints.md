@@ -26,6 +26,13 @@
   - Tambien acepta `fechaEntrega` (`"AAAA-MM-DD"` o `null` para borrarla), salvo en pedidos
     `ENTREGADO` o `CANCELADO` (409).
 - `POST /api/pedidos/:id/confirmar`
+- `GET /api/pedidos/:id/repeticion`: vista previa de "Repetir" (no crea nada). Las lineas del
+  pedido con el precio de hoy (`precioHoy`, `subtotal`) y `disponible`/`motivo` para las que no se
+  repiten (item inactivo, borrado o sin precio), mas el `total`. Sin costos.
+- `POST /api/pedidos/:id/repetir`: en una transaccion crea un pedido `PENDIENTE` con el mismo
+  cliente y origen, `observacionesInternas` "Repetido de PED-…", y las lineas disponibles con el
+  precio y el costo (snapshot) de hoy, igual que agregar un detalle. 409 si ninguna linea se puede
+  repetir. No mueve stock: eso pasa al confirmar el pedido nuevo.
 
 ## Produccion
 
@@ -45,6 +52,10 @@
     costo), `porItem` (cantidad, pedidos, vendido = suma de subtotales, costo = snapshot de cada
     linea, ganancia) y `porCliente` (pedidos, vendido = suma de totales, costo, ganancia), de mayor
     a menor vendido. La web arma el CSV de cada tabla.
+- `GET /api/reportes/ventas-por-mes` (solo administradores)
+  - Vendido y cantidad de pedidos de cada uno de los ultimos 12 meses (el actual incluido, hora de
+    Argentina), con el mismo criterio de `ventas-mes`. Vienen los 12, tambien los meses sin ventas.
+    La web lo dibuja en Reportes con un SVG propio (sin librerias de graficos).
 
 ## Busqueda global
 

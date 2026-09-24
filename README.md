@@ -125,7 +125,7 @@ corre solo el segundo.
 ### Presupuesto de rendimiento (Lighthouse)
 
 `npm run test:rendimiento` (proyecto `rendimiento` de Playwright, fuera de `test:e2e`) pasa
-Lighthouse con perfil movil sobre `/ingresar` (sin sesion), `/panel` y `/pedidos` (con la sesion
+Lighthouse con perfil movil sobre `/ingresar` (sin sesion), `/panel`, `/pedidos` y `/reportes` (con la sesion
 del administrador E2E), tres veces cada una, y compara la mediana con `PRESUPUESTO` en
 `apps/web/e2e/rendimiento.spec.ts`:
 
@@ -154,6 +154,51 @@ Aparte, `npm run test:coverage` falla si la cobertura de lineas **solo con vites
 de cada workspace (`coverage.thresholds` en `vitest.config.ts`: 49 % api, 56 % web), el valor de
 septiembre de 2026. Es un piso para que no retroceda; subirlo es otro trabajo.
 Para verlo en local: `E2E_COVERAGE=1 npm run build && E2E_COVERAGE=1 npm run test:e2e && npm run test:coverage && npm run coverage:report`.
+
+### Prueba de humo de produccion
+
+`.github/workflows/humo-produccion.yml` corre despues de cada push a `main`:
+
+1. Espera (hasta 20 min) a que produccion sirva el build de ese commit: el build escribe
+   `apps/web/out/version.json` con `COMMIT_REF` (`scripts/generar-version.mjs`) y
+   `scripts/esperar-deploy.mjs` lo consulta. Si no aparece, falla y avisa que revisen el deploy en
+   Netlify (por ejemplo, un build roto).
+2. Corre `npm run test:humo` (config aparte, `apps/web/playwright.humo.config.ts`, pruebas en
+   `apps/web/e2e/humo/*.humo.ts`) contra el sitio publicado: `/api/health` responde 200 con la
+   base en `ok`, `/ingresar` sale con la CSP, React hidrata y no hay errores de consola, violaciones
+   de CSP ni pedidos al sitio con error.
+
+Es **solo lectura**: no inicia sesion, no escribe nada y no toca la base mas alla del health. Si
+falla, el check queda en rojo sobre el commit de `main` (con trazas como artefacto). El sitio es la
+variable del repositorio `URL_PRODUCCION` o, si no esta, `https://mymbpm.netlify.app`. Tambien se
+puede lanzar a mano (Actions → "Humo de produccion" → Run workflow), opcionalmente contra otra URL
+como un deploy preview; en local:
+
+```bash
+URL_HUMO=https://mymbpm.netlify.app npm run test:humo --workspace @myfirstproject/web
+```
+
+### E2E nocturno
+
+`.github/workflows/e2e-nocturno.yml` corre todas las noches (06:00 UTC, 03:00 en Argentina) la suite
+E2E completa (`chromium` y `movil`) **3 veces seguidas y sin reintentos** (`--repeat-each=3
+--retries=0`), contra su propio Postgres de servicio. En el CI de los PR hay 1 reintento, que tapa
+las pruebas intermitentes; esta corrida las muestra antes de que molesten.
+
+`scripts/resumen-e2e-nocturno.mjs` lee el reporte JSON de Playwright y publica en el resumen del job
+una tabla con cada prueba que fallo alguna vez: cuantas de las corridas, si es **intermitente**
+(falla a veces) o **falla siempre**, y la primera linea del error. Si alguna fallo, el job queda en
+rojo; no abre issues ni avisa por otro medio. El reporte JSON y las trazas quedan como artefacto
+14 dias. Se puede lanzar a mano (Actions → "E2E nocturno" → Run workflow) con otra cantidad de
+repeticiones. La sesion del administrador E2E se crea una vez, asi que la corrida usa
+`E2E_JWT_EXPIRES_IN=4h` (en los PR sigue siendo 1 h). En local:
+
+```bash
+cd apps/web
+PLAYWRIGHT_JSON_OUTPUT_NAME=e2e-nocturno.json npx playwright test --project=chromium --project=movil \
+  --repeat-each=3 --retries=0 --reporter=dot,json
+node ../../scripts/resumen-e2e-nocturno.mjs e2e-nocturno.json
+```
 
 ## Testing HTTP desde VSCode
 
