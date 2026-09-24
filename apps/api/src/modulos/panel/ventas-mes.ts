@@ -1,7 +1,6 @@
 import { Prisma } from "@prisma/client";
 
-// Argentina no tiene horario de verano: UTC-3 todo el año.
-const OFFSET_ARGENTINA_MS = 3 * 60 * 60 * 1000;
+import { OFFSET_ARGENTINA_MS } from "../../compartido/dominio/fecha-argentina";
 
 // Del primer instante del mes en curso (hora de Argentina) al primero del mes siguiente.
 export function rangoMesArgentina(ahora: Date) {

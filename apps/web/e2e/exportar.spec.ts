@@ -25,7 +25,8 @@ test("pedidos: filtra por fecha de alta y exporta lo filtrado, no solo lo que se
   const cliente = await crearCliente(nombreCliente, "Perez; Gomez");
   const pedido = await api<{ idPedido: string; numeroPedido: string }>("POST", "/api/pedidos", {
     idCliente: cliente.idCliente,
-    origenPedido: "INSTAGRAM"
+    origenPedido: "INSTAGRAM",
+    fechaEntrega: diaDesdeHoy(5)
   });
 
   await page.goto("/pedidos");
@@ -36,11 +37,11 @@ test("pedidos: filtra por fecha de alta y exporta lo filtrado, no solo lo que se
 
   const { nombre, contenido } = await descargar(page);
   expect(nombre).toBe(`pedidos-${hoy}.csv`);
-  expect(contenido.startsWith("﻿Numero;Alta;Cliente;Estado;Cobro;Origen;Total\r\n")).toBe(true);
+  expect(contenido.startsWith("﻿Numero;Alta;Cliente;Estado;Cobro;Origen;Entrega prometida;Total\r\n")).toBe(true);
   const fila = contenido.split("\r\n").find((linea) => linea.startsWith(`${pedido.numeroPedido};`));
   expect(fila).toBeDefined();
   // El apellido tiene ";": va entre comillas para no partir la columna.
-  expect(fila).toContain(`;"${nombreCliente} Perez; Gomez";Pendiente;Pendiente;Instagram;0`);
+  expect(fila).toContain(`;"${nombreCliente} Perez; Gomez";Pendiente;Pendiente;Instagram;${diaDesdeHoy(5).split("-").reverse().join("/")};0`);
 
   // Con el rango en manana el pedido de hoy queda afuera.
   await page.getByLabel("Alta desde").fill(diaDesdeHoy(1));

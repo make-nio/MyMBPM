@@ -90,6 +90,16 @@ describe("pedidosService.crear", () => {
 
     expect(repo.actualizar).toHaveBeenCalledWith(tx, 42n, { numeroPedido: "PED-000042" });
   });
+
+  it("guarda la fecha de entrega prometida", async () => {
+    const fechaEntrega = new Date("2026-09-30T03:00:00Z");
+    repo.obtenerCliente.mockResolvedValue({ idCliente: 7n } as never);
+    repo.crear.mockResolvedValue({ idPedido: 42n } as never);
+
+    await pedidosService.crear({ idCliente: 7n, origenPedido: "WEB", fechaEntrega });
+
+    expect(repo.crear).toHaveBeenCalledWith(tx, { idCliente: 7n, origenPedido: "WEB", fechaEntrega });
+  });
 });
 
 describe("pedidosService.agregarDetalle", () => {
@@ -197,6 +207,27 @@ describe("pedidosService.actualizarEstado", () => {
     await expect(pedidosService.actualizarEstado(1n, { estadoPedido: "CONFIRMADO" })).rejects.toBeInstanceOf(
       ErrorConflicto
     );
+    expect(repo.actualizar).not.toHaveBeenCalled();
+  });
+});
+
+describe("pedidosService.actualizarEstado (fecha de entrega prometida)", () => {
+  const fecha = new Date("2026-09-30T03:00:00Z");
+
+  it.each(["PENDIENTE", "CONFIRMADO", "LISTO"] as const)("la cambia o la borra en un pedido %s", async (estado) => {
+    repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: estado }));
+
+    await pedidosService.actualizarEstado(1n, { fechaEntrega: fecha });
+    await pedidosService.actualizarEstado(1n, { fechaEntrega: null });
+
+    expect(repo.actualizar).toHaveBeenCalledWith(prisma, 1n, { fechaEntrega: fecha });
+    expect(repo.actualizar).toHaveBeenCalledWith(prisma, 1n, { fechaEntrega: null });
+  });
+
+  it.each(["ENTREGADO", "CANCELADO"] as const)("no la cambia en un pedido %s", async (estado) => {
+    repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: estado }));
+
+    await expect(pedidosService.actualizarEstado(1n, { fechaEntrega: fecha })).rejects.toBeInstanceOf(ErrorConflicto);
     expect(repo.actualizar).not.toHaveBeenCalled();
   });
 });

@@ -19,8 +19,12 @@
     "Exportar CSV", que arma el archivo en el navegador pidiendo todas las paginas.
 - `GET /api/pedidos/:id`
 - `POST /api/pedidos`
+  - Opcional `fechaEntrega`: el dia de entrega prometido al cliente (`"2026-09-30"`). Se guarda
+    en `FECHA_ENTREGA` como las 00:00 de ese dia en Argentina.
 - `POST /api/pedidos/:id/detalles`
 - `PATCH /api/pedidos/:id/estado`
+  - Tambien acepta `fechaEntrega` (`"AAAA-MM-DD"` o `null` para borrarla), salvo en pedidos
+    `ENTREGADO` o `CANCELADO` (409).
 - `POST /api/pedidos/:id/confirmar`
 
 ## Produccion

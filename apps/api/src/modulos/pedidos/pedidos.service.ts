@@ -34,6 +34,8 @@ const TRANSICIONES_ESTADO_PEDIDO: Record<EstadoPedido, readonly EstadoPedido[]> 
   CANCELADO: []
 };
 
+const ESTADOS_CERRADOS: readonly EstadoPedido[] = ["ENTREGADO", "CANCELADO"];
+
 function construirNumeroPedido(idPedido: bigint) {
   return `PED-${idPedido.toString().padStart(6, "0")}`;
 }
@@ -44,6 +46,7 @@ type DatosAltaPedido = {
   estadoCobro?: EstadoCobro;
   observacionesCliente?: string;
   observacionesInternas?: string;
+  fechaEntrega?: Date | null;
   activo?: boolean;
 };
 
@@ -245,9 +248,16 @@ export const pedidosService = {
       estadoPedido?: EstadoPedido;
       estadoCobro?: EstadoCobro;
       observacionesInternas?: string;
+      fechaEntrega?: Date | null;
     }
   ) {
     const pedido = await this.obtenerPorId(idPedido);
+
+    // La fecha prometida sirve mientras el pedido esta abierto: entregado o cancelado ya no se
+    // promete nada y la fecha queda como estaba.
+    if (data.fechaEntrega !== undefined && ESTADOS_CERRADOS.includes(pedido.estadoPedido as EstadoPedido)) {
+      throw new ErrorConflicto("No se puede cambiar la fecha de entrega de un pedido entregado o cancelado");
+    }
 
     if (data.estadoPedido === "CONFIRMADO") {
       throw new ErrorConflicto("Use el endpoint especifico para confirmar pedidos");

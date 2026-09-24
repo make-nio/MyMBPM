@@ -870,3 +870,8 @@ textarea {
     content: none;
   }
 }
+
+/* Un pedido con la fecha de entrega prometida vencida. Mismo tono que .mensaje-error. */
+.texto-alerta {
+  color: #8e2c18;
+}

@@ -13,6 +13,7 @@ const guias: Paso[] = [
       "Busca el cliente escribiendo su nombre, elegi de donde vino el pedido (Instagram, WhatsApp...) y toca \"Crear pedido\".",
       "En el detalle que se abre, toca \"Agregar item\" por cada producto: buscalo por nombre y pone la cantidad.",
       "El precio se copia del catalogo en ese momento: si despues cambias el precio del producto, el pedido no cambia.",
+      "Si le prometiste una fecha al cliente, cargala en \"Entrega prometida\". La podes cambiar desde el detalle con \"Guardar fecha\" hasta que el pedido se entregue.",
       "Si empezo como solicitud especial, en Solicitudes toca \"Convertir en pedido\": se crea el pedido con el cliente y la descripcion, y despues le cargas los items."
     ]
   },
@@ -150,7 +151,8 @@ export default function AyudaPage() {
       </section>
 
       <p className="texto-secundario">
-        Para lo que falta reponer y lo que hay para entregar, mira el <Link href="/panel">Dashboard</Link>.
+        Para lo que falta reponer, lo que hay para entregar y las entregas atrasadas o de esta semana, mira el{" "}
+        <Link href="/panel">Dashboard</Link>.
       </p>
     </section>
   );

@@ -21,7 +21,8 @@ vi.mock("./panel.repository", () => ({
     listarPedidosPorEstados: vi.fn(),
     contarOrdenesPorEstado: vi.fn(),
     listarOrdenesEnProceso: vi.fn(),
-    listarPedidosConfirmadosEntre: vi.fn()
+    listarPedidosConfirmadosEntre: vi.fn(),
+    listarPedidosConEntregaAntesDe: vi.fn()
   }
 }));
 
@@ -51,6 +52,7 @@ beforeEach(() => {
   ] as never);
   repo.listarOrdenesEnProceso.mockResolvedValue([]);
   repo.listarPedidosConfirmadosEntre.mockResolvedValue([]);
+  repo.listarPedidosConEntregaAntesDe.mockResolvedValue([]);
   stock.obtenerExistencias.mockResolvedValue([]);
   stock.obtenerUltimosMovimientos.mockResolvedValue([]);
 });
@@ -143,3 +145,34 @@ describe("panelService.obtenerResumen: sin permiso para ver costos", () => {
   });
 });
 
+
+describe("panelService.obtenerResumen: entregas prometidas", () => {
+  const ahora = new Date("2026-09-24T12:00:00Z");
+  const conFecha = (idPedido: bigint, fechaEntrega: string) => ({ idPedido, fechaEntrega: new Date(fechaEntrega) });
+
+  it("pide los pedidos abiertos con fecha antes de 7 dias desde hoy (hora de Argentina)", async () => {
+    await panelService.obtenerResumen({ limite: 5 }, { verCostos: false }, ahora);
+
+    expect(repo.listarPedidosConEntregaAntesDe).toHaveBeenCalledWith(
+      expect.anything(),
+      ["PENDIENTE", "CONFIRMADO", "EN_PREPARACION", "LISTO"],
+      new Date("2026-10-01T03:00:00Z")
+    );
+  });
+
+  it("separa los atrasados (antes de hoy) de los que vencen esta semana (hoy incluido)", async () => {
+    repo.listarPedidosConEntregaAntesDe.mockResolvedValue([
+      conFecha(1n, "2026-09-20T03:00:00Z"),
+      conFecha(2n, "2026-09-23T03:00:00Z"),
+      conFecha(3n, "2026-09-24T03:00:00Z"),
+      conFecha(4n, "2026-09-30T03:00:00Z")
+    ] as never);
+
+    const resumen = await panelService.obtenerResumen({ limite: 1 }, { verCostos: false }, ahora);
+
+    expect(resumen.entregas.atrasados.total).toBe(2);
+    expect(resumen.entregas.atrasados.pedidos.map((pedido) => pedido.idPedido)).toEqual([1n]);
+    expect(resumen.entregas.estaSemana.total).toBe(2);
+    expect(resumen.entregas.estaSemana.pedidos.map((pedido) => pedido.idPedido)).toEqual([3n]);
+  });
+});

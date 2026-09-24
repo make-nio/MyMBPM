@@ -21,6 +21,7 @@ type CrearPedidoInput = {
   estadoCobro?: string;
   observacionesCliente?: string;
   observacionesInternas?: string;
+  fechaEntrega?: Date | null;
   activo?: boolean;
 };
 
@@ -33,7 +34,7 @@ type ActualizarPedidoInput = Partial<{
   subtotal: Prisma.Decimal;
   total: Prisma.Decimal;
   fechaConfirmacion: Date;
-  fechaEntrega: Date;
+  fechaEntrega: Date | null;
   activo: boolean;
 }>;
 
@@ -82,6 +83,7 @@ export const pedidosRepository = {
         estadoCobro: input.estadoCobro ?? "PENDIENTE",
         observacionesCliente: input.observacionesCliente,
         observacionesInternas: input.observacionesInternas,
+        fechaEntrega: input.fechaEntrega,
         activo: input.activo ?? true,
         subtotal: new Prisma.Decimal(0),
         total: new Prisma.Decimal(0)

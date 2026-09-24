@@ -15,8 +15,8 @@ import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
-import { formatearEstado, formatearFecha, formatearMoneda } from "../../../src/lib/formato";
 import { generarCsv, numeroCsv } from "../../../src/lib/csv";
+import { formatearDia, formatearEstado, formatearFecha, formatearMoneda } from "../../../src/lib/formato";
 import { crearPedido, listarPedidos } from "../../../src/lib/modulos/pedidos";
 import { cargarTodo } from "../../../src/lib/paginacion";
 import {
@@ -67,7 +67,7 @@ export default function PedidosPage() {
     const todos = await cargarTodo((limit, offset) => listarPedidos({ ...filtros, limit, offset }));
 
     return generarCsv(
-      ["Numero", "Alta", "Cliente", "Estado", "Cobro", "Origen", "Total"],
+      ["Numero", "Alta", "Cliente", "Estado", "Cobro", "Origen", "Entrega prometida", "Total"],
       todos.map((pedido) => [
         pedido.numeroPedido ?? pedido.idPedido,
         formatearFecha(pedido.fechaAlta).replace(", ", " "),
@@ -75,6 +75,7 @@ export default function PedidosPage() {
         formatearEstado(pedido.estadoPedido),
         formatearEstado(pedido.estadoCobro),
         formatearEstado(pedido.origenPedido),
+        pedido.fechaEntrega ? formatearDia(pedido.fechaEntrega) : "",
         numeroCsv(pedido.total)
       ])
     );
@@ -163,6 +164,7 @@ export default function PedidosPage() {
               cell: (pedido) => `${pedido.cliente?.nombre ?? ""} ${pedido.cliente?.apellido ?? ""}`.trim() || "-"
             },
             { header: "Alta", cell: (pedido) => formatearFecha(pedido.fechaAlta) },
+            { header: "Entrega", cell: (pedido) => formatearDia(pedido.fechaEntrega) },
             { header: "Estado", cell: (pedido) => formatearEstado(pedido.estadoPedido) },
             { header: "Cobro", cell: (pedido) => formatearEstado(pedido.estadoCobro) },
             { header: "Total", cell: (pedido) => formatearMoneda(pedido.total) },

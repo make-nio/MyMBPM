@@ -21,6 +21,15 @@ export const panelRepository = {
     });
   },
 
+  // Pedidos abiertos con fecha de entrega prometida antes de `hasta`, los mas urgentes primero.
+  listarPedidosConEntregaAntesDe(prismaOrTx: PrismaOrTx, estados: string[], hasta: Date) {
+    return prismaOrTx.pedido.findMany({
+      where: { activo: true, estadoPedido: { in: estados }, fechaEntrega: { lt: hasta } },
+      include: { cliente: { select: { idCliente: true, nombre: true, apellido: true } } },
+      orderBy: [{ fechaEntrega: "asc" }, { idPedido: "asc" }]
+    });
+  },
+
   contarOrdenesPorEstado(prismaOrTx: PrismaOrTx) {
     return prismaOrTx.ordenProduccion.groupBy({
       by: ["estadoProduccion"],
