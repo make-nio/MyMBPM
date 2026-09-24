@@ -17,12 +17,15 @@ export class ErrorApi extends Error {
   readonly status: number;
   // Codigo de la solicitud que fallo (header X-Referencia): el mismo queda en el log de la API.
   readonly referencia: string | null;
+  // error.detalles de la API: en una validacion, los campos; en un duplicado, { target: [columna] }.
+  readonly detalles: unknown;
 
-  constructor(message: string, status: number, referencia: string | null = null) {
+  constructor(message: string, status: number, referencia: string | null = null, detalles: unknown = null) {
     super(message);
     this.name = "ErrorApi";
     this.status = status;
     this.referencia = referencia;
+    this.detalles = detalles;
   }
 }
 
@@ -69,7 +72,12 @@ export async function apiFetch<T>(path: string, init: ApiRequestInit = {}) {
       "No fue posible completar la solicitud";
     const referencia: string | null = body?.error?.referencia || response.headers?.get?.("X-Referencia") || null;
 
-    throw new ErrorApi(mensajeConReferencia(message, response.status, referencia), response.status, referencia);
+    throw new ErrorApi(
+      mensajeConReferencia(message, response.status, referencia),
+      response.status,
+      referencia,
+      body?.error?.detalles ?? null
+    );
   }
 
   return body as T;

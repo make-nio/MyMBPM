@@ -7,6 +7,8 @@ import { CampoCheckbox } from "../../formularios/campo-checkbox";
 import { CampoTextarea } from "../../formularios/campo-textarea";
 import { CampoTexto } from "../../formularios/campo-texto";
 import { MensajeError } from "../../ui/mensaje-error";
+import { useValidacionFormulario } from "../../../hooks/use-validacion-formulario";
+import { largoMaximo, requerido } from "../../../lib/validacion";
 import { Categoria } from "../../../types/categorias";
 
 type FormularioCategoriaProps = {
@@ -31,9 +33,21 @@ export function FormularioCategoria({
   const [activo, setActivo] = useState(categoria?.activo ?? true);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { formularioRef, validar, errorDelServidor, errorDe } = useValidacionFormulario();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    const resumen = validar({
+      "categoria-nombre": { valor: nombre, reglas: [requerido("el nombre"), largoMaximo(120)] },
+      "categoria-slug": { valor: slug, reglas: [requerido("el slug (el nombre en la direccion web, por ejemplo llaveros)"), largoMaximo(160)] },
+      "categoria-descripcion": { valor: descripcion, reglas: [largoMaximo(1000)] }
+    });
+    if (resumen) {
+      setError(resumen);
+      return;
+    }
+
     setEnviando(true);
     setError(null);
 
@@ -46,19 +60,21 @@ export function FormularioCategoria({
       });
     } catch (currentError) {
       setError(
-        currentError instanceof Error ? currentError.message : "No fue posible guardar la categoria"
+        errorDelServidor(currentError, { SLUG: { id: "categoria-slug", valor: slug } }) ??
+          (currentError instanceof Error ? currentError.message : "No fue posible guardar la categoria")
       );
       setEnviando(false);
     }
   }
 
   return (
-    <form className="formulario-modulo" onSubmit={handleSubmit}>
+    <form className="formulario-modulo" noValidate onSubmit={handleSubmit} ref={formularioRef}>
       {error ? <MensajeError mensaje={error} /> : null}
 
-      <CampoTexto id="categoria-nombre" label="Nombre" onChange={setNombre} required value={nombre} />
-      <CampoTexto id="categoria-slug" label="Slug" onChange={setSlug} required value={slug} />
+      <CampoTexto error={errorDe("categoria-nombre", nombre)} id="categoria-nombre" label="Nombre" onChange={setNombre} required value={nombre} />
+      <CampoTexto error={errorDe("categoria-slug", slug)} id="categoria-slug" label="Slug" onChange={setSlug} required value={slug} />
       <CampoTextarea
+        error={errorDe("categoria-descripcion", descripcion)}
         id="categoria-descripcion"
         label="Descripcion"
         onChange={setDescripcion}

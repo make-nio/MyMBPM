@@ -6,6 +6,8 @@ import { AccionesFormulario } from "../../formularios/acciones-formulario";
 import { CampoSelectBuscable } from "../../formularios/campo-select-buscable";
 import { CampoTexto } from "../../formularios/campo-texto";
 import { MensajeError } from "../../ui/mensaje-error";
+import { useValidacionFormulario } from "../../../hooks/use-validacion-formulario";
+import { numeroMayorACero, requerido } from "../../../lib/validacion";
 import { formatearMoneda } from "../../../lib/formato";
 import { buscarItemsActivos } from "../../../lib/modulos/items-catalogo";
 import { PedidoDetalle } from "../../../types/pedidos";
@@ -23,17 +25,17 @@ export function FormularioLineaPedido({ linea, onCancel, onSubmit }: FormularioL
   const [cantidad, setCantidad] = useState(linea ? String(Number(linea.cantidad)) : "1");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { formularioRef, validar, errorDe } = useValidacionFormulario();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!idItemCatalogo) {
-      setError("Selecciona un item del catalogo");
-      return;
-    }
-
-    if (!(Number(cantidad) > 0)) {
-      setError("La cantidad tiene que ser mayor a cero");
+    const resumen = validar({
+      "linea-item": { valor: idItemCatalogo, reglas: [requerido("el item del catalogo: buscalo y elegilo de la lista")] },
+      "linea-cantidad": { valor: cantidad, reglas: [requerido("la cantidad"), numeroMayorACero()] }
+    });
+    if (resumen) {
+      setError(resumen);
       return;
     }
 
@@ -49,7 +51,7 @@ export function FormularioLineaPedido({ linea, onCancel, onSubmit }: FormularioL
   }
 
   return (
-    <form className="formulario-modulo" onSubmit={handleSubmit}>
+    <form className="formulario-modulo" noValidate onSubmit={handleSubmit} ref={formularioRef}>
       {error ? <MensajeError mensaje={error} /> : null}
 
       {linea ? (
@@ -64,6 +66,7 @@ export function FormularioLineaPedido({ linea, onCancel, onSubmit }: FormularioL
               }))
             )
           }
+          error={errorDe("linea-item", idItemCatalogo)}
           id="linea-item"
           label="Item"
           onChange={setIdItemCatalogo}
@@ -72,6 +75,7 @@ export function FormularioLineaPedido({ linea, onCancel, onSubmit }: FormularioL
         />
       )}
       <CampoTexto
+        error={errorDe("linea-cantidad", cantidad)}
         id="linea-cantidad"
         label="Cantidad"
         onChange={setCantidad}

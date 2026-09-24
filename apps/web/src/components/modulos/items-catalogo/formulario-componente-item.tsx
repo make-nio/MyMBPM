@@ -9,6 +9,8 @@ import { CampoCheckbox } from "../../formularios/campo-checkbox";
 import { CampoSelectBuscable } from "../../formularios/campo-select-buscable";
 import { CampoTexto } from "../../formularios/campo-texto";
 import { MensajeError } from "../../ui/mensaje-error";
+import { useValidacionFormulario } from "../../../hooks/use-validacion-formulario";
+import { largoMaximo, numeroMayorACero, requerido } from "../../../lib/validacion";
 
 type FormularioComponenteItemProps = {
   componente?: ItemCatalogoComponente | null;
@@ -40,11 +42,17 @@ export function FormularioComponenteItem({
   const [activo, setActivo] = useState(componente?.activo ?? true);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { formularioRef, validar, errorDe } = useValidacionFormulario();
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!idItemCatalogoHijo) {
-      setError("Selecciona un item componente");
+    const resumen = validar({
+      "componente-item": { valor: idItemCatalogoHijo, reglas: [requerido("el item componente: buscalo y elegilo de la lista")] },
+      "componente-cantidad": { valor: cantidadRequerida, reglas: [requerido("la cantidad"), numeroMayorACero()] },
+      "componente-unidad": { valor: unidadMedida, reglas: [requerido("la unidad (por ejemplo UN o GR)"), largoMaximo(30)] }
+    });
+    if (resumen) {
+      setError(resumen);
       return;
     }
 
@@ -67,7 +75,7 @@ export function FormularioComponenteItem({
   }
 
   return (
-    <form className="formulario-modulo" onSubmit={handleSubmit}>
+    <form className="formulario-modulo" noValidate onSubmit={handleSubmit} ref={formularioRef}>
       {error ? <MensajeError mensaje={error} /> : null}
 
       <CampoSelectBuscable
@@ -77,6 +85,7 @@ export function FormularioComponenteItem({
             items.filter((item) => item.idItemCatalogo !== itemPadreId).map(opcionItem)
           )
         }
+        error={errorDe("componente-item", idItemCatalogoHijo)}
         id="componente-item"
         label="Item componente"
         onChange={setIdItemCatalogoHijo}
@@ -85,6 +94,7 @@ export function FormularioComponenteItem({
         value={idItemCatalogoHijo}
       />
       <CampoTexto
+        error={errorDe("componente-cantidad", cantidadRequerida)}
         id="componente-cantidad"
         label="Cantidad requerida"
         onChange={setCantidadRequerida}
@@ -92,6 +102,7 @@ export function FormularioComponenteItem({
         value={cantidadRequerida}
       />
       <CampoTexto
+        error={errorDe("componente-unidad", unidadMedida)}
         id="componente-unidad"
         label="Unidad de medida"
         onChange={setUnidadMedida}

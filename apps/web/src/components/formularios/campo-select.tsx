@@ -1,3 +1,5 @@
+import { atributosError, ErrorCampo } from "./error-campo";
+
 type OpcionSelect = {
   value: string;
   label: string;
@@ -9,6 +11,7 @@ type CampoSelectProps = {
   value: string;
   onChange: (value: string) => void;
   options: OpcionSelect[];
+  error?: string | null;
 };
 
 export function CampoSelect({
@@ -16,12 +19,14 @@ export function CampoSelect({
   label,
   value,
   onChange,
-  options
+  options,
+  error
 }: CampoSelectProps) {
   return (
     <div className="campo-formulario">
       <label htmlFor={id}>{label}</label>
       <select
+        {...atributosError(id, error)}
         id={id}
         name={id}
         onChange={(event) => onChange(event.target.value)}
@@ -33,6 +38,7 @@ export function CampoSelect({
           </option>
         ))}
       </select>
+      <ErrorCampo idCampo={id} mensaje={error} />
     </div>
   );
 }

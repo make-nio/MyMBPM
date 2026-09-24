@@ -41,6 +41,17 @@ async function validarQueQuedeUnAdministradorActivo(
   }
 }
 
+// Dice cual de los dos datos se repite. detalles.target usa los nombres de columna de un P2002,
+// asi la web marca el campo igual que en cualquier otro duplicado.
+function conflictoDuplicado(duplicado: { email?: string | null }, data: { email?: string }) {
+  const mismoEmail = Boolean(data.email && duplicado.email && duplicado.email.toLowerCase() === data.email.toLowerCase());
+
+  return new ErrorConflicto(
+    `Ya existe un usuario con ${mismoEmail ? "ese email" : "ese nombre de usuario"}: usa otro y volve a guardar`,
+    { target: [mismoEmail ? "EMAIL" : "USUARIO"] }
+  );
+}
+
 export const usuariosService = {
   listar(filtros: { activo?: boolean; limit: number; offset: number }) {
     return usuariosRepository.listar(filtros);
@@ -89,7 +100,7 @@ export const usuariosService = {
       });
 
       if (duplicado) {
-        throw new ErrorConflicto("Ya existe un usuario con ese email o nombre de usuario");
+        throw conflictoDuplicado(duplicado, data);
       }
 
       const claveHash = await bcrypt.hash(data.password, 10);
@@ -130,7 +141,7 @@ export const usuariosService = {
       });
 
       if (duplicado) {
-        throw new ErrorConflicto("Ya existe un usuario con ese email o nombre de usuario");
+        throw conflictoDuplicado(duplicado, data);
       }
 
       return usuariosRepository.actualizar(tx, idUsuario, data);
