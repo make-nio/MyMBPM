@@ -31,6 +31,12 @@ export function listarItemsCatalogo(filtros: FiltrosItemsCatalogo = {}) {
   ).then((response) => response.data);
 }
 
+export function obtenerItemCatalogo(idItemCatalogo: string) {
+  return apiFetch<{ ok: true; data: ItemCatalogo }>(`/api/items-catalogo/${idItemCatalogo}`).then(
+    (response) => response.data
+  );
+}
+
 export function crearItemCatalogo(payload: ItemCatalogoPayload) {
   return apiFetch<{ ok: true; data: ItemCatalogo }>("/api/items-catalogo", {
     method: "POST",
