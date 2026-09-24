@@ -178,6 +178,28 @@ como un deploy preview; en local:
 URL_HUMO=https://mymbpm.netlify.app npm run test:humo --workspace @myfirstproject/web
 ```
 
+### E2E nocturno
+
+`.github/workflows/e2e-nocturno.yml` corre todas las noches (06:00 UTC, 03:00 en Argentina) la suite
+E2E completa (`chromium` y `movil`) **3 veces seguidas y sin reintentos** (`--repeat-each=3
+--retries=0`), contra su propio Postgres de servicio. En el CI de los PR hay 1 reintento, que tapa
+las pruebas intermitentes; esta corrida las muestra antes de que molesten.
+
+`scripts/resumen-e2e-nocturno.mjs` lee el reporte JSON de Playwright y publica en el resumen del job
+una tabla con cada prueba que fallo alguna vez: cuantas de las corridas, si es **intermitente**
+(falla a veces) o **falla siempre**, y la primera linea del error. Si alguna fallo, el job queda en
+rojo; no abre issues ni avisa por otro medio. El reporte JSON y las trazas quedan como artefacto
+14 dias. Se puede lanzar a mano (Actions → "E2E nocturno" → Run workflow) con otra cantidad de
+repeticiones. La sesion del administrador E2E se crea una vez, asi que la corrida usa
+`E2E_JWT_EXPIRES_IN=4h` (en los PR sigue siendo 1 h). En local:
+
+```bash
+cd apps/web
+PLAYWRIGHT_JSON_OUTPUT_NAME=e2e-nocturno.json npx playwright test --project=chromium --project=movil \
+  --repeat-each=3 --retries=0 --reporter=dot,json
+node ../../scripts/resumen-e2e-nocturno.mjs e2e-nocturno.json
+```
+
 ## Testing HTTP desde VSCode
 
 - instala la extension `REST Client`
