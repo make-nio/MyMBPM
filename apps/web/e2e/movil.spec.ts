@@ -125,6 +125,17 @@ test("la busqueda global entra a lo ancho del celular", async ({ page }) => {
   expect((cerrar?.x ?? 0) + (cerrar?.width ?? 0)).toBeLessThanOrEqual((caja?.x ?? 0) + (caja?.width ?? 0));
 });
 
+test("los avisos del encabezado entran a lo ancho del celular", async ({ page }) => {
+  await page.goto("/panel");
+  await page.getByRole("button", { name: /^Avisos:/ }).click();
+  const avisos = page.getByRole("region", { name: "Avisos" });
+  await expect(avisos).toBeVisible();
+
+  const caja = await avisos.boundingBox();
+  expect(caja?.x ?? -1).toBeGreaterThanOrEqual(0);
+  expect((caja?.x ?? 0) + (caja?.width ?? 0)).toBeLessThanOrEqual(375);
+});
+
 test("el tablero de produccion entra a lo ancho del celular", async ({ page }) => {
   await page.goto("/produccion?vista=tablero");
   await expect(page.getByRole("region", { name: "Pendientes", exact: true })).toBeVisible();

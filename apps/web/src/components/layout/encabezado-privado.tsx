@@ -1,5 +1,6 @@
 import { UsuarioAutenticado } from "../../types/auth";
 
+import { AvisosEncabezado } from "./avisos-encabezado";
 import { BusquedaGlobal } from "./busqueda-global";
 
 type EncabezadoPrivadoProps = {
@@ -38,6 +39,7 @@ export function EncabezadoPrivado({
 
       <div className="encabezado-privado__usuario">
         <BusquedaGlobal />
+        <AvisosEncabezado />
         <span className="encabezado-privado__chip">
           {usuario.nombre} {usuario.apellido ?? ""}
         </span>
