@@ -49,6 +49,11 @@ export function manejoErroresMiddleware(
     return;
   }
 
+  if (typeof error === "object" && error !== null && (error as { type?: string }).type === "entity.too.large") {
+    responderError(request, response, 413, { codigo: "VALIDACION", message: "La solicitud es demasiado grande" });
+    return;
+  }
+
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     if (error.code === "P2002") {
       responderError(request, response, 409, {
