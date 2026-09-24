@@ -12,13 +12,15 @@ import { MensajeError } from "../../../src/components/ui/mensaje-error";
 import { Modal } from "../../../src/components/ui/modal";
 import { PieListado } from "../../../src/components/ui/pie-listado";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
+import { useAbrirDesdeUrl } from "../../../src/hooks/use-abrir-desde-url";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
 import {
   actualizarCliente,
   cambiarEstadoCliente,
   crearCliente,
-  listarClientes
+  listarClientes,
+  obtenerCliente
 } from "../../../src/lib/modulos/clientes";
 import { Cliente } from "../../../src/types/clientes";
 
@@ -44,6 +46,13 @@ export default function ClientesPage() {
     "No fue posible cargar los clientes"
   );
   const { items: clientes, cargando, error, recargar } = listado;
+
+  // /clientes?cliente=ID (desde la busqueda global): lista filtrada por su nombre y su ficha abierta.
+  useAbrirDesdeUrl("cliente", obtenerCliente, (cliente) => {
+    setBusqueda(cliente.nombre);
+    setBusquedaAplicada(cliente.nombre);
+    modalCliente.abrir(cliente);
+  });
 
   async function guardarCliente(payload: Parameters<typeof crearCliente>[0]) {
     if (modalCliente.contexto) {

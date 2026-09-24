@@ -68,6 +68,14 @@ const guias: Paso[] = [
     ojo: "Se importa todo o nada: si una sola fila tiene un error, no se carga ninguna. Un item que ya existe con el mismo nombre no se duplica: esa fila aparece con error."
   },
   {
+    titulo: "Encontrar algo rapido",
+    pasos: [
+      "Toca \"Buscar\" arriba (o apreta Ctrl+K en la compu; Cmd+K en Mac) desde cualquier pantalla.",
+      "Escribi un numero de pedido (alcanza con \"755\"), el nombre o telefono de un cliente, o el nombre de un item.",
+      "Toca el resultado (o usa las flechas y Enter): el pedido se abre en Pedidos y el cliente o el item, en su ficha."
+    ]
+  },
+  {
     titulo: "Llevarte los datos a una planilla",
     pasos: [
       "En Pedidos o en Stock, aplica los filtros que quieras (en Pedidos podes elegir las fechas de alta con \"Alta desde\" y \"hasta\").",
