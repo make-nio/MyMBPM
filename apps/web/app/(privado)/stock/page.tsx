@@ -37,6 +37,13 @@ export default function StockPage() {
   const [version, setVersion] = useState(0);
   const [cantidadBajoMinimo, setCantidadBajoMinimo] = useState<number | null>(null);
 
+  // /stock?bajoMinimo=1 (desde los avisos del encabezado) abre con el filtro puesto.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("bajoMinimo") === "1") {
+      setSoloBajoMinimo(true);
+    }
+  }, []);
+
   // La busqueda se aplica al dejar de escribir: filtra en la API.
   useEffect(() => {
     const espera = setTimeout(() => setBusquedaAplicada(busqueda.trim()), ESPERA_BUSQUEDA_MS);

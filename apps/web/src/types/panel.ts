@@ -63,3 +63,9 @@ export type ResumenPanel = {
     lineasSinCosto: number;
   };
 };
+
+export type AvisosPanel = {
+  stockBajo: number;
+  entregasAtrasadas: number;
+  entregasHoy: number;
+};
