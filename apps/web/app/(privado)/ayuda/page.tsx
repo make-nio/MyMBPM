@@ -14,7 +14,8 @@ const guias: Paso[] = [
       "En el detalle que se abre, toca \"Agregar item\" por cada producto: buscalo por nombre y pone la cantidad.",
       "El precio se copia del catalogo en ese momento: si despues cambias el precio del producto, el pedido no cambia.",
       "Si le prometiste una fecha al cliente, cargala en \"Entrega prometida\". La podes cambiar desde el detalle con \"Guardar fecha\" hasta que el pedido se entregue.",
-      "Si empezo como solicitud especial, en Solicitudes toca \"Convertir en pedido\": se crea el pedido con el cliente y la descripcion, y despues le cargas los items."
+      "Si empezo como solicitud especial, en Solicitudes toca \"Convertir en pedido\": se crea el pedido con el cliente y la descripcion, y despues le cargas los items.",
+      "Si un cliente pide lo mismo que otra vez, abri ese pedido y toca \"Repetir\": ves como queda con los precios de hoy y, al tocar \"Crear pedido nuevo\", se crea pendiente para revisarlo y confirmarlo. Los items dados de baja o sin precio no se repiten."
     ]
   },
   {
