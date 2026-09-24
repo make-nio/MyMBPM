@@ -33,7 +33,7 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testIgnore: /movil\.spec\.ts/,
+      testIgnore: /(movil|rendimiento)\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], storageState: ARCHIVO_SESION_ADMIN }
     },
     {
@@ -48,6 +48,13 @@ export default defineConfig({
         hasTouch: true,
         storageState: ARCHIVO_SESION_ADMIN
       }
+    },
+    {
+      // Presupuesto de Lighthouse (npm run test:rendimiento). Abre su propio Chromium con
+      // puerto de depuracion, asi que no usa el navegador de Playwright.
+      name: "rendimiento",
+      testMatch: /rendimiento\.spec\.ts/,
+      retries: 0
     }
   ],
   webServer: [
