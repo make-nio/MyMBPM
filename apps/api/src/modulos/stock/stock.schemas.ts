@@ -39,5 +39,10 @@ export const crearAjusteStockSchema = z.object({
     "Solo se permiten AJUSTE_POSITIVO o AJUSTE_NEGATIVO"
   ),
   cantidad: cantidadSchema,
-  observaciones: z.string().max(2000).optional()
+  // El motivo es obligatorio: cada correccion manual tiene que quedar explicada en el historial.
+  observaciones: z
+    .string({ required_error: "Indica el motivo del ajuste" })
+    .trim()
+    .min(1, "Indica el motivo del ajuste")
+    .max(2000)
 });

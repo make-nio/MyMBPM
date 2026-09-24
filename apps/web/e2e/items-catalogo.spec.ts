@@ -32,7 +32,12 @@ test("alta de un producto y armado de su receta con un insumo", async ({ page })
   await receta.getByRole("button", { name: "Guardar componente" }).click();
   await expect(receta).toBeHidden();
 
-  const componente = page.getByRole("row").filter({ hasText: insumo.nombre }).filter({ hasText: "KG" });
+  // Por celda exacta: hasText no distingue mayusculas y el sufijo aleatorio del nombre puede
+  // contener "kg", con lo que la fila del catalogo tambien matchearia.
+  const componente = page
+    .getByRole("row")
+    .filter({ hasText: insumo.nombre })
+    .filter({ has: page.getByRole("cell", { name: "KG", exact: true }) });
   await expect(componente).toContainText("1.5");
 
   page.once("dialog", (dialogo) => void dialogo.accept());
