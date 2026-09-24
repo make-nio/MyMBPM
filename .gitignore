@@ -21,3 +21,6 @@ apps/api/prisma/*.db-journal
 *.tsbuildinfo
 apps/web/out/
 .netlify/
+**/e2e/.auth/
+**/test-results/
+**/playwright-report/

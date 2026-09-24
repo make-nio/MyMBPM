@@ -17,13 +17,17 @@
     "check:web": "npm run check --workspace @myfirstproject/web",
     "check:api": "npm run check --workspace @myfirstproject/api",
     "check": "npm run check:web && npm run check:api",
-    "test": "npm run test --workspace @myfirstproject/api",
-    "build:netlify": "npm run prisma:generate --workspace @myfirstproject/api && npm run prisma:migrate:deploy --workspace @myfirstproject/api && npm run build:web"
+    "test": "npm run test --workspace @myfirstproject/api && npm run test --workspace @myfirstproject/web",
+    "build:netlify": "npm run prisma:generate --workspace @myfirstproject/api && node scripts/migrar-netlify.mjs && npm run build:web",
+    "test:coverage": "npm run test:coverage --workspace @myfirstproject/api && npm run test:coverage --workspace @myfirstproject/web",
+    "test:e2e": "npm run test:e2e --workspace @myfirstproject/web",
+    "coverage:report": "npm run coverage:e2e --workspace @myfirstproject/api && node scripts/reporte-cobertura.mjs"
   },
   "engines": {
     "node": ">=20.0.0"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "istanbul-lib-coverage": "^3.2.2"
   }
 }

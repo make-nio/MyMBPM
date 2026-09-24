@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  # Todo PR (tambien los apilados sobre otra rama de trabajo) y cada push a main.
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    name: Check, tests, build y E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      # Base propia del job: los E2E nunca corren contra Netlify DB (produccion).
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mymbpm_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      NETLIFY_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mymbpm_e2e
+      NETLIFY_DATABASE_URL_UNPOOLED: postgresql://postgres:postgres@localhost:5432/mymbpm_e2e
+      E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mymbpm_e2e
+      E2E_COVERAGE: "1"
+      COBERTURA_UMBRAL: "50"
+      COBERTURA_ESTRICTA: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Typecheck (web + api)
+        run: npm run check
+
+      - name: Tests unitarios con cobertura
+        run: npm run test:coverage
+
+      - name: Build (web con source maps para cobertura E2E + api)
+        run: npm run build
+
+      - name: Migraciones en la base del job
+        run: npm run prisma:migrate:deploy --workspace @myfirstproject/api
+
+      - name: Instalar Chromium para Playwright
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+
+      - name: E2E con Playwright
+        run: npm run test:e2e
+
+      - name: Reporte de cobertura
+        if: ${{ !cancelled() }}
+        run: npm run coverage:report
+
+      - name: Guardar reporte de Playwright
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+          retention-days: 7
+
+      - name: Guardar cobertura
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura
+          path: |
+            apps/api/coverage/unit/coverage-final.json
+            apps/api/coverage/e2e/coverage-final.json
+            apps/web/coverage/unit/coverage-final.json
+            apps/web/coverage/e2e/coverage-final.json
+          retention-days: 14
