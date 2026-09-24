@@ -1,5 +1,3 @@
-import { getApiUrl } from "./env";
-
 type ApiRequestInit = RequestInit & {
   token?: string;
 };
@@ -34,7 +32,7 @@ export async function apiFetch<T>(path: string, init: ApiRequestInit = {}) {
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(`${getApiUrl()}${path}`, {
+  const response = await fetch(path, {
     ...init,
     headers
   });

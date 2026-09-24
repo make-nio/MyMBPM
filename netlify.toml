@@ -1,0 +1,39 @@
+# MyMBPM en Netlify: web Next.js (export estatico) + API Express como Netlify Function,
+# ambas en el mismo sitio. La base es Netlify DB (Neon / PostgreSQL).
+
+[build]
+  base = "/"
+  # Genera el cliente Prisma, aplica migraciones pendientes y exporta la web.
+  command = "npm run build:netlify"
+  publish = "apps/web/out"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[functions]
+  directory = "apps/api/netlify/functions"
+  node_bundler = "esbuild"
+  # Prisma resuelve el query engine por ruta en runtime: no se puede bundlear.
+  external_node_modules = ["@prisma/client"]
+  # Cliente generado + engine para Lambda (rhel-openssl-3.0.x). Se excluye lo que no se
+  # usa en runtime (engine "native" del build, runtimes WASM de otros motores, typescript
+  # como peer opcional de @prisma/client): sin esto el zip ronda 47 MB (limite Lambda: 50 MB).
+  included_files = [
+    "node_modules/.prisma/client/**",
+    "!node_modules/.prisma/client/libquery_engine-debian-*",
+    "!node_modules/.prisma/client/libquery_engine-linux-*",
+    "!node_modules/.prisma/client/*.wasm",
+    "!node_modules/.prisma/client/index.d.ts",
+    "!node_modules/@prisma/client/generator-build/**",
+    "!node_modules/@prisma/client/runtime/*.wasm-base64.*",
+    "!node_modules/@prisma/client/runtime/*.map",
+    "!node_modules/typescript/**"
+  ]
+
+# La API responde bajo /api/* en el mismo dominio que la web (sin CORS).
+# El rewrite (200) conserva el path original, que Express enruta tal cual.
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true

@@ -7,26 +7,9 @@ import { apiRouter } from "./routes";
 
 export function createApp() {
   const app = express();
-  const env = getEnv();
 
-  app.use((request, response, next) => {
-    const requestOrigin = request.headers.origin;
-
-    if (!requestOrigin || env.corsOrigins.includes(requestOrigin)) {
-      response.header("Access-Control-Allow-Origin", requestOrigin ?? "*");
-      response.header("Vary", "Origin");
-    }
-
-    response.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-    response.header("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
-
-    if (request.method === "OPTIONS") {
-      response.sendStatus(204);
-      return;
-    }
-
-    next();
-  });
+  // Valida variables requeridas al arrancar (o en el cold start de la function).
+  getEnv();
 
   app.use(express.json());
 
