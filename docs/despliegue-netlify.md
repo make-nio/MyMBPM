@@ -30,10 +30,17 @@ Web y API comparten dominio, por eso no hay CORS ni `CORS_ORIGIN`.
    (ver "Migraciones y deploy previews").
 3. `next build` de `apps/web` → `apps/web/out`.
 
-Netlify empaqueta la function con esbuild. `@prisma/client` queda como modulo externo
-y el query engine `rhel-openssl-3.0.x` se agrega con `included_files`. Las exclusiones
-de `included_files` (runtimes WASM, `typescript`, engine nativo del build) bajan el zip de
-~47 MB a ~11 MB; el limite de AWS Lambda es 50 MB comprimido.
+Netlify empaqueta la function con esbuild. Desde Prisma 7 no hay query engine nativo: la API se
+conecta con el driver adapter de pg (`@prisma/adapter-pg`, bundleado) y el cliente generado
+(`apps/api/node_modules/.prisma/client`) trae el compilador de consultas en WASM, solo para
+PostgreSQL. `@prisma/client` queda como modulo externo y el cliente generado se agrega con
+`included_files`, excluyendo lo que no se usa en runtime (el `.wasm` suelto, tipos, runtime edge,
+compiladores de otros motores, source maps y los peers `prisma` y `typescript`). El zip de la
+function `api` ronda 3 MB (antes, con el engine nativo, ~11 MB); el limite de Lambda es 50 MB.
+
+Las URLs de conexion ya no van en `schema.prisma`: el CLI (generate, migrate) las toma de
+`apps/api/prisma.config.ts` (la directa, `NETLIFY_DATABASE_URL_UNPOOLED`) y la API de
+`src/lib/prisma.ts` (la pooled, `NETLIFY_DATABASE_URL`).
 
 ### Por que export estatico y no el runtime de Next.js
 
