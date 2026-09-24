@@ -8,6 +8,7 @@ import {
 } from "../compartido/middlewares/requerir-autenticacion.middleware";
 import { auditoriaRouter } from "../modulos/auditoria/auditoria.routes";
 import { autenticacionRouter } from "../modulos/autenticacion/autenticacion.routes";
+import { busquedaRouter } from "../modulos/busqueda/busqueda.routes";
 import { healthRouter } from "./health.routes";
 import { categoriasRouter } from "../modulos/categorias/categorias.routes";
 import { clientesRouter } from "../modulos/clientes/clientes.routes";
@@ -43,5 +44,6 @@ rutasPrivadasRouter.use("/produccion", produccionRouter);
 rutasPrivadasRouter.use("/solicitudes-especiales", solicitudesEspecialesRouter);
 rutasPrivadasRouter.use("/auditoria", auditoriaRouter);
 rutasPrivadasRouter.use("/reportes", reportesRouter);
+rutasPrivadasRouter.use("/busqueda", busquedaRouter);
 
 apiRouter.use(rutasPrivadasRouter);

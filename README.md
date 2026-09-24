@@ -131,8 +131,8 @@ del administrador E2E), tres veces cada una, y compara la mediana con `PRESUPUES
 
 - puntaje de rendimiento minimo: lo medido en el CI al crearlo menos un margen de 5 puntos, porque
   el puntaje varia entre corridas;
-- JavaScript descargado maximo (sin comprimir: el servidor de prueba no usa gzip): lo medido mas
-  un 10 %. Es casi deterministico y detecta un paquete que se cuela en el bundle.
+- JavaScript descargado maximo (el cuerpo de los scripts, sin comprimir y sin encabezados): lo
+  medido mas un 10 %. Es deterministico y detecta un paquete que se cuela en el bundle.
 
 Necesita el mismo entorno que los E2E (build, base local y el setup del administrador). Los
 reportes HTML quedan en `apps/web/rendimiento-report/` y en el artefacto `lighthouse` del CI, y

@@ -110,6 +110,21 @@ test("pedido completo desde el celular: el detalle queda a la vista", async ({ p
   expect(comprobante.contenido).toBeLessThanOrEqual(comprobante.pantalla);
 });
 
+test("la busqueda global entra a lo ancho del celular", async ({ page }) => {
+  const nombre = unico("PRUEBA-ClienteConNombreLargoSinEspaciosParaBuscar");
+  await crearCliente(nombre);
+  await page.goto("/panel");
+  await page.getByRole("button", { name: /^Buscar/ }).click();
+  const dialogo = page.getByRole("dialog", { name: "Buscar" });
+  await dialogo.getByLabel("Buscar pedidos, clientes e items").fill(nombre);
+  await expect(dialogo.getByRole("region", { name: "Clientes" })).toBeVisible();
+
+  const caja = await dialogo.boundingBox();
+  const cerrar = await dialogo.getByRole("button", { name: "Cerrar" }).boundingBox();
+  expect((caja?.x ?? 0) + (caja?.width ?? 0)).toBeLessThanOrEqual(375);
+  expect((cerrar?.x ?? 0) + (cerrar?.width ?? 0)).toBeLessThanOrEqual((caja?.x ?? 0) + (caja?.width ?? 0));
+});
+
 test("en stock, elegir un item lleva a sus movimientos", async ({ page }) => {
   const producto = await crearProductoConStock(unico("PRUEBA-ProdMovil"), 500, 4);
   await page.goto("/stock");

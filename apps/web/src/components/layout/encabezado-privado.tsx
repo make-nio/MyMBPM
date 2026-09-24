@@ -1,5 +1,7 @@
 import { UsuarioAutenticado } from "../../types/auth";
 
+import { BusquedaGlobal } from "./busqueda-global";
+
 type EncabezadoPrivadoProps = {
   usuario: UsuarioAutenticado;
   onLogout: () => void;
@@ -35,6 +37,7 @@ export function EncabezadoPrivado({
       </div>
 
       <div className="encabezado-privado__usuario">
+        <BusquedaGlobal />
         <span className="encabezado-privado__chip">
           {usuario.nombre} {usuario.apellido ?? ""}
         </span>
