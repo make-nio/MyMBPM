@@ -45,7 +45,7 @@ const puntoPrecio = objeto({
   costo: valorAuditado.nullable().optional()
 }).openapi("PuntoPrecio");
 
-export const endpoints: Endpoint[] = [
+export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/auditoria",
@@ -62,4 +62,4 @@ export const endpoints: Endpoint[] = [
     query: historialPreciosQuerySchema,
     respuesta: lista(puntoPrecio)
   }
-];
+] as const satisfies readonly Endpoint[];

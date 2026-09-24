@@ -23,7 +23,7 @@ const saludError = objeto({
   })
 });
 
-export const endpoints: Endpoint[] = [
+export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/health",
@@ -33,4 +33,4 @@ export const endpoints: Endpoint[] = [
     sinEnvoltorio: true,
     respuesta: z.union([saludOk, saludError])
   }
-];
+] as const satisfies readonly Endpoint[];

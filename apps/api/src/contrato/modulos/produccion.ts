@@ -107,7 +107,7 @@ const agregarDetalleBody = objeto({
   observaciones: z.string().max(2000).optional()
 });
 
-export const endpoints: Endpoint[] = [
+export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/produccion",
@@ -185,4 +185,4 @@ export const endpoints: Endpoint[] = [
     params,
     respuesta: ordenCompletaSchema
   }
-];
+] as const satisfies readonly Endpoint[];

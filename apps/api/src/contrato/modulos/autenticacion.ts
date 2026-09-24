@@ -3,7 +3,7 @@ import { loginSchema } from "../../modulos/autenticacion/autenticacion.schemas";
 
 import { usuario } from "./usuarios";
 
-export const endpoints: Endpoint[] = [
+export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/autenticacion/login",
@@ -23,4 +23,4 @@ export const endpoints: Endpoint[] = [
     etiqueta: "autenticacion",
     respuesta: usuario
   }
-];
+] as const satisfies readonly Endpoint[];

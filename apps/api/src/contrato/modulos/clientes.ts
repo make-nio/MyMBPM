@@ -36,7 +36,7 @@ const resumenClienteSchema = objeto({
 
 const params = objeto({ id });
 
-export const endpoints: Endpoint[] = [
+export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/clientes",
@@ -88,4 +88,4 @@ export const endpoints: Endpoint[] = [
     body: actualizarEstadoClienteSchema,
     respuesta: clienteSchema
   }
-];
+] as const satisfies readonly Endpoint[];

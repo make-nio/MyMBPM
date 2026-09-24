@@ -19,7 +19,7 @@ export const categoria = objeto({
 
 const params = objeto({ id });
 
-export const endpoints: Endpoint[] = [
+export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/categorias",
@@ -63,4 +63,4 @@ export const endpoints: Endpoint[] = [
     body: actualizarEstadoCategoriaSchema,
     respuesta: categoria
   }
-];
+] as const satisfies readonly Endpoint[];

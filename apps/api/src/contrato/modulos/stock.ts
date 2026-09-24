@@ -106,7 +106,7 @@ const crearAjusteBody = objeto({
   observaciones: z.string().trim().min(1).max(2000)
 });
 
-export const endpoints: Endpoint[] = [
+export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/stock/actual",
@@ -149,4 +149,4 @@ export const endpoints: Endpoint[] = [
     respuesta: movimientoStockSchema,
     status: 201
   }
-];
+] as const satisfies readonly Endpoint[];

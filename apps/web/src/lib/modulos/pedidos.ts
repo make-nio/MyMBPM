@@ -1,12 +1,5 @@
-import { apiFetch, buildQuery } from "../api";
-import {
-  EstadoCobro,
-  EstadoPedido,
-  Pedido,
-  PedidoAltaPayload,
-  PedidoEstadoPayload,
-  RepeticionPedido
-} from "../../types/pedidos";
+import { pedirApi } from "../api";
+import { EstadoCobro, EstadoPedido, PedidoAltaPayload, PedidoEstadoPayload } from "../../types/pedidos";
 
 type FiltrosPedidos = {
   idCliente?: string;
@@ -19,11 +12,9 @@ type FiltrosPedidos = {
   offset?: number;
 };
 
-type RespuestaPedido = { ok: true; data: Pedido };
-
 export function listarPedidos(filtros: FiltrosPedidos = {}) {
-  return apiFetch<{ ok: true; data: Pedido[] }>(
-    `/api/pedidos${buildQuery({
+  return pedirApi("get /api/pedidos", {
+    consulta: {
       idCliente: filtros.idCliente,
       estadoPedido: filtros.estadoPedido,
       estadoCobro: filtros.estadoCobro,
@@ -31,63 +22,48 @@ export function listarPedidos(filtros: FiltrosPedidos = {}) {
       hasta: filtros.hasta,
       limit: filtros.limit ?? 100,
       offset: filtros.offset ?? 0
-    })}`
-  ).then((response) => response.data);
+    }
+  });
 }
 
 export function obtenerPedido(idPedido: string) {
-  return apiFetch<RespuestaPedido>(`/api/pedidos/${idPedido}`).then((response) => response.data);
+  return pedirApi("get /api/pedidos/{id}", { params: { id: idPedido } });
 }
 
 export function crearPedido(payload: PedidoAltaPayload) {
-  return apiFetch<RespuestaPedido>("/api/pedidos", {
-    method: "POST",
-    body: JSON.stringify(payload)
-  }).then((response) => response.data);
+  return pedirApi("post /api/pedidos", { cuerpo: payload });
 }
 
 export function agregarDetallePedido(idPedido: string, payload: { idItemCatalogo: string; cantidad: number }) {
-  return apiFetch<RespuestaPedido>(`/api/pedidos/${idPedido}/detalles`, {
-    method: "POST",
-    body: JSON.stringify(payload)
-  }).then((response) => response.data);
+  return pedirApi("post /api/pedidos/{id}/detalles", { params: { id: idPedido }, cuerpo: payload });
 }
 
 export function actualizarDetallePedido(idPedido: string, idPedidoDetalle: string, cantidad: number) {
-  return apiFetch<RespuestaPedido>(`/api/pedidos/${idPedido}/detalles/${idPedidoDetalle}`, {
-    method: "PATCH",
-    body: JSON.stringify({ cantidad })
-  }).then((response) => response.data);
+  return pedirApi("patch /api/pedidos/{id}/detalles/{detalleId}", {
+    params: { id: idPedido, detalleId: idPedidoDetalle },
+    cuerpo: { cantidad }
+  });
 }
 
 export function eliminarDetallePedido(idPedido: string, idPedidoDetalle: string) {
-  return apiFetch<RespuestaPedido>(`/api/pedidos/${idPedido}/detalles/${idPedidoDetalle}`, {
-    method: "DELETE"
-  }).then((response) => response.data);
+  return pedirApi("delete /api/pedidos/{id}/detalles/{detalleId}", {
+    params: { id: idPedido, detalleId: idPedidoDetalle }
+  });
 }
 
 export function actualizarEstadoPedido(idPedido: string, payload: PedidoEstadoPayload) {
-  return apiFetch<RespuestaPedido>(`/api/pedidos/${idPedido}/estado`, {
-    method: "PATCH",
-    body: JSON.stringify(payload)
-  }).then((response) => response.data);
+  return pedirApi("patch /api/pedidos/{id}/estado", { params: { id: idPedido }, cuerpo: payload });
 }
 
 export function confirmarPedido(idPedido: string) {
-  return apiFetch<RespuestaPedido>(`/api/pedidos/${idPedido}/confirmar`, {
-    method: "POST"
-  }).then((response) => response.data);
+  return pedirApi("post /api/pedidos/{id}/confirmar", { params: { id: idPedido } });
 }
 
 // Vista previa de "Repetir" (no crea nada) y la repeticion (crea el pedido nuevo, pendiente).
 export function prepararRepeticionPedido(idPedido: string) {
-  return apiFetch<{ ok: true; data: RepeticionPedido }>(`/api/pedidos/${idPedido}/repeticion`).then(
-    (response) => response.data
-  );
+  return pedirApi("get /api/pedidos/{id}/repeticion", { params: { id: idPedido } });
 }
 
 export function repetirPedido(idPedido: string) {
-  return apiFetch<RespuestaPedido>(`/api/pedidos/${idPedido}/repetir`, { method: "POST" }).then(
-    (response) => response.data
-  );
+  return pedirApi("post /api/pedidos/{id}/repetir", { params: { id: idPedido } });
 }

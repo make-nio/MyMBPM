@@ -1,11 +1,5 @@
-import { apiFetch, buildQuery } from "../api";
-import {
-  ItemCatalogo,
-  ItemCatalogoComponente,
-  ItemCatalogoComponentePayload,
-  ItemCatalogoPayload,
-  TipoItem
-} from "../../types/items-catalogo";
+import { pedirApi } from "../api";
+import { ItemCatalogoComponentePayload, ItemCatalogoPayload, TipoItem } from "../../types/items-catalogo";
 
 type FiltrosItemsCatalogo = {
   busqueda?: string;
@@ -18,8 +12,8 @@ type FiltrosItemsCatalogo = {
 };
 
 export function listarItemsCatalogo(filtros: FiltrosItemsCatalogo = {}) {
-  return apiFetch<{ ok: true; data: ItemCatalogo[] }>(
-    `/api/items-catalogo${buildQuery({
+  return pedirApi("get /api/items-catalogo", {
+    consulta: {
       busqueda: filtros.busqueda,
       tipoItem: filtros.tipoItem,
       idCategoria: filtros.idCategoria,
@@ -27,60 +21,38 @@ export function listarItemsCatalogo(filtros: FiltrosItemsCatalogo = {}) {
       publico: filtros.publico,
       limit: filtros.limit ?? 100,
       offset: filtros.offset ?? 0
-    })}`
-  ).then((response) => response.data);
+    }
+  });
 }
 
 export function obtenerItemCatalogo(idItemCatalogo: string) {
-  return apiFetch<{ ok: true; data: ItemCatalogo }>(`/api/items-catalogo/${idItemCatalogo}`).then(
-    (response) => response.data
-  );
+  return pedirApi("get /api/items-catalogo/{id}", { params: { id: idItemCatalogo } });
 }
 
 export function crearItemCatalogo(payload: ItemCatalogoPayload) {
-  return apiFetch<{ ok: true; data: ItemCatalogo }>("/api/items-catalogo", {
-    method: "POST",
-    body: JSON.stringify(payload)
-  }).then((response) => response.data);
+  return pedirApi("post /api/items-catalogo", { cuerpo: payload });
 }
 
 export function actualizarItemCatalogo(
   idItemCatalogo: string,
   payload: Partial<ItemCatalogoPayload>
 ) {
-  return apiFetch<{ ok: true; data: ItemCatalogo }>(`/api/items-catalogo/${idItemCatalogo}`, {
-    method: "PATCH",
-    body: JSON.stringify(payload)
-  }).then((response) => response.data);
+  return pedirApi("patch /api/items-catalogo/{id}", { params: { id: idItemCatalogo }, cuerpo: payload });
 }
 
 export function cambiarEstadoItemCatalogo(idItemCatalogo: string, activo: boolean) {
-  return apiFetch<{ ok: true; data: ItemCatalogo }>(
-    `/api/items-catalogo/${idItemCatalogo}/estado`,
-    {
-      method: "PATCH",
-      body: JSON.stringify({ activo })
-    }
-  ).then((response) => response.data);
+  return pedirApi("patch /api/items-catalogo/{id}/estado", { params: { id: idItemCatalogo }, cuerpo: { activo } });
 }
 
 export function listarComponentesItem(idItemCatalogo: string) {
-  return apiFetch<{ ok: true; data: ItemCatalogoComponente[] }>(
-    `/api/items-catalogo/${idItemCatalogo}/componentes`
-  ).then((response) => response.data);
+  return pedirApi("get /api/items-catalogo/{id}/componentes", { params: { id: idItemCatalogo } });
 }
 
 export function crearComponenteItem(
   idItemCatalogo: string,
   payload: ItemCatalogoComponentePayload
 ) {
-  return apiFetch<{ ok: true; data: ItemCatalogoComponente }>(
-    `/api/items-catalogo/${idItemCatalogo}/componentes`,
-    {
-      method: "POST",
-      body: JSON.stringify(payload)
-    }
-  ).then((response) => response.data);
+  return pedirApi("post /api/items-catalogo/{id}/componentes", { params: { id: idItemCatalogo }, cuerpo: payload });
 }
 
 export function actualizarComponenteItem(
@@ -88,22 +60,16 @@ export function actualizarComponenteItem(
   idComponente: string,
   payload: Partial<ItemCatalogoComponentePayload>
 ) {
-  return apiFetch<{ ok: true; data: ItemCatalogoComponente }>(
-    `/api/items-catalogo/${idItemCatalogo}/componentes/${idComponente}`,
-    {
-      method: "PATCH",
-      body: JSON.stringify(payload)
-    }
-  ).then((response) => response.data);
+  return pedirApi("patch /api/items-catalogo/{id}/componentes/{componenteId}", {
+    params: { id: idItemCatalogo, componenteId: idComponente },
+    cuerpo: payload
+  });
 }
 
 export function eliminarComponenteItem(idItemCatalogo: string, idComponente: string) {
-  return apiFetch<{ ok: true; data: { eliminado: boolean } }>(
-    `/api/items-catalogo/${idItemCatalogo}/componentes/${idComponente}`,
-    {
-      method: "DELETE"
-    }
-  ).then((response) => response.data);
+  return pedirApi("delete /api/items-catalogo/{id}/componentes/{componenteId}", {
+    params: { id: idItemCatalogo, componenteId: idComponente }
+  });
 }
 
 // Items activos que coinciden con el texto, para elegir uno en un formulario.

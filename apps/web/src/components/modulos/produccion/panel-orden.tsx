@@ -22,7 +22,7 @@ import {
 import { listarMovimientosStock, obtenerStockActual } from "../../../lib/modulos/stock";
 import { calcularConsumosPrevistos } from "../../../lib/produccion/consumo-insumos";
 import { calcularImpactoStock, hayStockInsuficiente, ImpactoStockItem } from "../../../lib/stock/impacto-stock";
-import { OrdenProduccion, OrdenProduccionDetalle } from "../../../types/produccion";
+import { OrdenProduccionCompleta, OrdenProduccionDetalle } from "../../../types/produccion";
 import { MovimientoStock, TipoStock } from "../../../types/stock";
 import { TablaImpactoStock } from "../stock/tabla-impacto-stock";
 import { FormularioDetalleOrden } from "./formulario-detalle-orden";
@@ -38,7 +38,7 @@ type PanelOrdenProps = {
   accionInicial?: AccionOrden | null;
 };
 
-function accionValida(accion: AccionOrden, orden: OrdenProduccion) {
+function accionValida(accion: AccionOrden, orden: OrdenProduccionCompleta) {
   if (accion === "iniciar") {
     return orden.estadoProduccion === "PENDIENTE" && (orden.detalles ?? []).length > 0;
   }
@@ -77,7 +77,7 @@ async function movimientosDeOrden(idOrden: string, items: Map<string, string>, t
 export function PanelOrden({ idOrdenProduccion, onCambio, accionInicial = null }: PanelOrdenProps) {
   const modalDetalle = useModal<OrdenProduccionDetalle>();
   const modalAccion = useModal<Accion>();
-  const [orden, setOrden] = useState<OrdenProduccion | null>(null);
+  const [orden, setOrden] = useState<OrdenProduccionCompleta | null>(null);
   const [consumoPrevisto, setConsumoPrevisto] = useState<ImpactoStockItem[]>([]);
   const [sinReceta, setSinReceta] = useState<string[]>([]);
   const [ingresoPrevisto, setIngresoPrevisto] = useState<ImpactoStockItem[]>([]);

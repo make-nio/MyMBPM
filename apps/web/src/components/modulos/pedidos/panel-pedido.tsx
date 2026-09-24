@@ -34,7 +34,7 @@ import {
   TRANSICIONES_ESTADO_PEDIDO,
   EstadoCobro,
   EstadoPedido,
-  Pedido,
+  PedidoCompleto,
   PedidoDetalle
 } from "../../../types/pedidos";
 import { MovimientoStock } from "../../../types/stock";
@@ -61,7 +61,7 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
   const modalLinea = useModal<PedidoDetalle>();
   const modalConfirmacion = useModal();
   const modalRepetir = useModal();
-  const [pedido, setPedido] = useState<Pedido | null>(null);
+  const [pedido, setPedido] = useState<PedidoCompleto | null>(null);
   const [impacto, setImpacto] = useState<ImpactoStockItem[]>([]);
   const [movimientos, setMovimientos] = useState<MovimientoPedido[]>([]);
   const [error, setError] = useState<string | null>(null);

@@ -23,7 +23,7 @@ export const usuario = objeto({
 
 const params = objeto({ id });
 
-export const endpoints: Endpoint[] = [
+export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/usuarios",
@@ -86,4 +86,4 @@ export const endpoints: Endpoint[] = [
     body: restablecerClaveUsuarioSchema,
     respuesta: usuario
   }
-];
+] as const satisfies readonly Endpoint[];

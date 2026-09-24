@@ -144,7 +144,7 @@ const agregarDetalleBody = z.object({
 const params = objeto({ id });
 const paramsDetalle = objeto({ id, detalleId: id });
 
-export const endpoints: Endpoint[] = [
+export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/pedidos",
@@ -231,4 +231,4 @@ export const endpoints: Endpoint[] = [
     respuesta: pedidoConDetallesSchema,
     status: 201
   }
-];
+] as const satisfies readonly Endpoint[];

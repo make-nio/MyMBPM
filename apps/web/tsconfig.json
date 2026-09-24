@@ -13,6 +13,9 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "paths": {
+      "@contrato": ["../api/src/contrato/tipos.ts"]
+    },
     "plugins": [
       {
         "name": "next"
