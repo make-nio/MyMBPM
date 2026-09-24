@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import { asyncHandler } from "../compartido/http/async-handler";
+import { ocultarCostosSinPermiso } from "../compartido/middlewares/costos-solo-con-permiso.middleware";
 import {
   cargarAutenticacionOpcional,
   requerirAutenticacion
@@ -27,6 +28,7 @@ apiRouter.use("/autenticacion", autenticacionRouter);
 apiRouter.post("/usuarios", cargarAutenticacionOpcional, asyncHandler(usuariosController.crear));
 
 rutasPrivadasRouter.use(requerirAutenticacion);
+rutasPrivadasRouter.use(ocultarCostosSinPermiso);
 rutasPrivadasRouter.use("/usuarios", usuariosRouter);
 rutasPrivadasRouter.use("/categorias", categoriasRouter);
 rutasPrivadasRouter.use("/items-catalogo", itemsCatalogoRouter);
