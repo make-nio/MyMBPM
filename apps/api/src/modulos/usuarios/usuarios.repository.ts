@@ -4,8 +4,8 @@ import { prisma } from "../../lib/prisma";
 
 type PrismaOrTx = PrismaClient | Prisma.TransactionClient;
 
-// Clave arbitraria y fija del advisory lock que serializa las altas de usuario.
-const CLAVE_BLOQUEO_ALTA_USUARIOS = 4_101_001;
+// Clave arbitraria y fija del advisory lock que serializa la gestion de usuarios.
+const CLAVE_BLOQUEO_GESTION_USUARIOS = 4_101_001;
 
 const usuarioSelectSanitizado = {
   idUsuario: true,
@@ -49,14 +49,21 @@ export const usuariosRepository = {
     });
   },
 
-  // Serializa las altas de usuario hasta el fin de la transaccion. Sin esto, dos altas
-  // concurrentes con la tabla vacia verian 0 usuarios y entrarian las dos sin sesion.
-  async bloquearAltaUsuarios(tx: Prisma.TransactionClient) {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${CLAVE_BLOQUEO_ALTA_USUARIOS})`;
+  // Serializa altas y cambios de estado de usuarios hasta el fin de la transaccion. Sin esto,
+  // dos altas con la tabla vacia entrarian las dos sin sesion, y dos desactivaciones
+  // concurrentes podrian dejar el sistema sin administradores activos.
+  async bloquearGestionUsuarios(tx: Prisma.TransactionClient) {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${CLAVE_BLOQUEO_GESTION_USUARIOS})`;
   },
 
   contarUsuarios(prismaOrTx: PrismaOrTx) {
     return prismaOrTx.usuario.count();
+  },
+
+  contarAdministradoresActivos(prismaOrTx: PrismaOrTx) {
+    return prismaOrTx.usuario.count({
+      where: { esAdministrador: true, activo: true }
+    });
   },
 
   buscarPorEmailOUsuario(prismaOrTx: PrismaOrTx, input: { email?: string; usuario?: string; excluirIdUsuario?: bigint }) {

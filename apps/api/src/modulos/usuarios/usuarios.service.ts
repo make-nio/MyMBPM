@@ -36,7 +36,7 @@ export const usuariosService = {
     usuarioSolicitante?: { idUsuario: bigint; esAdministrador: boolean }
   ) {
     return prisma.$transaction(async (tx) => {
-      await usuariosRepository.bloquearAltaUsuarios(tx);
+      await usuariosRepository.bloquearGestionUsuarios(tx);
 
       // Sin usuarios, el alta es publica: es el bootstrap del primer administrador.
       // Desde ahi, solo un administrador autenticado puede crear usuarios.
@@ -99,8 +99,26 @@ export const usuariosService = {
   },
 
   async cambiarEstado(idUsuario: bigint, activo: boolean) {
-    await this.obtenerPorId(idUsuario);
-    return usuariosRepository.actualizar(prisma, idUsuario, { activo });
+    return prisma.$transaction(async (tx) => {
+      // Mismo bloqueo que el alta: serializa los cambios que afectan a los administradores.
+      await usuariosRepository.bloquearGestionUsuarios(tx);
+
+      const usuario = await usuariosRepository.obtenerPorId(tx, idUsuario);
+
+      if (!usuario) {
+        throw new ErrorNoEncontrado("Usuario no encontrado");
+      }
+
+      if (!activo && usuario.activo && usuario.esAdministrador) {
+        const administradoresActivos = await usuariosRepository.contarAdministradoresActivos(tx);
+
+        if (administradoresActivos <= 1) {
+          throw new ErrorConflicto("No se puede desactivar al unico administrador activo");
+        }
+      }
+
+      return usuariosRepository.actualizar(tx, idUsuario, { activo });
+    });
   },
 
   async cambiarClave(

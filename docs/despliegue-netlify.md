@@ -136,8 +136,11 @@ Se elimino la tabla `Healthcheck` que creaba la migracion `20260310_init` y no e
   usuarios sin sesion.
 - **Crear el primer usuario apenas termina el primer deploy.** Hasta ese momento cualquiera que
   conozca la URL podria reclamar el alta inicial.
-- Los demas endpoints de `/api/usuarios` (listar, editar, activar/desactivar) solo exigen sesion,
-  no rol de administrador.
+- **Gestion de usuarios.** Listar, ver, editar y activar/desactivar usuarios (`/api/usuarios`)
+  exige ser administrador (middleware `requerirAdministrador`; 403 si no lo es). Cualquier usuario
+  autenticado puede ver sus datos (`/api/autenticacion/me`) y cambiar su propia clave
+  (`PATCH /api/usuarios/:id/clave`). No se puede desactivar al unico administrador activo (409),
+  para que el sistema no quede sin nadie que gestione usuarios.
 - Migraciones nuevas: `npm run prisma:migrate --workspace @myfirstproject/api -- --name <nombre>`
   contra una base local; el deploy las aplica solo.
 - Deploy previews: `prisma migrate deploy` corre contra la base que Netlify inyecte en ese

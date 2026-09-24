@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ErrorAutenticacion } from "../../compartido/errores/error-autenticacion";
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
+import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 import { ErrorProhibido } from "../../compartido/errores/error-prohibido";
 import { prisma } from "../../lib/prisma";
 
@@ -18,10 +19,13 @@ vi.mock("../../lib/prisma", () => ({
 
 vi.mock("./usuarios.repository", () => ({
   usuariosRepository: {
-    bloquearAltaUsuarios: vi.fn(),
+    bloquearGestionUsuarios: vi.fn(),
     contarUsuarios: vi.fn(),
+    contarAdministradoresActivos: vi.fn(),
+    obtenerPorId: vi.fn(),
     buscarPorEmailOUsuario: vi.fn(),
-    crear: vi.fn()
+    crear: vi.fn(),
+    actualizar: vi.fn()
   }
 }));
 
@@ -63,8 +67,8 @@ describe("usuariosService.crear sin usuarios (alta inicial)", () => {
   it("toma el bloqueo de altas antes de contar usuarios", async () => {
     await usuariosService.crear(altaUsuario);
 
-    expect(repo.bloquearAltaUsuarios).toHaveBeenCalledWith(tx);
-    expect(repo.bloquearAltaUsuarios.mock.invocationCallOrder[0]).toBeLessThan(
+    expect(repo.bloquearGestionUsuarios).toHaveBeenCalledWith(tx);
+    expect(repo.bloquearGestionUsuarios.mock.invocationCallOrder[0]).toBeLessThan(
       repo.contarUsuarios.mock.invocationCallOrder[0]
     );
   });
@@ -112,5 +116,45 @@ describe("usuariosService.crear con usuarios existentes", () => {
 
     await expect(usuariosService.crear(altaUsuario, administrador)).rejects.toBeInstanceOf(ErrorConflicto);
     expect(repo.crear).not.toHaveBeenCalled();
+  });
+});
+
+describe("usuariosService.cambiarEstado", () => {
+  function usuarioGuardado(esAdministrador: boolean, activo = true) {
+    return { idUsuario: 3n, esAdministrador, activo } as never;
+  }
+
+  it("falla si el usuario no existe", async () => {
+    repo.obtenerPorId.mockResolvedValue(null);
+
+    await expect(usuariosService.cambiarEstado(3n, false)).rejects.toBeInstanceOf(ErrorNoEncontrado);
+    expect(repo.actualizar).not.toHaveBeenCalled();
+  });
+
+  it("no permite desactivar al unico administrador activo", async () => {
+    repo.obtenerPorId.mockResolvedValue(usuarioGuardado(true));
+    repo.contarAdministradoresActivos.mockResolvedValue(1);
+
+    await expect(usuariosService.cambiarEstado(3n, false)).rejects.toBeInstanceOf(ErrorConflicto);
+    expect(repo.actualizar).not.toHaveBeenCalled();
+  });
+
+  it("permite desactivar a un administrador si queda otro activo", async () => {
+    repo.obtenerPorId.mockResolvedValue(usuarioGuardado(true));
+    repo.contarAdministradoresActivos.mockResolvedValue(2);
+
+    await usuariosService.cambiarEstado(3n, false);
+
+    expect(repo.actualizar).toHaveBeenCalledWith(tx, 3n, { activo: false });
+  });
+
+  it("desactiva operadores sin contar administradores, bajo el bloqueo de gestion", async () => {
+    repo.obtenerPorId.mockResolvedValue(usuarioGuardado(false));
+
+    await usuariosService.cambiarEstado(3n, false);
+
+    expect(repo.bloquearGestionUsuarios).toHaveBeenCalledWith(tx);
+    expect(repo.contarAdministradoresActivos).not.toHaveBeenCalled();
+    expect(repo.actualizar).toHaveBeenCalledWith(tx, 3n, { activo: false });
   });
 });
