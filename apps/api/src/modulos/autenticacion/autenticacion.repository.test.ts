@@ -60,3 +60,21 @@ describe("autenticacionRepository.listarFallidosRecientes", () => {
     });
   });
 });
+
+describe("autenticacionRepository.registrarFallidos (limpieza)", () => {
+  it("en la misma transaccion registra los fallidos y borra los de cualquier clave anteriores al corte", async () => {
+    const corte = new Date("2026-09-23T12:00:00Z");
+    vi.mocked(prisma.intentoLogin.createMany).mockReturnValue("alta" as never);
+    vi.mocked(prisma.intentoLogin.deleteMany).mockReturnValue("limpieza" as never);
+    vi.mocked(prisma.$transaction).mockResolvedValue([] as never);
+
+    await autenticacionRepository.registrarFallidos(["usuario:7", "ip:203.0.113.9"], corte);
+
+    expect(prisma.intentoLogin.createMany).toHaveBeenCalledWith({
+      data: [{ clave: "usuario:7" }, { clave: "ip:203.0.113.9" }]
+    });
+    // Sin filtro por clave: cada fallido limpia la tabla entera, asi no crece para siempre.
+    expect(prisma.intentoLogin.deleteMany).toHaveBeenCalledWith({ where: { fecha: { lt: corte } } });
+    expect(prisma.$transaction).toHaveBeenCalledWith(["alta", "limpieza"]);
+  });
+});

@@ -20,7 +20,9 @@
 El bloqueo dura 15 minutos desde el ultimo fallido. Mientras dura, no se verifica la clave ni se
 suman fallidos. Un ingreso correcto limpia los fallidos de la cuenta y de la IP.
 
-- Los fallidos se guardan en `INTENTO_LOGIN` y se borran a las 24 horas.
+- Los fallidos se guardan en `INTENTO_LOGIN`. Cada fallido nuevo borra, en la misma transaccion,
+  los de **cualquier** clave con mas de 24 horas. No hace falta una tarea programada: la tabla solo
+  crece con fallidos, y cada fallido la limpia. Un ingreso correcto borra los de su cuenta y su IP.
 - La regla esta en `autenticacion/limite-intentos.ts`.
 - La IP sale de `x-nf-client-connection-ip`, que pone el CDN de Netlify. `x-forwarded-for` no se
   usa porque el cliente puede agregarle valores.
