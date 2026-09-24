@@ -19,7 +19,7 @@ Monorepo con `npm workspaces`:
 
 | Carpeta | Qué es |
 |---|---|
-| `apps/api` | Node 20 + Express + TypeScript + Prisma, sobre **PostgreSQL** (Netlify DB / Neon) |
+| `apps/api` | Node 22 + Express + TypeScript + Prisma 7 (driver adapter `pg`), sobre **PostgreSQL** (Netlify DB / Neon) |
 | `apps/web` | Next.js 15 (App Router) + React 19 + TypeScript, publicado como export estático |
 | `docs/` | Arquitectura, endpoints por bloque, modelo de datos (`der-actualizado.md`), idempotencia del stock |
 | `docs/http`, `apps/api/api.http` | Pedidos de ejemplo para probar la API a mano |
@@ -71,8 +71,8 @@ npm run dev                                        # web (3000) + api (3002); ne
 ## La base de datos
 
 PostgreSQL (Netlify DB / Neon), `provider = "postgresql"` en Prisma. La API lee
-`NETLIFY_DATABASE_URL` (conexión pooled) y Prisma Migrate usa `NETLIFY_DATABASE_URL_UNPOOLED`
-(conexión directa). En local van en `apps/api/.env` (ver `.env.example`); pueden ser la misma URL
+`NETLIFY_DATABASE_URL` (conexión pooled, con el driver adapter de pg en `src/lib/prisma.ts`) y
+Prisma Migrate usa `NETLIFY_DATABASE_URL_UNPOOLED` (conexión directa, en `prisma.config.ts`). En local van en `apps/api/.env` (ver `.env.example`); pueden ser la misma URL
 de un Postgres local.
 
 - Todo cambio de schema va con migración versionada (`prisma migrate dev --name <nombre>`). El

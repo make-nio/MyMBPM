@@ -19,20 +19,24 @@
 [functions]
   directory = "apps/api/netlify/functions"
   node_bundler = "esbuild"
-  # Prisma resuelve el query engine por ruta en runtime: no se puede bundlear.
+  # @prisma/client carga el cliente generado (.prisma/client) por ruta en runtime: no se bundlea.
   external_node_modules = ["@prisma/client"]
-  # Cliente generado + engine para Lambda (rhel-openssl-3.0.x). Se excluye lo que no se
-  # usa en runtime (engine "native" del build, runtimes WASM de otros motores, typescript
-  # como peer opcional de @prisma/client): sin esto el zip ronda 47 MB (limite Lambda: 50 MB).
+  # Prisma 7 no tiene query engine nativo: el cliente generado trae el compilador de consultas en
+  # WASM (query_compiler_fast_bg*.js, solo PostgreSQL) y se conecta con @prisma/adapter-pg, que si
+  # se bundlea. npm deja @prisma/client y el cliente generado en apps/api/node_modules. Se excluye lo
+  # que no se usa en runtime: el .wasm suelto (se carga la version base64), los tipos, el runtime
+  # edge, los compiladores de otros motores que trae @prisma/client/runtime, los source maps y los
+  # peers opcionales (prisma CLI, typescript).
   included_files = [
-    "node_modules/.prisma/client/**",
-    "!node_modules/.prisma/client/libquery_engine-debian-*",
-    "!node_modules/.prisma/client/libquery_engine-linux-*",
-    "!node_modules/.prisma/client/*.wasm",
-    "!node_modules/.prisma/client/index.d.ts",
-    "!node_modules/@prisma/client/generator-build/**",
-    "!node_modules/@prisma/client/runtime/*.wasm-base64.*",
-    "!node_modules/@prisma/client/runtime/*.map",
+    "apps/api/node_modules/.prisma/client/**",
+    "!apps/api/node_modules/.prisma/client/*.wasm",
+    "!apps/api/node_modules/.prisma/client/*.d.ts",
+    "!apps/api/node_modules/.prisma/client/edge.js",
+    "!apps/api/node_modules/@prisma/client/runtime/query_compiler_*",
+    "!apps/api/node_modules/@prisma/client/runtime/*.map",
+    "!apps/api/node_modules/@prisma/client/runtime/*.mjs",
+    "!apps/api/node_modules/prisma/**",
+    "!apps/api/node_modules/@prisma/engines/**",
     "!node_modules/typescript/**"
   ]
 

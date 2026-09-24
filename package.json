@@ -24,7 +24,7 @@
     "coverage:report": "npm run coverage:e2e --workspace @myfirstproject/api && node scripts/reporte-cobertura.mjs"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.12.0"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
