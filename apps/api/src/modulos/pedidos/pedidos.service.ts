@@ -51,6 +51,66 @@ type DatosAltaPedido = {
 };
 
 type PedidoConDetalles = NonNullable<Awaited<ReturnType<typeof pedidosRepository.obtenerPorId>>>;
+type ItemCatalogo = NonNullable<Awaited<ReturnType<typeof pedidosRepository.obtenerItemCatalogo>>>;
+
+// Una linea con los valores de hoy del item: precio de venta y costo (snapshot). Es lo mismo para
+// "Agregar item" y para repetir un pedido.
+function lineaDesdeItem(idPedido: bigint, item: ItemCatalogo, cantidadPedida: number | Prisma.Decimal) {
+  const cantidad = aDecimal(cantidadPedida);
+  const precioUnitario = aDecimal(item.precio);
+
+  return {
+    idPedido,
+    idItemCatalogo: item.idItemCatalogo,
+    nombreItemSnapshot: item.nombre,
+    cantidad,
+    precioUnitario,
+    costoUnitario: aDecimal(item.costo),
+    subtotal: precioUnitario.mul(cantidad)
+  };
+}
+
+// Por que una linea no se puede repetir hoy (null si se puede).
+function motivoNoRepetible(item: ItemCatalogo | undefined) {
+  if (!item) {
+    return "El item ya no existe";
+  }
+
+  if (!item.activo) {
+    return "El item esta inactivo";
+  }
+
+  if (item.precio === null) {
+    return "El item no tiene precio";
+  }
+
+  return null;
+}
+
+async function lineasARepetir(prismaOrTx: Prisma.TransactionClient | typeof prisma, original: PedidoConDetalles) {
+  const items = await pedidosRepository.obtenerItemsCatalogo(prismaOrTx, [
+    ...new Set(original.detalles.map((detalle) => detalle.idItemCatalogo))
+  ]);
+  const porId = new Map(items.map((item) => [item.idItemCatalogo.toString(), item]));
+
+  return original.detalles.map((detalle) => {
+    const item = porId.get(detalle.idItemCatalogo.toString());
+    const motivo = motivoNoRepetible(item);
+    const precioHoy = item && !motivo ? aDecimal(item.precio) : null;
+
+    return {
+      idItemCatalogo: detalle.idItemCatalogo,
+      nombre: item?.nombre ?? detalle.nombreItemSnapshot,
+      cantidad: detalle.cantidad,
+      precioAnterior: detalle.precioUnitario,
+      precioHoy,
+      subtotal: precioHoy ? precioHoy.mul(detalle.cantidad) : null,
+      disponible: motivo === null,
+      motivo,
+      item: motivo ? null : item ?? null
+    };
+  });
+}
 
 // Sin permiso para ver costos, el pedido sale sin el costo de cada linea ni el del item: el
 // margen se calcula con esos datos. Precio y total son de venta y se ven igual.
@@ -133,20 +193,7 @@ export const pedidosService = {
         throw new ErrorNoEncontrado("Item de catalogo no encontrado");
       }
 
-      const cantidad = aDecimal(data.cantidad);
-      const precioUnitario = aDecimal(item.precio);
-      const costoUnitario = aDecimal(item.costo);
-      const subtotalDetalle = precioUnitario.mul(cantidad);
-
-      await pedidosRepository.agregarDetalle(tx, {
-        idPedido,
-        idItemCatalogo: item.idItemCatalogo,
-        nombreItemSnapshot: item.nombre,
-        cantidad,
-        precioUnitario,
-        costoUnitario,
-        subtotal: subtotalDetalle
-      });
+      await pedidosRepository.agregarDetalle(tx, lineaDesdeItem(idPedido, item, data.cantidad));
 
       const pedidoActualizado = await pedidosRepository.obtenerPorId(tx, idPedido);
 
@@ -168,8 +215,57 @@ export const pedidosService = {
     });
   },
 
-  async recalcularTotales(prismaOrTx: typeof prisma | Parameters<typeof prisma.$transaction>[0], idPedido: bigint) {
-    const pedido = await pedidosRepository.obtenerPorId(prismaOrTx as never, idPedido);
+  // Vista previa de "Repetir": las mismas lineas con el precio de hoy. No crea nada. Las lineas de
+  // items inactivos, borrados o sin precio se marcan y no se van a repetir.
+  async prepararRepeticion(idPedido: bigint) {
+    const original = await pedidosService.obtenerPorId(idPedido);
+    const lineas = (await lineasARepetir(prisma, original)).map(({ item: _item, ...linea }) => linea);
+
+    return {
+      idPedidoOriginal: original.idPedido,
+      numeroPedido: original.numeroPedido,
+      idCliente: original.idCliente,
+      cliente: { nombre: original.cliente.nombre, apellido: original.cliente.apellido },
+      origenPedido: original.origenPedido,
+      lineas,
+      total: lineas.reduce((total, linea) => total.add(linea.subtotal ?? 0), new Prisma.Decimal(0))
+    };
+  },
+
+  // Crea el pedido repetido en una sola transaccion: pendiente, mismo cliente y origen, y las
+  // lineas que se pueden repetir con el precio y el costo de hoy. No toca stock (eso es al
+  // confirmarlo, como cualquier pedido).
+  async repetir(idPedido: bigint) {
+    return prisma.$transaction(async (tx) => {
+      const original = await pedidosRepository.obtenerPorId(tx, idPedido);
+
+      if (!original) {
+        throw new ErrorNoEncontrado("Pedido no encontrado");
+      }
+
+      const lineas = (await lineasARepetir(tx, original)).filter((linea) => linea.item !== null);
+
+      if (lineas.length === 0) {
+        throw new ErrorConflicto("Ninguna linea del pedido se puede repetir: sus items estan inactivos o sin precio");
+      }
+
+      const nuevo = await pedidosService.crearEnTransaccion(tx, {
+        idCliente: original.idCliente,
+        origenPedido: original.origenPedido as OrigenPedido,
+        observacionesInternas: `Repetido de ${original.numeroPedido ?? original.idPedido.toString()}`
+      });
+
+      for (const linea of lineas) {
+        await pedidosRepository.agregarDetalle(tx, lineaDesdeItem(nuevo.idPedido, linea.item as ItemCatalogo, linea.cantidad));
+      }
+
+      await pedidosService.recalcularTotales(tx, nuevo.idPedido);
+      return pedidosRepository.obtenerPorId(tx, nuevo.idPedido);
+    });
+  },
+
+  async recalcularTotales(tx: Prisma.TransactionClient, idPedido: bigint) {
+    const pedido = await pedidosRepository.obtenerPorId(tx, idPedido);
 
     if (!pedido) {
       throw new ErrorNoEncontrado("Pedido no encontrado");
@@ -180,7 +276,7 @@ export const pedidosService = {
       new Prisma.Decimal(0)
     );
 
-    await pedidosRepository.actualizar(prismaOrTx as never, idPedido, {
+    await pedidosRepository.actualizar(tx, idPedido, {
       subtotal,
       total: subtotal
     });
@@ -212,7 +308,7 @@ export const pedidosService = {
         subtotal
       });
 
-      await this.recalcularTotales(tx as never, idPedido);
+      await this.recalcularTotales(tx, idPedido);
       return pedidosRepository.obtenerPorId(tx, idPedido);
     });
   },
@@ -236,7 +332,7 @@ export const pedidosService = {
       }
 
       await pedidosRepository.eliminarDetalle(tx, idPedidoDetalle);
-      await this.recalcularTotales(tx as never, idPedido);
+      await this.recalcularTotales(tx, idPedido);
 
       return pedidosRepository.obtenerPorId(tx, idPedido);
     });

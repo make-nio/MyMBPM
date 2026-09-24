@@ -26,6 +26,13 @@
   - Tambien acepta `fechaEntrega` (`"AAAA-MM-DD"` o `null` para borrarla), salvo en pedidos
     `ENTREGADO` o `CANCELADO` (409).
 - `POST /api/pedidos/:id/confirmar`
+- `GET /api/pedidos/:id/repeticion`: vista previa de "Repetir" (no crea nada). Las lineas del
+  pedido con el precio de hoy (`precioHoy`, `subtotal`) y `disponible`/`motivo` para las que no se
+  repiten (item inactivo, borrado o sin precio), mas el `total`. Sin costos.
+- `POST /api/pedidos/:id/repetir`: en una transaccion crea un pedido `PENDIENTE` con el mismo
+  cliente y origen, `observacionesInternas` "Repetido de PED-…", y las lineas disponibles con el
+  precio y el costo (snapshot) de hoy, igual que agregar un detalle. 409 si ninguna linea se puede
+  repetir. No mueve stock: eso pasa al confirmar el pedido nuevo.
 
 ## Produccion
 

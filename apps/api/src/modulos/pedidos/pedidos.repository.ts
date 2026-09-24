@@ -147,6 +147,12 @@ export const pedidosRepository = {
     });
   },
 
+  obtenerItemsCatalogo(prismaOrTx: PrismaOrTx, idsItemCatalogo: bigint[]) {
+    return prismaOrTx.itemCatalogo.findMany({
+      where: { idItemCatalogo: { in: idsItemCatalogo } }
+    });
+  },
+
   obtenerCliente(prismaOrTx: PrismaOrTx, idCliente: bigint) {
     return prismaOrTx.cliente.findUnique({
       where: { idCliente }

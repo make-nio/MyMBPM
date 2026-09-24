@@ -1,9 +1,9 @@
 import { generarCsv } from "../csv";
 import { FilaImportacionCatalogo } from "../../types/importacion-catalogo";
+import { ColumnaImportacion, mapearFilas } from "./columnas";
 
-// Columnas de la plantilla. El nombre es lo que se ve en el archivo; la clave, lo que espera la
-// API. Al leer se ignoran mayusculas, acentos y espacios de mas.
-export const COLUMNAS_CATALOGO: Array<{ clave: keyof FilaImportacionCatalogo; nombre: string; obligatoria?: boolean }> = [
+// Columnas de la plantilla (ver ColumnaImportacion).
+export const COLUMNAS_CATALOGO: Array<ColumnaImportacion<keyof FilaImportacionCatalogo>> = [
   { clave: "nombre", nombre: "Nombre", obligatoria: true },
   { clave: "tipo", nombre: "Tipo", obligatoria: true },
   { clave: "categoria", nombre: "Categoria", obligatoria: true },
@@ -17,15 +17,6 @@ export const COLUMNAS_CATALOGO: Array<{ clave: keyof FilaImportacionCatalogo; no
   { clave: "activo", nombre: "Activo" }
 ];
 
-function normalizar(texto: string) {
-  return texto
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 export function plantillaCatalogo() {
   return generarCsv(
     COLUMNAS_CATALOGO.map((columna) => columna.nombre),
@@ -36,25 +27,7 @@ export function plantillaCatalogo() {
   );
 }
 
-// Pasa la tabla del CSV (con encabezado) a las filas que espera la API. Las columnas se buscan por
-// nombre, en cualquier orden; las que no se reconocen se ignoran.
+// Pasa la tabla del CSV (con encabezado) a las filas que espera la API.
 export function mapearFilasCatalogo(tabla: string[][]) {
-  const [encabezado = [], ...datos] = tabla;
-  const indices = new Map(encabezado.map((nombre, indice) => [normalizar(nombre), indice]));
-  const faltantes = COLUMNAS_CATALOGO.filter(
-    (columna) => columna.obligatoria && !indices.has(normalizar(columna.nombre))
-  ).map((columna) => columna.nombre);
-
-  const filas = datos.map((celdas) => {
-    const fila: FilaImportacionCatalogo = {};
-    for (const columna of COLUMNAS_CATALOGO) {
-      const indice = indices.get(normalizar(columna.nombre));
-      if (indice !== undefined) {
-        fila[columna.clave] = celdas[indice] ?? "";
-      }
-    }
-    return fila;
-  });
-
-  return { filas, faltantes };
+  return mapearFilas(tabla, COLUMNAS_CATALOGO);
 }
