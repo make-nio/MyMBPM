@@ -117,6 +117,11 @@ npm run test:e2e
 
 Con la base vacia, el setup crea el administrador de pruebas con el alta inicial.
 
+Hay dos proyectos: `chromium` (escritorio, todos los specs menos `movil.spec.ts`) y `movil`
+(Chromium a 375 x 812 con touch, solo `movil.spec.ts`: sin desborde horizontal en ninguna
+pantalla, menu plegable y un pedido completo desde el celular). `npx playwright test --project movil`
+corre solo el segundo.
+
 ### CI y cobertura
 
 `.github/workflows/ci.yml` corre en cada PR (hacia `main` o apilado sobre otra rama) y en cada push a `main`:

@@ -175,7 +175,8 @@ textarea {
 .panel-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 280px 1fr;
+  /* minmax(0, 1fr): sin esto una tabla ancha estira la columna y empuja toda la pagina. */
+  grid-template-columns: 280px minmax(0, 1fr);
 }
 
 .barra-lateral {
@@ -237,6 +238,18 @@ textarea {
 .contenido-privado {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+}
+
+.encabezado-privado__titulo {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+/* El boton del menu solo aparece en pantallas angostas, donde el menu va plegado. */
+.boton-menu {
+  display: none;
 }
 
 .encabezado-privado {
@@ -381,6 +394,7 @@ textarea {
 
 .modulo-panel {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.5rem;
 }
 
@@ -428,6 +442,7 @@ textarea {
 
 .control-filtro {
   min-width: 180px;
+  max-width: 100%;
   padding: 0.85rem 1rem;
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -575,12 +590,22 @@ textarea {
 
 @media (max-width: 980px) {
   .panel-shell {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .barra-lateral {
+    display: none;
     border-right: 0;
     border-bottom: 1px solid rgba(255, 244, 235, 0.14);
+  }
+
+  .barra-lateral--abierta {
+    display: block;
+  }
+
+  .boton-menu {
+    display: inline-flex;
+    flex-shrink: 0;
   }
 
   .encabezado-modulo,
@@ -591,6 +616,7 @@ textarea {
 
   .encabezado-modulo__acciones {
     width: 100%;
+    grid-template-columns: minmax(0, 1fr);
     justify-items: stretch;
   }
 
@@ -621,7 +647,72 @@ textarea {
 
   .encabezado-privado__usuario {
     width: 100%;
-    align-items: stretch;
-    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .encabezado-privado__descripcion {
+    display: none;
+  }
+
+  /* Un filtro por renglon: un select toma el ancho de su opcion mas larga. */
+  .filtros-inline,
+  .filtros-inline .control-filtro,
+  .encabezado-modulo__filtros .control-filtro {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  /* Tablas como tarjetas: cada fila es un bloque y cada celda lleva el nombre de su columna
+     (data-label, ver TablaDatos). El encabezado queda solo para lectores de pantalla. */
+  .tabla-datos thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .tabla-datos,
+  .tabla-datos tbody,
+  .tabla-datos tr,
+  .tabla-datos td {
+    display: block;
+    width: 100%;
+  }
+
+  .tabla-datos tr {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid rgba(28, 22, 17, 0.12);
+  }
+
+  .tabla-datos tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .tabla-datos td {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    gap: 0.75rem;
+    padding: 0.4rem 1rem;
+    border-bottom: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .tabla-datos td::before {
+    content: attr(data-label);
+    font-size: 0.75rem;
+    letter-spacing: 0.06rem;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .tabla-datos td[data-label="Acciones"] {
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: 0.6rem;
+  }
+
+  .tabla-datos td[data-label="Acciones"]::before {
+    content: none;
   }
 }

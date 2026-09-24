@@ -10,6 +10,7 @@ import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
 import { MensajeError } from "../../../src/components/ui/mensaje-error";
 import { Modal } from "../../../src/components/ui/modal";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
+import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
 import { useModal } from "../../../src/hooks/use-modal";
 import { formatearCantidad, formatearEstado, formatearFecha } from "../../../src/lib/formato";
 import { listarItemsCatalogo } from "../../../src/lib/modulos/items-catalogo";
@@ -25,6 +26,7 @@ export default function ProduccionPage() {
   const [error, setError] = useState<string | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<EstadoProduccion | "">("");
   const [idOrdenSeleccionada, setIdOrdenSeleccionada] = useState<string | null>(null);
+  const refDetalle = useDesplazarAlDetalle(idOrdenSeleccionada);
   const [observaciones, setObservaciones] = useState("");
   const [creando, setCreando] = useState(false);
 
@@ -137,7 +139,9 @@ export default function ProduccionPage() {
       ) : null}
 
       {idOrdenSeleccionada ? (
-        <PanelOrden idOrdenProduccion={idOrdenSeleccionada} onCambio={() => void recargar()} productos={productos} />
+        <div ref={refDetalle}>
+          <PanelOrden idOrdenProduccion={idOrdenSeleccionada} onCambio={() => void recargar()} productos={productos} />
+        </div>
       ) : null}
 
       <Modal

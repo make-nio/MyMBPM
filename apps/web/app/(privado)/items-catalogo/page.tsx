@@ -11,6 +11,7 @@ import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
 import { MensajeError } from "../../../src/components/ui/mensaje-error";
 import { Modal } from "../../../src/components/ui/modal";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
+import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
 import { useModal } from "../../../src/hooks/use-modal";
 import { listarCategorias } from "../../../src/lib/modulos/categorias";
 import {
@@ -40,6 +41,7 @@ export default function ItemsCatalogoPage() {
   const [items, setItems] = useState<ItemCatalogo[]>([]);
   const [componentes, setComponentes] = useState<ItemCatalogoComponente[]>([]);
   const [itemSeleccionado, setItemSeleccionado] = useState<ItemCatalogo | null>(null);
+  const refReceta = useDesplazarAlDetalle(itemSeleccionado?.idItemCatalogo ?? null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tipoFiltro, setTipoFiltro] = useState<string>("todos");
@@ -298,7 +300,7 @@ export default function ItemsCatalogoPage() {
         />
       ) : null}
 
-      <div className="seccion-receta">
+      <div className="seccion-receta" ref={refReceta}>
         <div className="seccion-receta__columna">
           <div className="tarjeta-seccion">
             <p className="marca-pequena">Datos del item</p>

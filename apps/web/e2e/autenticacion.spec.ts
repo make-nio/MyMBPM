@@ -27,7 +27,8 @@ test.describe("sin sesion", () => {
     await page.getByRole("button", { name: /ingresar/i }).click();
 
     await expect(page).toHaveURL(/\/panel$/);
-    await expect(page.getByText(`${ADMIN_E2E.nombre} ${ADMIN_E2E.apellido}`)).toBeVisible();
+    // exact: el panel tambien muestra el nombre en "fecha · Nombre" de los ultimos movimientos.
+    await expect(page.getByText(`${ADMIN_E2E.nombre} ${ADMIN_E2E.apellido}`, { exact: true })).toBeVisible();
 
     await page.getByRole("button", { name: /cerrar sesion|salir/i }).click();
     await expect(page).toHaveURL(/\/ingresar$/);

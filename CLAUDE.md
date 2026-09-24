@@ -100,6 +100,10 @@ Cada pantalla tiene su E2E en `apps/web/e2e/<modulo>.spec.ts` (Playwright). Impo
 preparar datos. Los E2E **nunca** corren contra la base de producción: la config lo impide.
 La cobertura (umbral 50 % de líneas, backend y front) se publica en el resumen del CI.
 
+La web se usa también desde el celular (375 px): en pantallas angostas el menú se pliega y las
+tablas de `TablaDatos` se ven como tarjetas. Si sumás una pantalla, agregala a la lista de
+`e2e/movil.spec.ts` (proyecto `movil` de Playwright).
+
 ## Cómo se trabaja
 
 - La rama principal es **`main`**. Nunca se commitea directo ahí.
