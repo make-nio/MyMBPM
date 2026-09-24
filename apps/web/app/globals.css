@@ -1363,3 +1363,31 @@ textarea {
     width: auto;
   }
 }
+
+/* Historial de precio y costo de un item: una linea de tiempo con el valor anterior y el nuevo. */
+.historial-precios__lista > li {
+  padding-left: 0.85rem;
+  border-left: 3px solid var(--accent-soft);
+}
+
+.historial-precios__valores {
+  display: grid;
+  gap: 0.2rem;
+  margin: 0.3rem 0 0;
+}
+
+.historial-precios__valores div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.historial-precios__valores dt {
+  font-weight: 700;
+}
+
+.historial-precios__valores dd {
+  margin: 0;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}

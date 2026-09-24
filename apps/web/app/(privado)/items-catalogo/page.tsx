@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { useUsuarioAutenticado } from "../../../src/components/auth/contexto-sesion";
 import { HistorialCambios } from "../../../src/components/modulos/auditoria/historial-cambios";
+import { HistorialPrecios } from "../../../src/components/modulos/auditoria/historial-precios";
 import { FormularioComponenteItem } from "../../../src/components/modulos/items-catalogo/formulario-componente-item";
 import { FormularioItemCatalogo } from "../../../src/components/modulos/items-catalogo/formulario-item-catalogo";
 import { ImportarCatalogo } from "../../../src/components/modulos/items-catalogo/importar-catalogo";
@@ -374,11 +375,17 @@ export default function ItemsCatalogoPage() {
                   Imagen principal: {itemSeleccionado.imagenPrincipal || "Sin imagen"}
                 </p>
                 {esAdministrador ? (
-                  <HistorialCambios
-                    entidad="ITEM_CATALOGO"
-                    idEntidad={itemSeleccionado.idItemCatalogo}
-                    version={itemSeleccionado.fechaModificacion}
-                  />
+                  <>
+                    <HistorialPrecios
+                      idItemCatalogo={itemSeleccionado.idItemCatalogo}
+                      version={itemSeleccionado.fechaModificacion}
+                    />
+                    <HistorialCambios
+                      entidad="ITEM_CATALOGO"
+                      idEntidad={itemSeleccionado.idItemCatalogo}
+                      version={itemSeleccionado.fechaModificacion}
+                    />
+                  </>
                 ) : null}
               </>
             ) : (
