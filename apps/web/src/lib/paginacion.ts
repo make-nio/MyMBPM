@@ -36,3 +36,17 @@ export async function cargarHasta<T>(cargar: CargarFilas<T>, cantidad: number): 
 
   return { items, hayMas };
 }
+
+// Todas las filas, en tandas del tope de la API (por ejemplo, para exportar).
+export async function cargarTodo<T>(cargar: CargarFilas<T>) {
+  const items: T[] = [];
+
+  for (;;) {
+    const tanda = await cargar(LIMITE_API, items.length);
+    items.push(...tanda);
+
+    if (tanda.length < LIMITE_API) {
+      return items;
+    }
+  }
+}

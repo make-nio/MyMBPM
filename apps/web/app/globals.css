@@ -694,6 +694,13 @@ textarea {
   height: 18px;
 }
 
+/* Filtro de fecha en la barra de un listado: rotulo corto y el control al lado. */
+.campo-filtro-fecha {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .acciones-formulario {
   display: flex;
   justify-content: flex-end;

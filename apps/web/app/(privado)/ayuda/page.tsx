@@ -46,6 +46,14 @@ const guias: Paso[] = [
     ]
   },
   {
+    titulo: "Llevarte los datos a una planilla",
+    pasos: [
+      "En Pedidos o en Stock, aplica los filtros que quieras (en Pedidos podes elegir las fechas de alta con \"Alta desde\" y \"hasta\").",
+      "Toca \"Exportar CSV\": se descarga un archivo con todo lo filtrado, no solo lo que ves en pantalla.",
+      "Abrilo con Excel o Google Sheets: las columnas se separan solas y los numeros quedan como numeros."
+    ]
+  },
+  {
     titulo: "Costos y ganancia (administradores)",
     pasos: [
       "Carga el costo de cada insumo (por ejemplo, lo que pagaste el kilo de filamento) al editarlo, en \"Costo\".",

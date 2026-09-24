@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { FormularioAjusteStock } from "../../../src/components/modulos/stock/formulario-ajuste-stock";
 import { PanelItemStock } from "../../../src/components/modulos/stock/panel-item-stock";
+import { BotonExportarCsv } from "../../../src/components/ui/boton-exportar-csv";
 import { EncabezadoModulo } from "../../../src/components/ui/encabezado-modulo";
 import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
 import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
@@ -16,6 +17,7 @@ import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detal
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
 import { formatearCantidad, formatearEstado, formatearFecha } from "../../../src/lib/formato";
+import { generarCsv, numeroCsv } from "../../../src/lib/csv";
 import { crearAjusteStock, listarExistencias } from "../../../src/lib/modulos/stock";
 import { Existencia, TipoAjuste, TipoStock } from "../../../src/types/stock";
 
@@ -61,6 +63,29 @@ export default function StockPage() {
       .then((bajos) => setCantidadBajoMinimo(bajos.length))
       .catch(() => setCantidadBajoMinimo(null));
   }, [version]);
+
+  // Sin limit la API devuelve todas las existencias con los filtros aplicados.
+  async function exportarStock() {
+    const todas = await listarExistencias({
+      activo: true,
+      tipoItem: filtroTipo || undefined,
+      soloBajoMinimo: soloBajoMinimo || undefined,
+      busqueda: busquedaAplicada || undefined
+    });
+
+    return generarCsv(
+      ["Item", "Tipo", "Categoria", "Stock", "Minimo", "Estado", "Ultimo movimiento"],
+      todas.map((existencia) => [
+        existencia.nombre,
+        formatearEstado(existencia.tipoItem),
+        existencia.categoria?.nombre ?? "",
+        numeroCsv(existencia.stockActual),
+        numeroCsv(existencia.stockMinimo),
+        existencia.bajoMinimo ? "Bajo minimo" : "OK",
+        existencia.fechaUltimoMovimiento ? formatearFecha(existencia.fechaUltimoMovimiento).replace(", ", " ") : ""
+      ])
+    );
+  }
 
   async function recargar() {
     await listado.recargar();
@@ -117,6 +142,7 @@ export default function StockPage() {
               />
               <span>Solo bajo minimo{cantidadBajoMinimo === null ? "" : ` (${cantidadBajoMinimo})`}</span>
             </label>
+            <BotonExportarCsv generar={exportarStock} nombre="stock" />
           </div>
         }
         titulo="Stock"

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { FormularioPedido } from "../../../src/components/modulos/pedidos/formulario-pedido";
 import { PanelPedido } from "../../../src/components/modulos/pedidos/panel-pedido";
+import { BotonExportarCsv } from "../../../src/components/ui/boton-exportar-csv";
 import { EncabezadoModulo } from "../../../src/components/ui/encabezado-modulo";
 import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
 import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
@@ -15,7 +16,9 @@ import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detal
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
 import { formatearEstado, formatearFecha, formatearMoneda } from "../../../src/lib/formato";
+import { generarCsv, numeroCsv } from "../../../src/lib/csv";
 import { crearPedido, listarPedidos } from "../../../src/lib/modulos/pedidos";
+import { cargarTodo } from "../../../src/lib/paginacion";
 import {
   ESTADOS_COBRO,
   ESTADOS_PEDIDO,
@@ -29,6 +32,8 @@ export default function PedidosPage() {
   const modalPedido = useModal();
   const [filtroEstado, setFiltroEstado] = useState<EstadoPedido | "">("");
   const [filtroCobro, setFiltroCobro] = useState<EstadoCobro | "">("");
+  const [desde, setDesde] = useState("");
+  const [hasta, setHasta] = useState("");
   const [idPedidoSeleccionado, setIdPedidoSeleccionado] = useState<string | null>(null);
   const refDetalle = useDesplazarAlDetalle(idPedidoSeleccionado);
 
@@ -42,18 +47,38 @@ export default function PedidosPage() {
     }
   }, []);
 
+  const rangoInvertido = desde !== "" && hasta !== "" && desde > hasta;
+  const filtros = {
+    estadoPedido: filtroEstado || undefined,
+    estadoCobro: filtroCobro || undefined,
+    desde: rangoInvertido ? undefined : desde || undefined,
+    hasta: rangoInvertido ? undefined : hasta || undefined
+  };
+
   const listado = useListadoPaginado<Pedido>(
-    (limit, offset) =>
-      listarPedidos({
-        estadoPedido: filtroEstado || undefined,
-        estadoCobro: filtroCobro || undefined,
-        limit,
-        offset
-      }),
-    [filtroEstado, filtroCobro],
+    (limit, offset) => listarPedidos({ ...filtros, limit, offset }),
+    [filtroEstado, filtroCobro, desde, hasta],
     "No fue posible cargar los pedidos"
   );
   const { items: pedidos, cargando, error, recargar } = listado;
+
+  // Todos los pedidos con los filtros aplicados, no solo los cargados en pantalla.
+  async function exportarPedidos() {
+    const todos = await cargarTodo((limit, offset) => listarPedidos({ ...filtros, limit, offset }));
+
+    return generarCsv(
+      ["Numero", "Alta", "Cliente", "Estado", "Cobro", "Origen", "Total"],
+      todos.map((pedido) => [
+        pedido.numeroPedido ?? pedido.idPedido,
+        formatearFecha(pedido.fechaAlta).replace(", ", " "),
+        `${pedido.cliente?.nombre ?? ""} ${pedido.cliente?.apellido ?? ""}`.trim(),
+        formatearEstado(pedido.estadoPedido),
+        formatearEstado(pedido.estadoCobro),
+        formatearEstado(pedido.origenPedido),
+        numeroCsv(pedido.total)
+      ])
+    );
+  }
 
   async function guardarPedido(payload: PedidoAltaPayload) {
     const pedido = await crearPedido(payload);
@@ -95,12 +120,34 @@ export default function PedidosPage() {
                 </option>
               ))}
             </select>
+            <label className="campo-filtro-fecha" htmlFor="pedidos-desde">
+              <span>Alta desde</span>
+              <input
+                className="control-filtro"
+                id="pedidos-desde"
+                onChange={(event) => setDesde(event.target.value)}
+                type="date"
+                value={desde}
+              />
+            </label>
+            <label className="campo-filtro-fecha" htmlFor="pedidos-hasta">
+              <span>hasta</span>
+              <input
+                className="control-filtro"
+                id="pedidos-hasta"
+                onChange={(event) => setHasta(event.target.value)}
+                type="date"
+                value={hasta}
+              />
+            </label>
+            <BotonExportarCsv generar={exportarPedidos} nombre="pedidos" />
           </div>
         }
         onCrear={() => modalPedido.abrir(null)}
         titulo="Pedidos"
       />
 
+      {rangoInvertido ? <MensajeError mensaje="La fecha desde es posterior a la fecha hasta: no se aplica el rango." /> : null}
       {error ? <MensajeError mensaje={error} /> : null}
       {cargando ? <EstadoCargando titulo="Cargando pedidos" /> : null}
       {!cargando && !error && pedidos.length === 0 ? (

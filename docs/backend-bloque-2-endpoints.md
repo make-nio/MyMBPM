@@ -13,7 +13,10 @@
 
 ## Pedidos
 
-- `GET /api/pedidos`
+- `GET /api/pedidos?estadoPedido=CONFIRMADO&desde=2026-09-01&hasta=2026-09-30&limit=100&offset=0`
+  - `desde` y `hasta` (opcionales, `AAAA-MM-DD`) filtran por fecha de alta, los dos dias incluidos,
+    en hora de Argentina. Un rango invertido es 400. La web los usa para el listado y para
+    "Exportar CSV", que arma el archivo en el navegador pidiendo todas las paginas.
 - `GET /api/pedidos/:id`
 - `POST /api/pedidos`
 - `POST /api/pedidos/:id/detalles`
