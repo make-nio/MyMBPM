@@ -61,6 +61,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/reportes/ventas-mes",
+    acceso: "administrador",
     resumen: "Vendido, costo y ganancia de un mes, por item y por cliente (solo administradores)",
     etiqueta,
     query: ventasMesQuerySchema,
@@ -69,6 +70,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/reportes/ventas-por-mes",
+    acceso: "administrador",
     resumen: "Vendido por mes en los ultimos 12 meses (solo administradores)",
     etiqueta,
     respuesta: ventasPorMesSchema

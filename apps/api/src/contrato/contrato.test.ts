@@ -20,6 +20,35 @@ describe("contrato de la API", () => {
     expect(contrato).toEqual(express);
   });
 
+  it("el acceso declarado coincide con los middlewares de cada ruta", () => {
+    const rutas = listarRutasExpress(apiRouter, "/api");
+    // POST /api/usuarios acepta sin token (cargarAutenticacionOpcional) solo para crear el primer
+    // usuario; con usuarios cargados el service exige administrador (usuariosService.crear).
+    const excepciones: Record<string, string> = { "post /api/usuarios": "cargarAutenticacionOpcional" };
+
+    const distintos = endpoints.flatMap((endpoint) => {
+      const clave = `${endpoint.metodo} ${endpoint.ruta}`;
+      const middlewares = rutas.find((ruta) => `${ruta.metodo} ${ruta.ruta}` === clave)?.middlewares ?? [];
+      const real = middlewares.includes("requerirAdministrador")
+        ? "administrador"
+        : middlewares.includes("requerirAutenticacion")
+          ? "autenticado"
+          : excepciones[clave] && middlewares.includes(excepciones[clave])
+            ? "administrador"
+            : "publico";
+      return real === endpoint.acceso ? [] : [`${clave}: declara ${endpoint.acceso} y la ruta es ${real}`];
+    });
+
+    expect(distintos).toEqual([]);
+  });
+
+  it("solo health y el ingreso son publicos", () => {
+    expect(endpoints.filter((endpoint) => endpoint.acceso === "publico").map((endpoint) => endpoint.ruta)).toEqual([
+      "/api/health",
+      "/api/autenticacion/login"
+    ]);
+  });
+
   it("no repite endpoints", () => {
     const claves = endpoints.map((endpoint) => `${endpoint.metodo} ${endpoint.ruta}`);
     expect(new Set(claves).size).toBe(claves.length);

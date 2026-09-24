@@ -40,6 +40,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/busqueda",
+    acceso: "autenticado",
     resumen: "Busqueda global (Ctrl+K): hasta 5 pedidos, clientes e items que coinciden con el texto",
     etiqueta: "busqueda",
     query: buscarQuerySchema,

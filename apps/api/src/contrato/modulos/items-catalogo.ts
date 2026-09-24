@@ -75,6 +75,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/items-catalogo",
+    acceso: "autenticado",
     resumen: "Lista los items del catalogo, con su categoria y sus imagenes activas",
     etiqueta: "items-catalogo",
     query: listarItemsCatalogoQuerySchema,
@@ -83,6 +84,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/items-catalogo/{id}",
+    acceso: "autenticado",
     resumen: "Obtiene un item con su categoria, sus componentes y todas sus imagenes",
     etiqueta: "items-catalogo",
     params,
@@ -91,6 +93,7 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/items-catalogo",
+    acceso: "autenticado",
     resumen: "Crea un item del catalogo (el costo solo lo carga un administrador)",
     etiqueta: "items-catalogo",
     body: crearItemCatalogoSchema,
@@ -100,6 +103,7 @@ export const endpoints = [
   {
     metodo: "patch",
     ruta: "/api/items-catalogo/{id}",
+    acceso: "autenticado",
     resumen: "Edita un item del catalogo (el costo solo lo cambia un administrador)",
     etiqueta: "items-catalogo",
     params,
@@ -109,6 +113,7 @@ export const endpoints = [
   {
     metodo: "patch",
     ruta: "/api/items-catalogo/{id}/estado",
+    acceso: "autenticado",
     resumen: "Activa o desactiva un item del catalogo",
     etiqueta: "items-catalogo",
     params,
@@ -118,6 +123,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/items-catalogo/{id}/componentes",
+    acceso: "autenticado",
     resumen: "Lista los componentes de un item, con el item de cada componente",
     etiqueta: "items-catalogo",
     params,
@@ -126,6 +132,7 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/items-catalogo/{id}/componentes",
+    acceso: "autenticado",
     resumen: "Agrega un componente a un item",
     etiqueta: "items-catalogo",
     params,
@@ -136,6 +143,7 @@ export const endpoints = [
   {
     metodo: "patch",
     ruta: "/api/items-catalogo/{id}/componentes/{componenteId}",
+    acceso: "autenticado",
     resumen: "Edita un componente de un item",
     etiqueta: "items-catalogo",
     params: paramsComponente,
@@ -145,6 +153,7 @@ export const endpoints = [
   {
     metodo: "delete",
     ruta: "/api/items-catalogo/{id}/componentes/{componenteId}",
+    acceso: "autenticado",
     resumen: "Quita un componente de un item",
     etiqueta: "items-catalogo",
     params: paramsComponente,
@@ -153,6 +162,7 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/items-catalogo/{id}/imagenes",
+    acceso: "autenticado",
     resumen: "Agrega una imagen adicional a un item",
     etiqueta: "items-catalogo",
     params,
@@ -163,6 +173,7 @@ export const endpoints = [
   {
     metodo: "delete",
     ruta: "/api/items-catalogo/{id}/imagenes/{imagenId}",
+    acceso: "autenticado",
     resumen: "Elimina una imagen adicional de un item",
     etiqueta: "items-catalogo",
     params: paramsImagen,

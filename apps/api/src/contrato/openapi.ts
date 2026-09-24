@@ -20,8 +20,9 @@ export function generarOpenApi(lista: readonly Endpoint[] = endpoints) {
       method: endpoint.metodo,
       path: endpoint.ruta,
       summary: endpoint.resumen,
+      description: `Acceso: ${endpoint.acceso}.`,
       tags: [endpoint.etiqueta],
-      security: endpoint.publico ? [] : [{ [bearer.name]: [] }],
+      security: endpoint.acceso === "publico" ? [] : [{ [bearer.name]: [] }],
       request: {
         params: endpoint.params,
         query: endpoint.query,

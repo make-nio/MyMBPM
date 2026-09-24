@@ -30,6 +30,7 @@ export const usuariosController = {
   },
 
   async crear(request: Request, response: Response) {
+    await usuariosService.verificarPermisoAlta(request.usuarioAutenticado);
     const body = validar(crearUsuarioSchema, request.body);
     const usuario = await usuariosService.crear(body, request.usuarioAutenticado);
 

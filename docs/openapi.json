@@ -2915,6 +2915,7 @@
     "/api/health": {
       "get": {
         "summary": "Estado de la API y de la base (200 si responde, 503 si no)",
+        "description": "Acceso: publico.",
         "tags": [
           "salud"
         ],
@@ -3043,6 +3044,7 @@
     "/api/autenticacion/login": {
       "post": {
         "summary": "Ingresa con usuario o email y clave; devuelve el token y el usuario",
+        "description": "Acceso: publico.",
         "tags": [
           "autenticacion"
         ],
@@ -3128,6 +3130,7 @@
     "/api/autenticacion/me": {
       "get": {
         "summary": "Devuelve el usuario de la sesion actual",
+        "description": "Acceso: autenticado.",
         "tags": [
           "autenticacion"
         ],
@@ -3179,10 +3182,15 @@
     "/api/usuarios": {
       "post": {
         "summary": "Crea un usuario (sin sesion solo el primero, que queda administrador; despues, solo un administrador)",
+        "description": "Acceso: administrador.",
         "tags": [
           "usuarios"
         ],
-        "security": [],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3273,6 +3281,7 @@
       },
       "get": {
         "summary": "Lista los usuarios (solo administradores)",
+        "description": "Acceso: administrador.",
         "tags": [
           "usuarios"
         ],
@@ -3365,6 +3374,7 @@
     "/api/usuarios/{id}/clave": {
       "patch": {
         "summary": "Cambia la clave del usuario autenticado (pide la actual)",
+        "description": "Acceso: autenticado.",
         "tags": [
           "usuarios"
         ],
@@ -3451,6 +3461,7 @@
     "/api/usuarios/{id}": {
       "get": {
         "summary": "Obtiene un usuario (solo administradores)",
+        "description": "Acceso: administrador.",
         "tags": [
           "usuarios"
         ],
@@ -3511,6 +3522,7 @@
       },
       "patch": {
         "summary": "Edita los datos y el rol de un usuario (solo administradores)",
+        "description": "Acceso: administrador.",
         "tags": [
           "usuarios"
         ],
@@ -3610,6 +3622,7 @@
     "/api/usuarios/{id}/estado": {
       "patch": {
         "summary": "Activa o desactiva un usuario (solo administradores)",
+        "description": "Acceso: administrador.",
         "tags": [
           "usuarios"
         ],
@@ -3689,6 +3702,7 @@
     "/api/usuarios/{id}/restablecer-clave": {
       "patch": {
         "summary": "Asigna una clave nueva a otro usuario (solo administradores)",
+        "description": "Acceso: administrador.",
         "tags": [
           "usuarios"
         ],
@@ -3770,6 +3784,7 @@
     "/api/categorias": {
       "get": {
         "summary": "Lista las categorias",
+        "description": "Acceso: autenticado.",
         "tags": [
           "categorias"
         ],
@@ -3860,6 +3875,7 @@
       },
       "post": {
         "summary": "Crea una categoria",
+        "description": "Acceso: autenticado.",
         "tags": [
           "categorias"
         ],
@@ -3943,6 +3959,7 @@
     "/api/categorias/{id}": {
       "get": {
         "summary": "Obtiene una categoria",
+        "description": "Acceso: autenticado.",
         "tags": [
           "categorias"
         ],
@@ -4003,6 +4020,7 @@
       },
       "patch": {
         "summary": "Edita una categoria",
+        "description": "Acceso: autenticado.",
         "tags": [
           "categorias"
         ],
@@ -4093,6 +4111,7 @@
     "/api/categorias/{id}/estado": {
       "patch": {
         "summary": "Activa o desactiva una categoria",
+        "description": "Acceso: autenticado.",
         "tags": [
           "categorias"
         ],
@@ -4172,6 +4191,7 @@
     "/api/items-catalogo": {
       "get": {
         "summary": "Lista los items del catalogo, con su categoria y sus imagenes activas",
+        "description": "Acceso: autenticado.",
         "tags": [
           "items-catalogo"
         ],
@@ -4327,6 +4347,7 @@
       },
       "post": {
         "summary": "Crea un item del catalogo (el costo solo lo carga un administrador)",
+        "description": "Acceso: autenticado.",
         "tags": [
           "items-catalogo"
         ],
@@ -4487,6 +4508,7 @@
     "/api/items-catalogo/{id}": {
       "get": {
         "summary": "Obtiene un item con su categoria, sus componentes y todas sus imagenes",
+        "description": "Acceso: autenticado.",
         "tags": [
           "items-catalogo"
         ],
@@ -4577,6 +4599,7 @@
       },
       "patch": {
         "summary": "Edita un item del catalogo (el costo solo lo cambia un administrador)",
+        "description": "Acceso: autenticado.",
         "tags": [
           "items-catalogo"
         ],
@@ -4749,6 +4772,7 @@
     "/api/items-catalogo/{id}/estado": {
       "patch": {
         "summary": "Activa o desactiva un item del catalogo",
+        "description": "Acceso: autenticado.",
         "tags": [
           "items-catalogo"
         ],
@@ -4851,6 +4875,7 @@
     "/api/items-catalogo/{id}/componentes": {
       "get": {
         "summary": "Lista los componentes de un item, con el item de cada componente",
+        "description": "Acceso: autenticado.",
         "tags": [
           "items-catalogo"
         ],
@@ -4914,6 +4939,7 @@
       },
       "post": {
         "summary": "Agrega un componente a un item",
+        "description": "Acceso: autenticado.",
         "tags": [
           "items-catalogo"
         ],
@@ -5008,6 +5034,7 @@
     "/api/items-catalogo/{id}/componentes/{componenteId}": {
       "patch": {
         "summary": "Edita un componente de un item",
+        "description": "Acceso: autenticado.",
         "tags": [
           "items-catalogo"
         ],
@@ -5104,6 +5131,7 @@
       },
       "delete": {
         "summary": "Quita un componente de un item",
+        "description": "Acceso: autenticado.",
         "tags": [
           "items-catalogo"
         ],
@@ -5187,6 +5215,7 @@
     "/api/items-catalogo/{id}/imagenes": {
       "post": {
         "summary": "Agrega una imagen adicional a un item",
+        "description": "Acceso: autenticado.",
         "tags": [
           "items-catalogo"
         ],
@@ -5275,6 +5304,7 @@
     "/api/items-catalogo/{id}/imagenes/{imagenId}": {
       "delete": {
         "summary": "Elimina una imagen adicional de un item",
+        "description": "Acceso: autenticado.",
         "tags": [
           "items-catalogo"
         ],
@@ -5358,6 +5388,7 @@
     "/api/items-catalogo/importacion/previsualizar": {
       "post": {
         "summary": "Valida las filas de un CSV de catalogo sin crear nada (solo administradores)",
+        "description": "Acceso: administrador.",
         "tags": [
           "importacion-catalogo"
         ],
@@ -5591,6 +5622,7 @@
     "/api/items-catalogo/importacion": {
       "post": {
         "summary": "Importa el catalogo desde las filas de un CSV, todo o nada (solo administradores)",
+        "description": "Acceso: administrador.",
         "tags": [
           "importacion-catalogo"
         ],
@@ -5726,6 +5758,7 @@
     "/api/clientes": {
       "get": {
         "summary": "Lista clientes, paginado, con busqueda por nombre, apellido, telefono, email o documento",
+        "description": "Acceso: autenticado.",
         "tags": [
           "clientes"
         ],
@@ -5825,6 +5858,7 @@
       },
       "post": {
         "summary": "Da de alta un cliente",
+        "description": "Acceso: autenticado.",
         "tags": [
           "clientes"
         ],
@@ -5935,6 +5969,7 @@
     "/api/clientes/{id}": {
       "get": {
         "summary": "Obtiene un cliente",
+        "description": "Acceso: autenticado.",
         "tags": [
           "clientes"
         ],
@@ -5995,6 +6030,7 @@
       },
       "patch": {
         "summary": "Modifica los datos de un cliente",
+        "description": "Acceso: autenticado.",
         "tags": [
           "clientes"
         ],
@@ -6113,6 +6149,7 @@
     "/api/clientes/{id}/resumen": {
       "get": {
         "summary": "Resumen de compras del cliente: total, cantidad de pedidos y ultima compra",
+        "description": "Acceso: autenticado.",
         "tags": [
           "clientes"
         ],
@@ -6175,6 +6212,7 @@
     "/api/clientes/{id}/estado": {
       "patch": {
         "summary": "Activa o desactiva un cliente",
+        "description": "Acceso: autenticado.",
         "tags": [
           "clientes"
         ],
@@ -6254,6 +6292,7 @@
     "/api/clientes/importacion/previsualizar": {
       "post": {
         "summary": "Valida las filas de un CSV de clientes y muestra los errores por fila, sin guardar nada (solo administradores)",
+        "description": "Acceso: administrador.",
         "tags": [
           "importacion-clientes"
         ],
@@ -6469,6 +6508,7 @@
     "/api/clientes/importacion": {
       "post": {
         "summary": "Importa los clientes de un CSV, todo o nada (solo administradores)",
+        "description": "Acceso: administrador.",
         "tags": [
           "importacion-clientes"
         ],
@@ -6597,6 +6637,7 @@
     "/api/stock/actual": {
       "get": {
         "summary": "Stock vigente de un item y tipo de stock, con su ultimo movimiento",
+        "description": "Acceso: autenticado.",
         "tags": [
           "stock"
         ],
@@ -6798,6 +6839,7 @@
     "/api/stock/historial": {
       "get": {
         "summary": "Historial de movimientos de stock de un item, del mas nuevo al mas viejo",
+        "description": "Acceso: autenticado.",
         "tags": [
           "stock"
         ],
@@ -6921,6 +6963,7 @@
     "/api/stock/existencias": {
       "get": {
         "summary": "Stock vigente de cada item del catalogo, con filtros y paginacion opcional",
+        "description": "Acceso: autenticado.",
         "tags": [
           "stock"
         ],
@@ -7045,6 +7088,7 @@
     "/api/stock/bajo-stock": {
       "get": {
         "summary": "Items con stock igual o por debajo de su stock minimo",
+        "description": "Acceso: autenticado.",
         "tags": [
           "stock"
         ],
@@ -7137,6 +7181,7 @@
     "/api/stock/ajustes": {
       "post": {
         "summary": "Registra un ajuste manual de stock (positivo o negativo) con su motivo",
+        "description": "Acceso: autenticado.",
         "tags": [
           "stock"
         ],
@@ -7330,6 +7375,7 @@
     "/api/panel/resumen": {
       "get": {
         "summary": "Resumen del inicio: entregas, pedidos por confirmar y entregar, produccion, stock bajo, ultimos movimientos y ventas del mes",
+        "description": "Acceso: autenticado.",
         "tags": [
           "panel"
         ],
@@ -7394,6 +7440,7 @@
     "/api/panel/avisos": {
       "get": {
         "summary": "Cuantos avisos hay para el encabezado: stock bajo, entregas atrasadas y entregas de hoy",
+        "description": "Acceso: autenticado.",
         "tags": [
           "panel"
         ],
@@ -7445,6 +7492,7 @@
     "/api/pedidos": {
       "get": {
         "summary": "Lista pedidos con su cliente, paginado, filtrando por cliente, estado, cobro y fecha de alta",
+        "description": "Acceso: autenticado.",
         "tags": [
           "pedidos"
         ],
@@ -7579,6 +7627,7 @@
       },
       "post": {
         "summary": "Crea un pedido pendiente, sin lineas, con su numero PED-000000",
+        "description": "Acceso: autenticado.",
         "tags": [
           "pedidos"
         ],
@@ -7791,6 +7840,7 @@
     "/api/pedidos/{id}": {
       "get": {
         "summary": "Obtiene un pedido con su cliente y sus lineas",
+        "description": "Acceso: autenticado.",
         "tags": [
           "pedidos"
         ],
@@ -7853,6 +7903,7 @@
     "/api/pedidos/{id}/detalles": {
       "post": {
         "summary": "Agrega una linea a un pedido pendiente con el precio y el costo de hoy del item",
+        "description": "Acceso: autenticado.",
         "tags": [
           "pedidos"
         ],
@@ -7938,6 +7989,7 @@
     "/api/pedidos/{id}/detalles/{detalleId}": {
       "patch": {
         "summary": "Cambia la cantidad de una linea de un pedido pendiente",
+        "description": "Acceso: autenticado.",
         "tags": [
           "pedidos"
         ],
@@ -8025,6 +8077,7 @@
       },
       "delete": {
         "summary": "Quita una linea de un pedido pendiente",
+        "description": "Acceso: autenticado.",
         "tags": [
           "pedidos"
         ],
@@ -8096,6 +8149,7 @@
     "/api/pedidos/{id}/estado": {
       "patch": {
         "summary": "Cambia estado, cobro, observaciones internas o fecha de entrega (para confirmar se usa /confirmar)",
+        "description": "Acceso: autenticado.",
         "tags": [
           "pedidos"
         ],
@@ -8305,6 +8359,7 @@
     "/api/pedidos/{id}/confirmar": {
       "post": {
         "summary": "Confirma un pedido pendiente y descuenta su stock",
+        "description": "Acceso: autenticado.",
         "tags": [
           "pedidos"
         ],
@@ -8367,6 +8422,7 @@
     "/api/pedidos/{id}/repeticion": {
       "get": {
         "summary": "Vista previa de repetir el pedido: sus lineas con el precio de hoy, sin crear nada",
+        "description": "Acceso: autenticado.",
         "tags": [
           "pedidos"
         ],
@@ -8429,6 +8485,7 @@
     "/api/pedidos/{id}/repetir": {
       "post": {
         "summary": "Crea un pedido pendiente nuevo con las lineas repetibles del original, a precio de hoy",
+        "description": "Acceso: autenticado.",
         "tags": [
           "pedidos"
         ],
@@ -8491,6 +8548,7 @@
     "/api/produccion": {
       "get": {
         "summary": "Lista las ordenes de produccion, de la mas nueva a la mas vieja",
+        "description": "Acceso: autenticado.",
         "tags": [
           "produccion"
         ],
@@ -8583,6 +8641,7 @@
       },
       "post": {
         "summary": "Crea una orden de produccion pendiente, sin detalles",
+        "description": "Acceso: autenticado.",
         "tags": [
           "produccion"
         ],
@@ -8709,6 +8768,7 @@
     "/api/produccion/{id}": {
       "get": {
         "summary": "Obtiene una orden de produccion con sus detalles y consumos",
+        "description": "Acceso: autenticado.",
         "tags": [
           "produccion"
         ],
@@ -8771,6 +8831,7 @@
     "/api/produccion/{id}/detalles": {
       "post": {
         "summary": "Agrega un producto a una orden pendiente y devuelve la orden completa",
+        "description": "Acceso: autenticado.",
         "tags": [
           "produccion"
         ],
@@ -8861,6 +8922,7 @@
     "/api/produccion/{id}/detalles/{detalleId}": {
       "patch": {
         "summary": "Cambia cantidad u observaciones de un detalle de una orden pendiente",
+        "description": "Acceso: autenticado.",
         "tags": [
           "produccion"
         ],
@@ -8949,6 +9011,7 @@
       },
       "delete": {
         "summary": "Quita un detalle de una orden pendiente y devuelve la orden completa",
+        "description": "Acceso: autenticado.",
         "tags": [
           "produccion"
         ],
@@ -9020,6 +9083,7 @@
     "/api/produccion/{id}/estado": {
       "patch": {
         "summary": "Cancela una orden pendiente o en proceso (no devuelve el stock consumido)",
+        "description": "Acceso: autenticado.",
         "tags": [
           "produccion"
         ],
@@ -9166,6 +9230,7 @@
     "/api/produccion/{id}/iniciar": {
       "post": {
         "summary": "Inicia la orden: descuenta los insumos segun la receta y registra los consumos",
+        "description": "Acceso: autenticado.",
         "tags": [
           "produccion"
         ],
@@ -9228,6 +9293,7 @@
     "/api/produccion/{id}/finalizar": {
       "post": {
         "summary": "Finaliza la orden: ingresa al stock los productos fabricados",
+        "description": "Acceso: autenticado.",
         "tags": [
           "produccion"
         ],
@@ -9290,6 +9356,7 @@
     "/api/solicitudes-especiales": {
       "get": {
         "summary": "Lista solicitudes especiales, paginado, filtrando por cliente y estado",
+        "description": "Acceso: autenticado.",
         "tags": [
           "solicitudes-especiales"
         ],
@@ -9392,6 +9459,7 @@
       },
       "post": {
         "summary": "Registra una solicitud especial (un pedido a medida)",
+        "description": "Acceso: autenticado.",
         "tags": [
           "solicitudes-especiales"
         ],
@@ -9495,6 +9563,7 @@
     "/api/solicitudes-especiales/{id}": {
       "get": {
         "summary": "Obtiene una solicitud especial",
+        "description": "Acceso: autenticado.",
         "tags": [
           "solicitudes-especiales"
         ],
@@ -9555,6 +9624,7 @@
       },
       "patch": {
         "summary": "Modifica una solicitud especial",
+        "description": "Acceso: autenticado.",
         "tags": [
           "solicitudes-especiales"
         ],
@@ -9665,6 +9735,7 @@
     "/api/solicitudes-especiales/{id}/estado": {
       "patch": {
         "summary": "Cambia el estado de una solicitud que todavia no se convirtio en pedido",
+        "description": "Acceso: autenticado.",
         "tags": [
           "solicitudes-especiales"
         ],
@@ -9751,6 +9822,7 @@
     "/api/solicitudes-especiales/{id}/convertir": {
       "post": {
         "summary": "Convierte la solicitud en un pedido pendiente para su cliente y la vincula",
+        "description": "Acceso: autenticado.",
         "tags": [
           "solicitudes-especiales"
         ],
@@ -9830,6 +9902,7 @@
     "/api/auditoria": {
       "get": {
         "summary": "Historial de cambios de un item o un cliente, del mas nuevo al mas viejo (solo administradores)",
+        "description": "Acceso: administrador.",
         "tags": [
           "auditoria"
         ],
@@ -9931,6 +10004,7 @@
     "/api/auditoria/precios": {
       "get": {
         "summary": "Linea de tiempo de precio y costo de un item (solo administradores)",
+        "description": "Acceso: administrador.",
         "tags": [
           "auditoria"
         ],
@@ -10020,6 +10094,7 @@
     "/api/reportes/ventas-mes": {
       "get": {
         "summary": "Vendido, costo y ganancia de un mes, por item y por cliente (solo administradores)",
+        "description": "Acceso: administrador.",
         "tags": [
           "reportes"
         ],
@@ -10082,6 +10157,7 @@
     "/api/reportes/ventas-por-mes": {
       "get": {
         "summary": "Vendido por mes en los ultimos 12 meses (solo administradores)",
+        "description": "Acceso: administrador.",
         "tags": [
           "reportes"
         ],
@@ -10133,6 +10209,7 @@
     "/api/busqueda": {
       "get": {
         "summary": "Busqueda global (Ctrl+K): hasta 5 pedidos, clientes e items que coinciden con el texto",
+        "description": "Acceso: autenticado.",
         "tags": [
           "busqueda"
         ],

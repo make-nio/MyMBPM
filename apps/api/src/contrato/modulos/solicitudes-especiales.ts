@@ -54,6 +54,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/solicitudes-especiales",
+    acceso: "autenticado",
     resumen: "Lista solicitudes especiales, paginado, filtrando por cliente y estado",
     etiqueta,
     query: listarQuery,
@@ -62,6 +63,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/solicitudes-especiales/{id}",
+    acceso: "autenticado",
     resumen: "Obtiene una solicitud especial",
     etiqueta,
     params,
@@ -70,6 +72,7 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/solicitudes-especiales",
+    acceso: "autenticado",
     resumen: "Registra una solicitud especial (un pedido a medida)",
     etiqueta,
     body: crearBody,
@@ -79,6 +82,7 @@ export const endpoints = [
   {
     metodo: "patch",
     ruta: "/api/solicitudes-especiales/{id}",
+    acceso: "autenticado",
     resumen: "Modifica una solicitud especial",
     etiqueta,
     params,
@@ -88,6 +92,7 @@ export const endpoints = [
   {
     metodo: "patch",
     ruta: "/api/solicitudes-especiales/{id}/estado",
+    acceso: "autenticado",
     resumen: "Cambia el estado de una solicitud que todavia no se convirtio en pedido",
     etiqueta,
     params,
@@ -97,6 +102,7 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/solicitudes-especiales/{id}/convertir",
+    acceso: "autenticado",
     resumen: "Convierte la solicitud en un pedido pendiente para su cliente y la vincula",
     etiqueta,
     params,

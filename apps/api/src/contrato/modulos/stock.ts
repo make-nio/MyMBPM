@@ -110,6 +110,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/stock/actual",
+    acceso: "autenticado",
     resumen: "Stock vigente de un item y tipo de stock, con su ultimo movimiento",
     etiqueta,
     query: stockActualQuery,
@@ -118,6 +119,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/stock/historial",
+    acceso: "autenticado",
     resumen: "Historial de movimientos de stock de un item, del mas nuevo al mas viejo",
     etiqueta,
     query: historialQuery,
@@ -126,6 +128,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/stock/existencias",
+    acceso: "autenticado",
     resumen: "Stock vigente de cada item del catalogo, con filtros y paginacion opcional",
     etiqueta,
     query: existenciasQuerySchema,
@@ -134,6 +137,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/stock/bajo-stock",
+    acceso: "autenticado",
     resumen: "Items con stock igual o por debajo de su stock minimo",
     etiqueta,
     query: bajoStockQuerySchema,
@@ -142,6 +146,7 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/stock/ajustes",
+    acceso: "autenticado",
     resumen: "Registra un ajuste manual de stock (positivo o negativo) con su motivo",
     etiqueta,
     body: crearAjusteBody,

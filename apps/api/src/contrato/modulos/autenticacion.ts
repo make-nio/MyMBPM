@@ -7,9 +7,9 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/autenticacion/login",
+    acceso: "publico",
     resumen: "Ingresa con usuario o email y clave; devuelve el token y el usuario",
     etiqueta: "autenticacion",
-    publico: true,
     body: loginSchema,
     respuesta: objeto({
       token: z.string(),
@@ -19,6 +19,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/autenticacion/me",
+    acceso: "autenticado",
     resumen: "Devuelve el usuario de la sesion actual",
     etiqueta: "autenticacion",
     respuesta: usuario

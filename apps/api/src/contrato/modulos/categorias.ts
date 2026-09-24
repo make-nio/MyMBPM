@@ -23,6 +23,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/categorias",
+    acceso: "autenticado",
     resumen: "Lista las categorias",
     etiqueta: "categorias",
     query: listarCategoriasQuerySchema,
@@ -31,6 +32,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/categorias/{id}",
+    acceso: "autenticado",
     resumen: "Obtiene una categoria",
     etiqueta: "categorias",
     params,
@@ -39,6 +41,7 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/categorias",
+    acceso: "autenticado",
     resumen: "Crea una categoria",
     etiqueta: "categorias",
     body: crearCategoriaSchema,
@@ -48,6 +51,7 @@ export const endpoints = [
   {
     metodo: "patch",
     ruta: "/api/categorias/{id}",
+    acceso: "autenticado",
     resumen: "Edita una categoria",
     etiqueta: "categorias",
     params,
@@ -57,6 +61,7 @@ export const endpoints = [
   {
     metodo: "patch",
     ruta: "/api/categorias/{id}/estado",
+    acceso: "autenticado",
     resumen: "Activa o desactiva una categoria",
     etiqueta: "categorias",
     params,
