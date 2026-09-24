@@ -11,6 +11,8 @@ import { CampoSelect } from "../../formularios/campo-select";
 import { CampoTextarea } from "../../formularios/campo-textarea";
 import { CampoTexto } from "../../formularios/campo-texto";
 import { MensajeError } from "../../ui/mensaje-error";
+import { useValidacionFormulario } from "../../../hooks/use-validacion-formulario";
+import { largoMaximo, numeroEntero, numeroNoNegativo, requerido } from "../../../lib/validacion";
 
 type FormularioItemCatalogoProps = {
   categorias: Categoria[];
@@ -70,6 +72,7 @@ export function FormularioItemCatalogo({
   const [publico, setPublico] = useState(item?.publico ?? false);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { formularioRef, validar, errorDelServidor, errorDe } = useValidacionFormulario();
 
   useEffect(() => {
     if (item?.idCategoria) {
@@ -84,6 +87,27 @@ export function FormularioItemCatalogo({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    const resumen = validar({
+      "item-categoria": { valor: idCategoria, reglas: [requerido("la categoria: si no hay ninguna, crea una en Categorias")] },
+      "item-nombre": { valor: nombre, reglas: [requerido("el nombre"), largoMaximo(150)] },
+      "item-slug": { valor: slug, reglas: [requerido("el slug (el nombre en la direccion web, por ejemplo llavero-gato)"), largoMaximo(180)] },
+      "item-codigo": { valor: codigo, reglas: [largoMaximo(80)] },
+      "item-material": { valor: tipoMaterial, reglas: [largoMaximo(100)] },
+      "item-color": { valor: color, reglas: [largoMaximo(100)] },
+      "item-imagen": { valor: imagenPrincipal, reglas: [largoMaximo(500)] },
+      "item-precio": { valor: precio, reglas: [numeroNoNegativo()] },
+      "item-costo": { valor: costo, reglas: esAdministrador ? [numeroNoNegativo()] : [] },
+      "item-stock-minimo": { valor: stockMinimo, reglas: [numeroNoNegativo(), numeroEntero()] },
+      "item-descripcion-corta": { valor: descripcionCorta, reglas: [largoMaximo(300)] },
+      "item-descripcion-completa": { valor: descripcionCompleta, reglas: [largoMaximo(4000)] },
+      "item-observaciones": { valor: observacionesInternas, reglas: [largoMaximo(2000)] }
+    });
+    if (resumen) {
+      setError(resumen);
+      return;
+    }
+
     setEnviando(true);
     setError(null);
 
@@ -108,17 +132,19 @@ export function FormularioItemCatalogo({
       });
     } catch (currentError) {
       setError(
-        currentError instanceof Error ? currentError.message : "No fue posible guardar el item"
+        errorDelServidor(currentError, { SLUG: { id: "item-slug", valor: slug } }) ??
+          (currentError instanceof Error ? currentError.message : "No fue posible guardar el item")
       );
       setEnviando(false);
     }
   }
 
   return (
-    <form className="formulario-modulo formulario-modulo--dos-columnas" onSubmit={handleSubmit}>
+    <form className="formulario-modulo formulario-modulo--dos-columnas" noValidate onSubmit={handleSubmit} ref={formularioRef}>
       {error ? <MensajeError mensaje={error} /> : null}
 
       <CampoSelect
+        error={errorDe("item-categoria", idCategoria)}
         id="item-categoria"
         label="Categoria"
         onChange={setIdCategoria}
@@ -138,22 +164,24 @@ export function FormularioItemCatalogo({
         options={TIPOS_ITEM.map((tipo) => ({ label: tipo, value: tipo }))}
         value={tipoItem}
       />
-      <CampoTexto id="item-nombre" label="Nombre" onChange={setNombre} required value={nombre} />
-      <CampoTexto id="item-slug" label="Slug" onChange={setSlug} required value={slug} />
-      <CampoTexto id="item-codigo" label="Codigo" onChange={setCodigo} value={codigo} />
-      <CampoTexto id="item-material" label="Tipo material" onChange={setTipoMaterial} value={tipoMaterial} />
-      <CampoTexto id="item-color" label="Color" onChange={setColor} value={color} />
+      <CampoTexto error={errorDe("item-nombre", nombre)} id="item-nombre" label="Nombre" onChange={setNombre} required value={nombre} />
+      <CampoTexto error={errorDe("item-slug", slug)} id="item-slug" label="Slug" onChange={setSlug} required value={slug} />
+      <CampoTexto error={errorDe("item-codigo", codigo)} id="item-codigo" label="Codigo" onChange={setCodigo} value={codigo} />
+      <CampoTexto error={errorDe("item-material", tipoMaterial)} id="item-material" label="Tipo material" onChange={setTipoMaterial} value={tipoMaterial} />
+      <CampoTexto error={errorDe("item-color", color)} id="item-color" label="Color" onChange={setColor} value={color} />
       <CampoTexto
+        error={errorDe("item-imagen", imagenPrincipal)}
         id="item-imagen"
         label="Imagen principal"
         onChange={setImagenPrincipal}
         value={imagenPrincipal}
       />
-      <CampoTexto id="item-precio" label="Precio" onChange={setPrecio} type="number" value={precio} />
+      <CampoTexto error={errorDe("item-precio", precio)} id="item-precio" label="Precio" onChange={setPrecio} type="number" value={precio} />
       {esAdministrador ? (
-        <CampoTexto id="item-costo" label="Costo" onChange={setCosto} type="number" value={costo} />
+        <CampoTexto error={errorDe("item-costo", costo)} id="item-costo" label="Costo" onChange={setCosto} type="number" value={costo} />
       ) : null}
       <CampoTexto
+        error={errorDe("item-stock-minimo", stockMinimo)}
         id="item-stock-minimo"
         label="Stock minimo"
         onChange={setStockMinimo}
@@ -162,6 +190,7 @@ export function FormularioItemCatalogo({
       />
       <div className="formulario-modulo__col-span">
         <CampoTextarea
+          error={errorDe("item-descripcion-corta", descripcionCorta)}
           id="item-descripcion-corta"
           label="Descripcion corta"
           onChange={setDescripcionCorta}
@@ -170,6 +199,7 @@ export function FormularioItemCatalogo({
       </div>
       <div className="formulario-modulo__col-span">
         <CampoTextarea
+          error={errorDe("item-descripcion-completa", descripcionCompleta)}
           id="item-descripcion-completa"
           label="Descripcion completa"
           onChange={setDescripcionCompleta}
@@ -179,6 +209,7 @@ export function FormularioItemCatalogo({
       </div>
       <div className="formulario-modulo__col-span">
         <CampoTextarea
+          error={errorDe("item-observaciones", observacionesInternas)}
           id="item-observaciones"
           label="Observaciones internas"
           onChange={setObservacionesInternas}

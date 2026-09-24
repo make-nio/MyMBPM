@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
-import { FormularioPedido } from "../../../src/components/modulos/pedidos/formulario-pedido";
 import { BotonExportarCsv } from "../../../src/components/ui/boton-exportar-csv";
 import { EncabezadoModulo } from "../../../src/components/ui/encabezado-modulo";
 import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
@@ -15,6 +14,7 @@ import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
+import { usePrecargar } from "../../../src/hooks/use-precargar";
 import { generarCsv, numeroCsv } from "../../../src/lib/csv";
 import { formatearDia, formatearEstado, formatearFecha, formatearMoneda } from "../../../src/lib/formato";
 import { crearPedido, listarPedidos } from "../../../src/lib/modulos/pedidos";
@@ -28,6 +28,14 @@ import {
   PedidoAltaPayload
 } from "../../../src/types/pedidos";
 
+// Los formularios se ven solo al abrir su modal: no entran en el JS inicial de la pantalla y se
+// precargan cuando el navegador queda libre (usePrecargar), asi el modal abre sin esperar.
+const cargarFormularioPedido = () => import("../../../src/components/modulos/pedidos/formulario-pedido").then((modulo) => modulo.FormularioPedido);
+const FormularioPedido = dynamic(cargarFormularioPedido, {
+  ssr: false,
+  loading: () => <EstadoCargando descripcion="Un momento." titulo="Cargando formulario" />
+});
+
 // El detalle del pedido (items, impacto en stock, confirmar, repetir) se ve solo al elegir uno: su
 // codigo no entra en el JS inicial de la pantalla, que primero tiene que mostrar la lista.
 const PanelPedido = dynamic(
@@ -36,6 +44,7 @@ const PanelPedido = dynamic(
 );
 
 export default function PedidosPage() {
+  usePrecargar(cargarFormularioPedido);
   const modalPedido = useModal();
   const [filtroEstado, setFiltroEstado] = useState<EstadoPedido | "">("");
   const [filtroCobro, setFiltroCobro] = useState<EstadoCobro | "">("");

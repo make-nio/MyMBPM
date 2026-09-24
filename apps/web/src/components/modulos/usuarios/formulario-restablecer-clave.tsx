@@ -5,6 +5,8 @@ import { FormEvent, useState } from "react";
 import { AccionesFormulario } from "../../formularios/acciones-formulario";
 import { CampoTexto } from "../../formularios/campo-texto";
 import { MensajeError } from "../../ui/mensaje-error";
+import { useValidacionFormulario } from "../../../hooks/use-validacion-formulario";
+import { igualA, largoMaximo, largoMinimo, requerido } from "../../../lib/validacion";
 
 type FormularioRestablecerClaveProps = {
   onCancel: () => void;
@@ -16,12 +18,17 @@ export function FormularioRestablecerClave({ onCancel, onSubmit }: FormularioRes
   const [confirmacion, setConfirmacion] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { formularioRef, validar, errorDe } = useValidacionFormulario();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (passwordNueva !== confirmacion) {
-      setError("Las claves no coinciden");
+    const resumen = validar({
+      "clave-nueva": { valor: passwordNueva, reglas: [requerido("la clave nueva"), largoMinimo(8, "La clave tiene que tener"), largoMaximo(100)] },
+      "clave-confirmacion": { valor: confirmacion, reglas: [requerido("repetir la clave nueva"), igualA(passwordNueva, "No coincide con la clave nueva: escribila de nuevo igual.")] }
+    });
+    if (resumen) {
+      setError(resumen);
       return;
     }
 
@@ -39,11 +46,12 @@ export function FormularioRestablecerClave({ onCancel, onSubmit }: FormularioRes
   }
 
   return (
-    <form className="formulario-modulo" onSubmit={handleSubmit}>
+    <form className="formulario-modulo" noValidate onSubmit={handleSubmit} ref={formularioRef}>
       {error ? <MensajeError mensaje={error} /> : null}
 
       <CampoTexto
         autoComplete="new-password"
+        error={errorDe("clave-nueva", passwordNueva)}
         id="clave-nueva"
         label="Clave nueva"
         minLength={8}
@@ -54,6 +62,7 @@ export function FormularioRestablecerClave({ onCancel, onSubmit }: FormularioRes
       />
       <CampoTexto
         autoComplete="new-password"
+        error={errorDe("clave-confirmacion", confirmacion)}
         id="clave-confirmacion"
         label="Repetir clave nueva"
         minLength={8}

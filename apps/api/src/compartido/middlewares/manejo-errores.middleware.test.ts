@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ErrorConflicto } from "../errores/error-conflicto";
 
-import { manejoErroresMiddleware } from "./manejo-errores.middleware";
+import { manejoErroresMiddleware, mensajeDuplicado } from "./manejo-errores.middleware";
 import { generarReferencia, referenciaMiddleware } from "./referencia.middleware";
 
 function solicitud(extra: Partial<Request> = {}) {
@@ -127,5 +127,28 @@ describe("manejoErroresMiddleware", () => {
     manejoErroresMiddleware(duplicado, solicitud(), res as unknown as Response, vi.fn());
 
     expect(res.status).toHaveBeenCalledWith(409);
+  });
+
+  it("un duplicado dice que dato se repite y como se arregla", () => {
+    const res = respuesta();
+    const duplicado = new Prisma.PrismaClientKnownRequestError("duplicado", {
+      code: "P2002",
+      clientVersion: "6.19.3",
+      meta: { modelName: "Categoria", target: ["SLUG"] }
+    });
+
+    manejoErroresMiddleware(duplicado, solicitud(), res as unknown as Response, vi.fn());
+
+    expect(res.status).toHaveBeenCalledWith(409);
+    expect(res.json.mock.calls[0][0].error.message).toBe(
+      "Ya existe otro registro con ese slug: elegi uno distinto y volve a guardar"
+    );
+  });
+
+  it("un duplicado de una columna desconocida no inventa el nombre", () => {
+    expect(mensajeDuplicado({ target: ["OTRA"] })).toBe(
+      "Ya existe un registro con un valor unico duplicado: cambia ese dato y volve a guardar"
+    );
+    expect(mensajeDuplicado(undefined)).toContain("cambia ese dato");
   });
 });

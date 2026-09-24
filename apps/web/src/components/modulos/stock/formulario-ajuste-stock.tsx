@@ -7,6 +7,8 @@ import { CampoSelect } from "../../formularios/campo-select";
 import { CampoTextarea } from "../../formularios/campo-textarea";
 import { CampoTexto } from "../../formularios/campo-texto";
 import { MensajeError } from "../../ui/mensaje-error";
+import { useValidacionFormulario } from "../../../hooks/use-validacion-formulario";
+import { largoMaximo, numeroMayorACero, requerido } from "../../../lib/validacion";
 import { formatearCantidad } from "../../../lib/formato";
 import { Existencia, TipoAjuste } from "../../../types/stock";
 
@@ -24,6 +26,7 @@ export function FormularioAjusteStock({ existencia, onCancel, onSubmit }: Formul
   const [observaciones, setObservaciones] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { formularioRef, validar, errorDe } = useValidacionFormulario();
 
   const actual = Number(existencia.stockActual);
   const valor = Number(cantidad);
@@ -33,13 +36,12 @@ export function FormularioAjusteStock({ existencia, onCancel, onSubmit }: Formul
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!(valor > 0)) {
-      setError("La cantidad tiene que ser mayor a cero");
-      return;
-    }
-
-    if (!observaciones.trim()) {
-      setError("Indica el motivo del ajuste");
+    const resumen = validar({
+      "ajuste-cantidad": { valor: cantidad, reglas: [requerido("la cantidad"), numeroMayorACero()] },
+      "ajuste-motivo": { valor: observaciones, reglas: [requerido("el motivo del ajuste (por ejemplo: rotura, conteo)"), largoMaximo(2000)] }
+    });
+    if (resumen) {
+      setError(resumen);
       return;
     }
 
@@ -55,7 +57,7 @@ export function FormularioAjusteStock({ existencia, onCancel, onSubmit }: Formul
   }
 
   return (
-    <form className="formulario-modulo" onSubmit={handleSubmit}>
+    <form className="formulario-modulo" noValidate onSubmit={handleSubmit} ref={formularioRef}>
       {error ? <MensajeError mensaje={error} /> : null}
 
       <p className="texto-secundario">
@@ -71,8 +73,8 @@ export function FormularioAjusteStock({ existencia, onCancel, onSubmit }: Formul
         ]}
         value={tipoMovimiento}
       />
-      <CampoTexto id="ajuste-cantidad" label="Cantidad" onChange={setCantidad} required step="any" type="number" value={cantidad} />
-      <CampoTextarea id="ajuste-motivo" label="Motivo" onChange={setObservaciones} value={observaciones} />
+      <CampoTexto error={errorDe("ajuste-cantidad", cantidad)} id="ajuste-cantidad" label="Cantidad" onChange={setCantidad} required step="any" type="number" value={cantidad} />
+      <CampoTextarea error={errorDe("ajuste-motivo", observaciones)} id="ajuste-motivo" label="Motivo" onChange={setObservaciones} value={observaciones} />
       {valor > 0 ? (
         <p className="texto-secundario" data-testid="ajuste-resultante">
           Stock resultante: <strong>{formatearCantidad(resultante)}</strong>
