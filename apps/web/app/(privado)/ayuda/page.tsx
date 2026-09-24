@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { GuiaAdministrador } from "../../../src/components/modulos/ayuda/guia-administrador";
+
 // Ayuda corta para quien usa el sistema todos los dias. Los nombres de botones y estados son los
 // que aparecen en pantalla: si cambian alla, cambian aca.
 
@@ -14,7 +16,8 @@ const guias: Paso[] = [
       "En el detalle que se abre, toca \"Agregar item\" por cada producto: buscalo por nombre y pone la cantidad.",
       "El precio se copia del catalogo en ese momento: si despues cambias el precio del producto, el pedido no cambia.",
       "Si le prometiste una fecha al cliente, cargala en \"Entrega prometida\". La podes cambiar desde el detalle con \"Guardar fecha\" hasta que el pedido se entregue.",
-      "Si empezo como solicitud especial, en Solicitudes toca \"Convertir en pedido\": se crea el pedido con el cliente y la descripcion, y despues le cargas los items."
+      "Si empezo como solicitud especial, en Solicitudes toca \"Convertir en pedido\": se crea el pedido con el cliente y la descripcion, y despues le cargas los items.",
+      "Si un cliente pide lo mismo que otra vez, abri ese pedido y toca \"Repetir\": ves como queda con los precios de hoy y, al tocar \"Crear pedido nuevo\", se crea pendiente para revisarlo y confirmarlo. Los items dados de baja o sin precio no se repiten."
     ]
   },
   {
@@ -93,12 +96,21 @@ const guias: Paso[] = [
     ]
   },
   {
+    titulo: "Ver lo que compro un cliente",
+    pasos: [
+      "En Clientes, busca al cliente y toca \"Ficha\".",
+      "Arriba ves sus datos y el total comprado: suma los pedidos confirmados, sin los cancelados ni los que todavia estan pendientes.",
+      "Abajo esta su historial de pedidos con el estado, el cobro y el total. \"Ver pedido\" te lleva al detalle."
+    ]
+  },
+  {
     titulo: "Costos y ganancia (administradores)",
     pasos: [
       "Carga el costo de cada insumo (por ejemplo, lo que pagaste el kilo de filamento) al editarlo, en \"Costo\".",
       "En la receta de un producto vas a ver cuanto cuesta fabricarlo. Si no coincide con su costo, toca \"Usar como costo\".",
       "Cada pedido muestra su costo y su ganancia, y el Dashboard lo vendido y ganado en el mes.",
-      "En Reportes elegis un mes y ves lo vendido por item y por cliente, con \"Exportar CSV\" para cada tabla."
+      "En Reportes elegis un mes y ves lo vendido por item y por cliente, con \"Exportar CSV\" para cada tabla.",
+      "Arriba de Reportes esta lo vendido en los ultimos 12 meses: toca una barra (o \"Ver los datos\" y \"Ver mes\") para ver el reporte de ese mes."
     ],
     ojo: "El costo de un pedido se toma cuando agregas cada item: si despues cambias el costo del producto, los pedidos ya cargados no cambian."
   }
@@ -188,6 +200,8 @@ export default function AyudaPage() {
           </div>
         ))}
       </section>
+
+      <GuiaAdministrador />
 
       <p className="texto-secundario">
         Para lo que falta reponer, lo que hay para entregar y las entregas atrasadas o de esta semana, mira el{" "}

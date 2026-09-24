@@ -26,7 +26,9 @@ type Presupuesto = { ruta: string; nombre: string; conSesion: boolean; puntajeMi
 const PRESUPUESTO: Presupuesto[] = [
   { ruta: "/ingresar", nombre: "Ingreso", conSesion: false, puntajeMinimo: 87, jsMaximoKb: 382 },
   { ruta: "/panel", nombre: "Panel", conSesion: true, puntajeMinimo: 88, jsMaximoKb: 480 },
-  { ruta: "/pedidos", nombre: "Pedidos", conSesion: true, puntajeMinimo: 87, jsMaximoKb: 433 }
+  { ruta: "/pedidos", nombre: "Pedidos", conSesion: true, puntajeMinimo: 87, jsMaximoKb: 433 },
+  // Con el grafico de 12 meses (SVG propio, sin librerias de graficos). CI del 24/09: 90 y 377 KB.
+  { ruta: "/reportes", nombre: "Reportes", conSesion: true, puntajeMinimo: 85, jsMaximoKb: 415 }
 ];
 
 const PASADAS = Number(process.env.RENDIMIENTO_PASADAS || 3);
@@ -103,7 +105,7 @@ function publicarResumen(resultados: Resultado[]) {
 
 test.describe.configure({ mode: "serial" });
 
-test("presupuesto de rendimiento de ingreso, panel y pedidos", async () => {
+test("presupuesto de rendimiento de ingreso, panel, pedidos y reportes", async () => {
   test.setTimeout(PRESUPUESTO.length * PASADAS * 60_000);
 
   // Lighthouse abre sus propias pestañas por el puerto de depuracion. Con un perfil
