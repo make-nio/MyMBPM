@@ -16,6 +16,7 @@ const pantallas: Array<{ ruta: string; titulo: string; alta?: string }> = [
   { ruta: "/pedidos", titulo: "Pedidos", alta: "Nuevo pedido" },
   { ruta: "/produccion", titulo: "Produccion", alta: "Nueva orden" },
   { ruta: "/stock", titulo: "Stock" },
+  { ruta: "/reportes", titulo: "Reportes" },
   { ruta: "/ayuda", titulo: "Ayuda" }
 ];
 
