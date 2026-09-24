@@ -40,10 +40,13 @@ import {
 import { MovimientoStock } from "../../../types/stock";
 import { TablaImpactoStock } from "../stock/tabla-impacto-stock";
 import { FormularioLineaPedido } from "./formulario-linea-pedido";
+import { RepetirPedido } from "./repetir-pedido";
 
 type PanelPedidoProps = {
   idPedido: string;
   onCambio: () => void;
+  // Para abrir otro pedido en la pantalla (el que se crea al repetir este).
+  onAbrirPedido?: (idPedido: string) => void;
 };
 
 type MovimientoPedido = MovimientoStock & { nombreItem: string };
@@ -53,10 +56,11 @@ function itemsDistintos(detalles: PedidoDetalle[]) {
 }
 
 // Detalle de un pedido: lineas, confirmacion con su impacto en el stock y cambios de estado.
-export function PanelPedido({ idPedido, onCambio }: PanelPedidoProps) {
+export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoProps) {
   const { esAdministrador } = useUsuarioAutenticado();
   const modalLinea = useModal<PedidoDetalle>();
   const modalConfirmacion = useModal();
+  const modalRepetir = useModal();
   const [pedido, setPedido] = useState<Pedido | null>(null);
   const [impacto, setImpacto] = useState<ImpactoStockItem[]>([]);
   const [movimientos, setMovimientos] = useState<MovimientoPedido[]>([]);
@@ -207,9 +211,14 @@ export function PanelPedido({ idPedido, onCambio }: PanelPedidoProps) {
 
         <div className="acciones-tabla">
           {detalles.length > 0 ? (
-            <Link className="boton-secundario" href={`/pedidos/comprobante?pedido=${idPedido}`}>
-              Comprobante
-            </Link>
+            <>
+              <Link className="boton-secundario" href={`/pedidos/comprobante?pedido=${idPedido}`}>
+                Comprobante
+              </Link>
+              <button className="boton-secundario" onClick={() => modalRepetir.abrir(null)} type="button">
+                Repetir
+              </button>
+            </>
           ) : null}
           {pendiente ? (
             <>
@@ -387,6 +396,25 @@ export function PanelPedido({ idPedido, onCambio }: PanelPedidoProps) {
           onCancel={modalLinea.cerrar}
           onSubmit={guardarLinea}
         />
+      </Modal>
+
+      <Modal
+        abierto={modalRepetir.abierto}
+        descripcion="Un pedido nuevo para el mismo cliente, con las mismas lineas y los precios de hoy. Se crea recien al confirmar."
+        onClose={modalRepetir.cerrar}
+        titulo="Repetir pedido"
+      >
+        {modalRepetir.abierto ? (
+          <RepetirPedido
+            idPedido={idPedido}
+            onCancel={modalRepetir.cerrar}
+            onRepetido={(nuevo) => {
+              modalRepetir.cerrar();
+              onCambio();
+              onAbrirPedido?.(nuevo.idPedido);
+            }}
+          />
+        ) : null}
       </Modal>
 
       <Modal

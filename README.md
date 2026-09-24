@@ -155,6 +155,29 @@ de cada workspace (`coverage.thresholds` en `vitest.config.ts`: 49 % api, 56 % w
 septiembre de 2026. Es un piso para que no retroceda; subirlo es otro trabajo.
 Para verlo en local: `E2E_COVERAGE=1 npm run build && E2E_COVERAGE=1 npm run test:e2e && npm run test:coverage && npm run coverage:report`.
 
+### Prueba de humo de produccion
+
+`.github/workflows/humo-produccion.yml` corre despues de cada push a `main`:
+
+1. Espera (hasta 20 min) a que produccion sirva el build de ese commit: el build escribe
+   `apps/web/out/version.json` con `COMMIT_REF` (`scripts/generar-version.mjs`) y
+   `scripts/esperar-deploy.mjs` lo consulta. Si no aparece, falla y avisa que revisen el deploy en
+   Netlify (por ejemplo, un build roto).
+2. Corre `npm run test:humo` (config aparte, `apps/web/playwright.humo.config.ts`, pruebas en
+   `apps/web/e2e/humo/*.humo.ts`) contra el sitio publicado: `/api/health` responde 200 con la
+   base en `ok`, `/ingresar` sale con la CSP, React hidrata y no hay errores de consola, violaciones
+   de CSP ni pedidos al sitio con error.
+
+Es **solo lectura**: no inicia sesion, no escribe nada y no toca la base mas alla del health. Si
+falla, el check queda en rojo sobre el commit de `main` (con trazas como artefacto). El sitio es la
+variable del repositorio `URL_PRODUCCION` o, si no esta, `https://mymbpm.netlify.app`. Tambien se
+puede lanzar a mano (Actions → "Humo de produccion" → Run workflow), opcionalmente contra otra URL
+como un deploy preview; en local:
+
+```bash
+URL_HUMO=https://mymbpm.netlify.app npm run test:humo --workspace @myfirstproject/web
+```
+
 ## Testing HTTP desde VSCode
 
 - instala la extension `REST Client`

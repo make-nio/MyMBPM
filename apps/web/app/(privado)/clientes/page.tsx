@@ -6,10 +6,12 @@ import { useUsuarioAutenticado } from "../../../src/components/auth/contexto-ses
 import { HistorialCambios } from "../../../src/components/modulos/auditoria/historial-cambios";
 import { FichaCliente } from "../../../src/components/modulos/clientes/ficha-cliente";
 import { FormularioCliente } from "../../../src/components/modulos/clientes/formulario-cliente";
+import { ImportarClientes } from "../../../src/components/modulos/clientes/importar-clientes";
 import { EncabezadoModulo } from "../../../src/components/ui/encabezado-modulo";
 import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
 import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
 import { MensajeError } from "../../../src/components/ui/mensaje-error";
+import { MensajeExito } from "../../../src/components/ui/mensaje-exito";
 import { Modal } from "../../../src/components/ui/modal";
 import { PieListado } from "../../../src/components/ui/pie-listado";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
@@ -32,6 +34,8 @@ export default function ClientesPage() {
   const { esAdministrador } = useUsuarioAutenticado();
   const modalCliente = useModal<Cliente>();
   const modalHistorial = useModal<Cliente>();
+  const modalImportacion = useModal();
+  const [avisoImportacion, setAvisoImportacion] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState("");
   const [busquedaAplicada, setBusquedaAplicada] = useState("");
   const [filtroActivo, setFiltroActivo] = useState<FiltroActivo>("todos");
@@ -107,6 +111,22 @@ export default function ClientesPage() {
         onCrear={() => modalCliente.abrir(null)}
         titulo="Clientes"
       />
+
+      {esAdministrador ? (
+        <div className="acciones-tabla">
+          <button
+            className="boton-secundario"
+            onClick={() => {
+              setAvisoImportacion(null);
+              modalImportacion.abrir(null);
+            }}
+            type="button"
+          >
+            Importar CSV
+          </button>
+        </div>
+      ) : null}
+      {avisoImportacion ? <MensajeExito mensaje={avisoImportacion} /> : null}
 
       {error ? <MensajeError mensaje={error} /> : null}
       {cargando ? <EstadoCargando titulo="Cargando clientes" /> : null}
@@ -196,6 +216,22 @@ export default function ClientesPage() {
           cliente={modalCliente.contexto}
           onCancel={modalCliente.cerrar}
           onSubmit={guardarCliente}
+        />
+      </Modal>
+
+      <Modal
+        abierto={modalImportacion.abierto}
+        descripcion="Carga muchos clientes de una vez desde un archivo CSV (Excel o Google Sheets)."
+        onClose={modalImportacion.cerrar}
+        titulo="Importar clientes"
+      >
+        <ImportarClientes
+          onCancel={modalImportacion.cerrar}
+          onImportado={async (resultado) => {
+            modalImportacion.cerrar();
+            setAvisoImportacion(`Se importaron ${resultado.creados} ${resultado.creados === 1 ? "cliente" : "clientes"}.`);
+            await recargar();
+          }}
         />
       </Modal>
 

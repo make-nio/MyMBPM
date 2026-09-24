@@ -27,12 +27,26 @@ import { MovimientoStock, TipoStock } from "../../../types/stock";
 import { TablaImpactoStock } from "../stock/tabla-impacto-stock";
 import { FormularioDetalleOrden } from "./formulario-detalle-orden";
 
+export type AccionOrden = "iniciar" | "finalizar" | "cancelar";
+type Accion = AccionOrden;
+
 type PanelOrdenProps = {
   idOrdenProduccion: string;
   onCambio: () => void;
+  // Desde el tablero: al cargar la orden abre el modal de esa accion (con su impacto en stock),
+  // si todavia corresponde a su estado.
+  accionInicial?: AccionOrden | null;
 };
 
-type Accion = "iniciar" | "finalizar" | "cancelar";
+function accionValida(accion: AccionOrden, orden: OrdenProduccion) {
+  if (accion === "iniciar") {
+    return orden.estadoProduccion === "PENDIENTE" && (orden.detalles ?? []).length > 0;
+  }
+  if (accion === "finalizar") {
+    return orden.estadoProduccion === "EN_PROCESO";
+  }
+  return orden.estadoProduccion === "PENDIENTE" || orden.estadoProduccion === "EN_PROCESO";
+}
 type MovimientoOrden = MovimientoStock & { nombreItem: string };
 
 async function stockPorItem(ids: string[], tipoStock: TipoStock) {
@@ -60,7 +74,7 @@ async function movimientosDeOrden(idOrden: string, items: Map<string, string>, t
     .map((movimiento) => ({ ...movimiento, nombreItem: items.get(movimiento.idItemCatalogo) ?? "-" }));
 }
 
-export function PanelOrden({ idOrdenProduccion, onCambio }: PanelOrdenProps) {
+export function PanelOrden({ idOrdenProduccion, onCambio, accionInicial = null }: PanelOrdenProps) {
   const modalDetalle = useModal<OrdenProduccionDetalle>();
   const modalAccion = useModal<Accion>();
   const [orden, setOrden] = useState<OrdenProduccion | null>(null);
@@ -109,11 +123,11 @@ export function PanelOrden({ idOrdenProduccion, onCambio }: PanelOrdenProps) {
       const stock = await stockPorItem([...new Set(egresos.map((egreso) => egreso.idItemCatalogo))], "INSUMO");
       setConsumoPrevisto(calcularImpactoStock(egresos, stock));
       setSinReceta(productosSinReceta);
-      return;
+      return actual;
     }
 
     if (actual.estadoProduccion === "PENDIENTE") {
-      return;
+      return actual;
     }
 
     const insumos = new Map(
@@ -140,15 +154,24 @@ export function PanelOrden({ idOrdenProduccion, onCambio }: PanelOrdenProps) {
         )
       );
     }
+
+    return actual;
   }, [idOrdenProduccion]);
 
   useEffect(() => {
     setOrden(null);
     setError(null);
-    cargar().catch((currentError) =>
-      setError(currentError instanceof Error ? currentError.message : "No fue posible cargar la orden")
-    );
-  }, [cargar]);
+    cargar()
+      .then((actual) => {
+        if (accionInicial && accionValida(accionInicial, actual)) {
+          modalAccion.abrir(accionInicial);
+        }
+      })
+      .catch((currentError) =>
+        setError(currentError instanceof Error ? currentError.message : "No fue posible cargar la orden")
+      );
+    // modalAccion.abrir no cambia; la accion inicial se aplica una vez, al cargar la orden.
+  }, [cargar, accionInicial]);
 
   async function ejecutar(accion: () => Promise<unknown>) {
     setError(null);
@@ -373,6 +396,15 @@ export function PanelOrden({ idOrdenProduccion, onCambio }: PanelOrdenProps) {
       >
         <div className="formulario-modulo">
           {accion === "iniciar" ? <TablaImpactoStock etiquetaItem="Insumo" impacto={consumoPrevisto} /> : null}
+          {accion === "iniciar" && bloqueoInicio ? (
+            <MensajeError
+              mensaje={
+                sinReceta.length > 0
+                  ? `No se puede iniciar: ${sinReceta.join(", ")} no tiene receta.`
+                  : "No se puede iniciar: faltan insumos."
+              }
+            />
+          ) : null}
           {accion === "finalizar" ? (
             <TablaImpactoStock etiquetaItem="Producto" impacto={ingresoPrevisto} sentido="ingreso" />
           ) : null}
@@ -380,7 +412,12 @@ export function PanelOrden({ idOrdenProduccion, onCambio }: PanelOrdenProps) {
             <button className="boton-secundario" onClick={modalAccion.cerrar} type="button">
               Volver
             </button>
-            <button className="boton-primario" disabled={procesando} onClick={() => void confirmarAccion()} type="button">
+            <button
+              className="boton-primario"
+              disabled={procesando || (accion === "iniciar" && bloqueoInicio)}
+              onClick={() => void confirmarAccion()}
+              type="button"
+            >
               {procesando
                 ? "Procesando..."
                 : accion === "iniciar"
