@@ -197,7 +197,11 @@ export default function PedidosPage() {
 
       {idPedidoSeleccionado ? (
         <div ref={refDetalle}>
-          <PanelPedido idPedido={idPedidoSeleccionado} onCambio={() => void recargar()} />
+          <PanelPedido
+            idPedido={idPedidoSeleccionado}
+            onAbrirPedido={setIdPedidoSeleccionado}
+            onCambio={() => void recargar()}
+          />
         </div>
       ) : null}
 

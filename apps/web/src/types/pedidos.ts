@@ -77,3 +77,26 @@ export type PedidoEstadoPayload = Partial<{
   // AAAA-MM-DD; null la borra.
   fechaEntrega: string | null;
 }>;
+
+// GET /api/pedidos/:id/repeticion: vista previa de "Repetir" con los precios de hoy. Las lineas
+// no disponibles (item inactivo, borrado o sin precio) no se van a repetir.
+export type LineaRepeticion = {
+  idItemCatalogo: string;
+  nombre: string;
+  cantidad: string;
+  precioAnterior: string;
+  precioHoy: string | null;
+  subtotal: string | null;
+  disponible: boolean;
+  motivo: string | null;
+};
+
+export type RepeticionPedido = {
+  idPedidoOriginal: string;
+  numeroPedido: string | null;
+  idCliente: string;
+  cliente: { nombre: string; apellido: string | null };
+  origenPedido: OrigenPedido;
+  lineas: LineaRepeticion[];
+  total: string;
+};

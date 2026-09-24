@@ -1,6 +1,7 @@
 import type { Page } from "@playwright/test";
 
-import { crearCliente, crearProductoConStock } from "./api";
+import { revisarAccesibilidad } from "./accesibilidad";
+import { api, crearCliente, crearProductoConStock } from "./api";
 import { ADMIN_E2E } from "./entorno";
 import { expect, test, unico } from "./fixtures";
 
@@ -124,4 +125,53 @@ test("filtra el listado por estado", async ({ page }) => {
 
   await page.getByLabel("Filtrar por estado").selectOption("PENDIENTE");
   await expect(page.getByRole("row").filter({ hasText: cliente }).first()).toBeVisible();
+});
+
+test("repetir un pedido: vista previa con precios de hoy y el nuevo se crea solo al confirmar", async ({ page }) => {
+  const nombreCliente = unico("PRUEBA-ClienteRepetir");
+  const cliente = await crearCliente(nombreCliente);
+  const maceta = await crearProductoConStock(unico("PRUEBA-MacetaRep"), 1000, 10);
+  const vela = await crearProductoConStock(unico("PRUEBA-VelaRep"), 500, 10);
+  const llavero = await crearProductoConStock(unico("PRUEBA-LlaveroRep"), 100, 10);
+  const original = await api<{ idPedido: string; numeroPedido: string }>("POST", "/api/pedidos", {
+    idCliente: cliente.idCliente,
+    origenPedido: "INSTAGRAM"
+  });
+  for (const [item, cantidad] of [[maceta, 2], [vela, 1], [llavero, 3]] as const) {
+    await api("POST", `/api/pedidos/${original.idPedido}/detalles`, { idItemCatalogo: item.idItemCatalogo, cantidad });
+  }
+  await api("POST", `/api/pedidos/${original.idPedido}/confirmar`);
+
+  // Despues del pedido, la maceta sube de precio y el llavero se da de baja.
+  await api("PATCH", `/api/items-catalogo/${maceta.idItemCatalogo}`, { precio: 1200 });
+  await api("PATCH", `/api/items-catalogo/${llavero.idItemCatalogo}/estado`, { activo: false });
+  const pedidosDelCliente = async () =>
+    (await api<Array<{ idPedido: string }>>("GET", `/api/pedidos?idCliente=${cliente.idCliente}`)).length;
+
+  await page.goto(`/pedidos?pedido=${original.idPedido}`);
+  const panel = page.getByRole("region", { name: `Pedido ${original.numeroPedido}` });
+  await panel.getByRole("button", { name: "Repetir" }).click();
+  const dialogo = page.getByRole("dialog", { name: "Repetir pedido" });
+  await expect(dialogo).toContainText(`Cliente: ${nombreCliente}`);
+  await expect(dialogo.getByRole("row").filter({ hasText: maceta.nombre })).toContainText(/1\.000,00.*1\.200,00.*2\.400,00/);
+  await expect(dialogo.getByRole("row").filter({ hasText: llavero.nombre })).toContainText("No se repite: El item esta inactivo");
+  await expect(dialogo.getByTestId("total-repeticion")).toHaveText(/2\.900,00/);
+  await revisarAccesibilidad(page, "repetir pedido");
+
+  // Cancelar no crea nada.
+  await dialogo.getByRole("button", { name: "Cancelar" }).click();
+  await expect(dialogo).toBeHidden();
+  expect(await pedidosDelCliente()).toBe(1);
+
+  await panel.getByRole("button", { name: "Repetir" }).click();
+  await dialogo.getByRole("button", { name: "Crear pedido nuevo" }).click();
+  await expect(dialogo).toBeHidden();
+  expect(await pedidosDelCliente()).toBe(2);
+
+  // Queda abierto el pedido nuevo: pendiente, con las dos lineas disponibles a precio de hoy.
+  const nuevo = page.getByRole("region", { name: /^Pedido PED-/ });
+  await expect(nuevo).not.toHaveAttribute("aria-label", `Pedido ${original.numeroPedido}`);
+  await expect(nuevo.getByTestId("estado-pedido")).toHaveText("Pendiente");
+  await expect(nuevo.getByTestId("total-pedido")).toHaveText(/2\.900,00/);
+  await expect(nuevo.getByRole("row").filter({ hasText: llavero.nombre })).toHaveCount(0);
 });

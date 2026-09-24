@@ -4,7 +4,8 @@ import {
   EstadoPedido,
   Pedido,
   PedidoAltaPayload,
-  PedidoEstadoPayload
+  PedidoEstadoPayload,
+  RepeticionPedido
 } from "../../types/pedidos";
 
 type FiltrosPedidos = {
@@ -76,4 +77,17 @@ export function confirmarPedido(idPedido: string) {
   return apiFetch<RespuestaPedido>(`/api/pedidos/${idPedido}/confirmar`, {
     method: "POST"
   }).then((response) => response.data);
+}
+
+// Vista previa de "Repetir" (no crea nada) y la repeticion (crea el pedido nuevo, pendiente).
+export function prepararRepeticionPedido(idPedido: string) {
+  return apiFetch<{ ok: true; data: RepeticionPedido }>(`/api/pedidos/${idPedido}/repeticion`).then(
+    (response) => response.data
+  );
+}
+
+export function repetirPedido(idPedido: string) {
+  return apiFetch<RespuestaPedido>(`/api/pedidos/${idPedido}/repetir`, { method: "POST" }).then(
+    (response) => response.data
+  );
 }
