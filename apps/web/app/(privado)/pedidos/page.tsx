@@ -14,7 +14,7 @@ import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
-import { formatearEstado, formatearFecha, formatearMoneda } from "../../../src/lib/formato";
+import { formatearDia, formatearEstado, formatearFecha, formatearMoneda } from "../../../src/lib/formato";
 import { crearPedido, listarPedidos } from "../../../src/lib/modulos/pedidos";
 import {
   ESTADOS_COBRO,
@@ -116,6 +116,7 @@ export default function PedidosPage() {
               cell: (pedido) => `${pedido.cliente?.nombre ?? ""} ${pedido.cliente?.apellido ?? ""}`.trim() || "-"
             },
             { header: "Alta", cell: (pedido) => formatearFecha(pedido.fechaAlta) },
+            { header: "Entrega", cell: (pedido) => formatearDia(pedido.fechaEntrega) },
             { header: "Estado", cell: (pedido) => formatearEstado(pedido.estadoPedido) },
             { header: "Cobro", cell: (pedido) => formatearEstado(pedido.estadoCobro) },
             { header: "Total", cell: (pedido) => formatearMoneda(pedido.total) },

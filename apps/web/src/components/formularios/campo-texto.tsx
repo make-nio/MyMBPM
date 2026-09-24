@@ -3,7 +3,7 @@ type CampoTextoProps = {
   label: string;
   value: string;
   onChange: (value: string) => void;
-  type?: "text" | "email" | "number" | "password";
+  type?: "text" | "email" | "number" | "password" | "date";
   placeholder?: string;
   required?: boolean;
   autoComplete?: string;

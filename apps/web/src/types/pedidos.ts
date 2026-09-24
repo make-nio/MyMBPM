@@ -66,10 +66,14 @@ export type PedidoAltaPayload = {
   estadoCobro?: EstadoCobro;
   observacionesCliente?: string;
   observacionesInternas?: string;
+  // Dia prometido al cliente, AAAA-MM-DD.
+  fechaEntrega?: string;
 };
 
 export type PedidoEstadoPayload = Partial<{
   estadoPedido: EstadoPedido;
   estadoCobro: EstadoCobro;
   observacionesInternas: string;
+  // AAAA-MM-DD; null la borra.
+  fechaEntrega: string | null;
 }>;
