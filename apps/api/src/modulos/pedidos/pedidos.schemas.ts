@@ -49,7 +49,3 @@ export const actualizarEstadoPedidoSchema = z
     observacionesInternas: z.string().max(2000).optional()
   })
   .refine((data) => Object.keys(data).length > 0, "Debe enviar al menos un campo para actualizar");
-
-export const confirmarPedidoSchema = z.object({
-  idUsuario: idSchema.optional()
-});

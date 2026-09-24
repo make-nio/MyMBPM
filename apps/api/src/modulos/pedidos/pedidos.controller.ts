@@ -7,7 +7,6 @@ import {
   actualizarEstadoPedidoSchema,
   actualizarDetallePedidoSchema,
   agregarDetallePedidoSchema,
-  confirmarPedidoSchema,
   crearPedidoSchema,
   listarPedidosQuerySchema,
   pedidoDetalleParamsSchema,
@@ -70,8 +69,9 @@ export const pedidosController = {
 
   async confirmar(request: Request, response: Response) {
     const params = validar(pedidoParamsSchema, request.params);
-    const body = validar(confirmarPedidoSchema, request.body ?? {});
-    const pedido = await pedidosService.confirmar(params.id, body.idUsuario);
+    // Los egresos de stock quedan a nombre del usuario de la sesion. Antes se tomaba un
+    // idUsuario del body, que cualquier cliente podia falsear u omitir.
+    const pedido = await pedidosService.confirmar(params.id, request.usuarioAutenticado?.idUsuario);
 
     responderExito(response, pedido);
   }
