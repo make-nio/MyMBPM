@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { FormularioAjusteStock } from "../../../src/components/modulos/stock/formulario-ajuste-stock";
@@ -19,6 +20,7 @@ import { useModal } from "../../../src/hooks/use-modal";
 import { formatearCantidad, formatearEstado, formatearFecha } from "../../../src/lib/formato";
 import { generarCsv, numeroCsv } from "../../../src/lib/csv";
 import { crearAjusteStock, listarExistencias } from "../../../src/lib/modulos/stock";
+import { cantidadParaReponer, rutaOrdenParaReponer } from "../../../src/lib/stock/reponer";
 import { Existencia, TipoAjuste, TipoStock } from "../../../src/types/stock";
 
 const ESPERA_BUSQUEDA_MS = 300;
@@ -187,6 +189,18 @@ export default function StockPage() {
                   >
                     Ajustar
                   </button>
+                  {/* Solo productos: los insumos se compran. La orden se confirma en Produccion. */}
+                  {existencia.tipoItem === "PRODUCTO" && existencia.bajoMinimo ? (
+                    <Link
+                      className="boton-secundario"
+                      href={rutaOrdenParaReponer(
+                        existencia.idItemCatalogo,
+                        cantidadParaReponer(existencia.stockActual, existencia.stockMinimo)
+                      )}
+                    >
+                      Crear orden de produccion
+                    </Link>
+                  ) : null}
                 </div>
               )
             }
