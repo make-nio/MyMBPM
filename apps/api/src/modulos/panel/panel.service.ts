@@ -17,7 +17,7 @@ function sumarConteos(conteos: Array<{ estado: string; total: number }>, estados
 export const panelService = {
   // Lo que Maxi necesita ver al entrar: que confirmar, que entregar, que se esta fabricando,
   // que falta reponer y que se movio ultimo en el stock.
-  async obtenerResumen({ limite }: { limite: number }, ahora = new Date()) {
+  async obtenerResumen({ limite }: { limite: number }, { verCostos }: { verCostos: boolean }, ahora = new Date()) {
     const mes = rangoMesArgentina(ahora);
     const [
       conteosPedidos,
@@ -36,7 +36,7 @@ export const panelService = {
       panelRepository.listarOrdenesEnProceso(prisma, limite),
       stockService.obtenerExistencias(prisma, { activo: true }),
       stockService.obtenerUltimosMovimientos(prisma, limite),
-      panelRepository.listarPedidosConfirmadosEntre(prisma, mes.desde, mes.hasta)
+      verCostos ? panelRepository.listarPedidosConfirmadosEntre(prisma, mes.desde, mes.hasta) : Promise.resolve(null)
     ]);
 
     const pedidosPorEstado = conteosPedidos.map((conteo) => ({ estado: conteo.estadoPedido, total: conteo._count._all }));
@@ -60,8 +60,8 @@ export const panelService = {
       },
       stockBajo: { total: bajoMinimo.length, items: bajoMinimo.slice(0, limite) },
       ultimosMovimientos,
-      // Lo confirmado este mes (hora de Argentina), sin cancelados.
-      ventasDelMes: { desde: mes.desde, ...calcularVentas(vendidosDelMes) }
+      // Lo confirmado este mes (hora de Argentina), sin cancelados. Solo con permiso de ver costos.
+      ...(vendidosDelMes ? { ventasDelMes: { desde: mes.desde, ...calcularVentas(vendidosDelMes) } } : {})
     };
   }
 };
