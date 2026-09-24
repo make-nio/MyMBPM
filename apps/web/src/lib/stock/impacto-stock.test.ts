@@ -5,7 +5,7 @@ import { calcularImpactoStock, hayStockInsuficiente } from "./impacto-stock";
 const linea = (idItemCatalogo: string, cantidad: string, nombre = `Item ${idItemCatalogo}`) => ({
   idItemCatalogo,
   cantidad,
-  nombreItemSnapshot: nombre
+  nombre
 });
 
 describe("calcularImpactoStock", () => {
@@ -45,6 +45,14 @@ describe("calcularImpactoStock", () => {
 
     expect(item.resultante).toBe(0);
     expect(item.insuficiente).toBe(false);
+  });
+});
+
+describe("calcularImpactoStock con ingreso", () => {
+  it("suma la cantidad al stock actual", () => {
+    const [item] = calcularImpactoStock([linea("1", "4"), linea("1", "1.5")], { "1": "-0" }, "ingreso");
+
+    expect(item).toMatchObject({ disponible: 0, egreso: 5.5, resultante: 5.5, insuficiente: false });
   });
 });
 
