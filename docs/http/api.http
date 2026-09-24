@@ -3,6 +3,7 @@
 # El token puede completarse manualmente en @token o capturarse automaticamente ejecutando primero el login.
 # Este archivo apunta a la API Express. No usar el puerto del frontend Next.js.
 # Puerto por defecto de la API: 3002. Si cambias PORT en apps/api/.env, actualiza @baseUrl.
+# Contra el sitio desplegado: @baseUrl = https://<sitio>.netlify.app (web y API comparten dominio).
 # Cada seccion incluye un curl equivalente comentado para poder probar desde terminal si hace falta.
 
 @baseUrl = http://localhost:3002

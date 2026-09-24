@@ -19,8 +19,8 @@ Monorepo con `npm workspaces`:
 
 | Carpeta | Qué es |
 |---|---|
-| `apps/api` | Node 20 + Express + TypeScript + Prisma, sobre **SQL Server** |
-| `apps/web` | Next.js 15 (App Router) + React 19 + TypeScript |
+| `apps/api` | Node 20 + Express + TypeScript + Prisma, sobre **PostgreSQL** (Netlify DB / Neon) |
+| `apps/web` | Next.js 15 (App Router) + React 19 + TypeScript, publicado como export estático |
 | `docs/` | Arquitectura, endpoints por bloque, modelo de datos (`der-actualizado.md`), idempotencia del stock |
 | `docs/http`, `apps/api/api.http` | Pedidos de ejemplo para probar la API a mano |
 
@@ -48,33 +48,45 @@ Vienen de `docs/arquitectura-backend.md`. Leelo entero antes de tocar el backend
 ## Comandos
 
 ```bash
-npm install                                        # desde la raíz
-npm run check                                      # tipos de web y api (tsc --noEmit)
+npm install                                        # desde la raíz (corre prisma generate)
+npm run check                                      # tipos de web y api (tsc --noEmit, incluye tests)
+npm test                                           # vitest de los services, sin base
 npm run build
 npm run prisma:generate --workspace @myfirstproject/api
 npm run dev                                        # web (3000) + api (3002); necesita la base
 ```
 
-**`npm run check` tiene que pasar antes de cada commit.** Hoy es el único control que hay.
+**`npm run check` y `npm test` tienen que pasar antes de cada commit.**
 
 ## La base de datos
 
-La API necesita SQL Server (`apps/api/.env`, ver `.env.example`). **En una sesión en la nube no
-hay SQL Server**, así que:
+PostgreSQL (Netlify DB / Neon), `provider = "postgresql"` en Prisma. La API lee
+`NETLIFY_DATABASE_URL` (conexión pooled) y Prisma Migrate usa `NETLIFY_DATABASE_URL_UNPOOLED`
+(conexión directa). En local van en `apps/api/.env` (ver `.env.example`); pueden ser la misma URL
+de un Postgres local.
 
-- Podés escribir código, migraciones de Prisma (`prisma migrate dev --create-only` no aplica
-  nada) y pruebas que no dependan de la base.
-- No inventes una base de reemplazo (SQLite, etc.) cambiando el `provider` de Prisma: rompe las
-  migraciones reales.
-- Si algo sólo se puede comprobar contra la base, decilo en el PR: *"no probado contra SQL
-  Server"*.
+- Todo cambio de schema va con migración versionada (`prisma migrate dev --name <nombre>`). El
+  deploy corre `prisma migrate deploy`.
+- Postgres distingue mayúsculas: el login y la búsqueda de clientes usan `mode: "insensitive"`,
+  y usuario/email tienen índices únicos sobre `lower(...)` (SQL crudo en la migración inicial).
+- Si algo sólo se puede comprobar contra la base real (Neon), decilo en el PR.
+
+## Despliegue
+
+Un solo sitio de Netlify (`netlify.toml`), detalle en `docs/despliegue-netlify.md`:
+
+- La web se publica como sitio estático desde `apps/web/out`.
+- La API corre como Netlify Function (`serverless-http`) bajo `/api/*`, en el mismo dominio: no
+  hay CORS. En local, `next dev` reenvía `/api/*` a la API (`API_DEV_URL`).
+- El build es `npm run build:netlify`: genera Prisma, aplica migraciones y exporta la web.
+- Variables del sitio: `NETLIFY_DATABASE_URL` y `NETLIFY_DATABASE_URL_UNPOOLED` (las inyecta
+  Netlify DB), `JWT_SECRET` y `JWT_EXPIRES_IN`.
 
 ## Pruebas
 
-Todavía no hay ninguna. Si sumás, que sean de los **services**, con el repository reemplazado
-por uno falso. Ahí vive la lógica, y así corren sin base. Empezá por `stock`, `pedidos` y
-`produccion`, que son las que mueven stock. Usá `vitest`. Agregá el script `test` en
-`apps/api/package.json` y un `npm test` en la raíz.
+`npm test` desde la raíz corre `vitest` en `apps/api`. Las pruebas son de los **services**
+(`src/modulos/<modulo>/<modulo>.service.test.ts`), con el repository y `prisma.$transaction`
+mockeados: corren sin base. Si tocás un service, sumá o ajustá su prueba.
 
 ## Cómo se trabaja
 
@@ -92,4 +104,4 @@ por uno falso. Ahí vive la lógica, y así corren sin base. Empezá por `stock`
 - **Web:** ingreso, panel, y administración de categorías, ítems del catálogo, clientes y
   solicitudes especiales.
 - **Falta la web de stock, pedidos y producción**, que es lo que más usa Maxi.
-- No hay pruebas ni pipeline.
+- Hay pruebas de los services de stock, pedidos, producción y usuarios. No hay pipeline de CI.

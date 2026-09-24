@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { ErrorAutenticacion } from "../../compartido/errores/error-autenticacion";
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
+import { ErrorProhibido } from "../../compartido/errores/error-prohibido";
 import { prisma } from "../../lib/prisma";
 
 import { usuariosRepository } from "./usuarios.repository";
@@ -30,11 +31,24 @@ export const usuariosService = {
       usuario: string;
       password: string;
       activo?: boolean;
+      esAdministrador?: boolean;
     },
-    usuarioSolicitante?: { idUsuario: bigint }
+    usuarioSolicitante?: { idUsuario: bigint; esAdministrador: boolean }
   ) {
     return prisma.$transaction(async (tx) => {
-      const cantidadUsuarios = await usuariosRepository.contarUsuarios(tx);
+      await usuariosRepository.bloquearGestionUsuarios(tx);
+
+      // Sin usuarios, el alta es publica: es el bootstrap del primer administrador.
+      // Desde ahi, solo un administrador autenticado puede crear usuarios.
+      const esAltaInicial = (await usuariosRepository.contarUsuarios(tx)) === 0;
+
+      if (!esAltaInicial && !usuarioSolicitante) {
+        throw new ErrorAutenticacion("Debe autenticarse para crear nuevos usuarios");
+      }
+
+      if (!esAltaInicial && !usuarioSolicitante?.esAdministrador) {
+        throw new ErrorProhibido("Solo un administrador puede crear usuarios");
+      }
 
       const duplicado = await usuariosRepository.buscarPorEmailOUsuario(tx, {
         email: data.email,
@@ -45,10 +59,6 @@ export const usuariosService = {
         throw new ErrorConflicto("Ya existe un usuario con ese email o nombre de usuario");
       }
 
-      if (cantidadUsuarios > 0 && !usuarioSolicitante) {
-        throw new ErrorAutenticacion("Debe autenticarse para crear nuevos usuarios");
-      }
-
       const claveHash = await bcrypt.hash(data.password, 10);
 
       return usuariosRepository.crear(tx, {
@@ -57,7 +67,8 @@ export const usuariosService = {
         email: data.email,
         usuario: data.usuario,
         claveHash,
-        activo: data.activo
+        activo: esAltaInicial ? true : data.activo,
+        esAdministrador: esAltaInicial ? true : (data.esAdministrador ?? false)
       });
     });
   },
@@ -88,8 +99,26 @@ export const usuariosService = {
   },
 
   async cambiarEstado(idUsuario: bigint, activo: boolean) {
-    await this.obtenerPorId(idUsuario);
-    return usuariosRepository.actualizar(prisma, idUsuario, { activo });
+    return prisma.$transaction(async (tx) => {
+      // Mismo bloqueo que el alta: serializa los cambios que afectan a los administradores.
+      await usuariosRepository.bloquearGestionUsuarios(tx);
+
+      const usuario = await usuariosRepository.obtenerPorId(tx, idUsuario);
+
+      if (!usuario) {
+        throw new ErrorNoEncontrado("Usuario no encontrado");
+      }
+
+      if (!activo && usuario.activo && usuario.esAdministrador) {
+        const administradoresActivos = await usuariosRepository.contarAdministradoresActivos(tx);
+
+        if (administradoresActivos <= 1) {
+          throw new ErrorConflicto("No se puede desactivar al unico administrador activo");
+        }
+      }
+
+      return usuariosRepository.actualizar(tx, idUsuario, { activo });
+    });
   },
 
   async cambiarClave(

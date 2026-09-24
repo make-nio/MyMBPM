@@ -4,6 +4,9 @@ import { prisma } from "../../lib/prisma";
 
 type PrismaOrTx = PrismaClient | Prisma.TransactionClient;
 
+// Clave arbitraria y fija del advisory lock que serializa la gestion de usuarios.
+const CLAVE_BLOQUEO_GESTION_USUARIOS = 4_101_001;
+
 const usuarioSelectSanitizado = {
   idUsuario: true,
   nombre: true,
@@ -11,6 +14,7 @@ const usuarioSelectSanitizado = {
   email: true,
   usuario: true,
   activo: true,
+  esAdministrador: true,
   fechaAlta: true,
   fechaModificacion: true
 } satisfies Prisma.UsuarioSelect;
@@ -45,19 +49,32 @@ export const usuariosRepository = {
     });
   },
 
+  // Serializa altas y cambios de estado de usuarios hasta el fin de la transaccion. Sin esto,
+  // dos altas con la tabla vacia entrarian las dos sin sesion, y dos desactivaciones
+  // concurrentes podrian dejar el sistema sin administradores activos.
+  async bloquearGestionUsuarios(tx: Prisma.TransactionClient) {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${CLAVE_BLOQUEO_GESTION_USUARIOS})`;
+  },
+
   contarUsuarios(prismaOrTx: PrismaOrTx) {
     return prismaOrTx.usuario.count();
+  },
+
+  contarAdministradoresActivos(prismaOrTx: PrismaOrTx) {
+    return prismaOrTx.usuario.count({
+      where: { esAdministrador: true, activo: true }
+    });
   },
 
   buscarPorEmailOUsuario(prismaOrTx: PrismaOrTx, input: { email?: string; usuario?: string; excluirIdUsuario?: bigint }) {
     const condiciones: Prisma.UsuarioWhereInput[] = [];
 
     if (input.email) {
-      condiciones.push({ email: input.email });
+      condiciones.push({ email: { equals: input.email, mode: "insensitive" } });
     }
 
     if (input.usuario) {
-      condiciones.push({ usuario: input.usuario });
+      condiciones.push({ usuario: { equals: input.usuario, mode: "insensitive" } });
     }
 
     if (condiciones.length === 0) {
@@ -81,6 +98,7 @@ export const usuariosRepository = {
       usuario: string;
       claveHash: string;
       activo?: boolean;
+      esAdministrador?: boolean;
     }
   ) {
     return prismaOrTx.usuario.create({

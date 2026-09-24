@@ -2,7 +2,7 @@
   "name": "myfirstproject",
   "version": "1.0.0",
   "private": true,
-  "description": "Monorepo base with Next.js frontend and Node.js API.",
+  "description": "Monorepo con web Next.js y API Express, desplegado en Netlify.",
   "workspaces": [
     "apps/web",
     "apps/api"
@@ -16,7 +16,9 @@
     "build": "npm run build:web && npm run build:api",
     "check:web": "npm run check --workspace @myfirstproject/web",
     "check:api": "npm run check --workspace @myfirstproject/api",
-    "check": "npm run check:web && npm run check:api"
+    "check": "npm run check:web && npm run check:api",
+    "test": "npm run test --workspace @myfirstproject/api",
+    "build:netlify": "npm run prisma:generate --workspace @myfirstproject/api && npm run prisma:migrate:deploy --workspace @myfirstproject/api && npm run build:web"
   },
   "engines": {
     "node": ">=20.0.0"

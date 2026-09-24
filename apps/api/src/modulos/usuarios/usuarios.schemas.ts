@@ -19,7 +19,8 @@ export const crearUsuarioSchema = z.object({
   email: z.string().email().max(150),
   usuario: z.string().min(1).max(100),
   password: z.string().min(8).max(100),
-  activo: z.boolean().optional()
+  activo: z.boolean().optional(),
+  esAdministrador: z.boolean().optional()
 });
 
 export const actualizarUsuarioSchema = z

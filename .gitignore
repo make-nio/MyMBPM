@@ -1,5 +1,4 @@
 node_modules/
-package-lock.json
 dist/
 .next/
 .env
@@ -20,3 +19,5 @@ coverage/
 apps/api/prisma/*.db
 apps/api/prisma/*.db-journal
 *.tsbuildinfo
+apps/web/out/
+.netlify/

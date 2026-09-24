@@ -6,7 +6,7 @@ La idempotencia del modulo de stock esta implementada como regla logica de servi
 
 Punto central:
 
-- [stock.service.ts](d:/CodexAgentProjects/MyFirstProject/apps/api/src/modulos/stock/stock.service.ts)
+- [stock.service.ts](../apps/api/src/modulos/stock/stock.service.ts)
 
 Antes de insertar un movimiento no manual, el servicio consulta si ya existe uno con la misma clave logica:
 
@@ -40,6 +40,6 @@ Se mantiene este enfoque por ahora para no endurecer demasiado la base en esta e
 
 Si el sistema empieza a recibir operaciones concurrentes reales, el siguiente paso natural es evaluar:
 
-- indice unico filtrado
+- indice unico parcial (en PostgreSQL: `CREATE UNIQUE INDEX ... WHERE "ORIGEN_MOVIMIENTO" <> 'MANUAL'`)
 - clave tecnica de idempotencia persistida
 - bloqueo transaccional mas estricto
