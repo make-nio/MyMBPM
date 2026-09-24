@@ -12,7 +12,8 @@ export function RedireccionInicio() {
     let mounted = true;
 
     async function resolver() {
-      const sesion = await resolverSesionActual();
+      // Si hay token pero no se pudo verificar, /panel muestra el error con "Reintentar".
+      const sesion = await resolverSesionActual().catch(() => "sin-verificar" as const);
 
       if (!mounted) {
         return;
