@@ -7,3 +7,7 @@ export const listarAuditoriaQuerySchema = paginacionSchema.extend({
   entidad: z.enum(ENTIDADES_AUDITADAS),
   idEntidad: idSchema
 });
+
+export const historialPreciosQuerySchema = paginacionSchema.extend({
+  idItemCatalogo: idSchema
+});

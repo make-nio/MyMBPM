@@ -25,7 +25,8 @@
     "prisma:migrate:status": "prisma migrate status",
     "prisma:db:push": "prisma db push",
     "prisma:db:pull": "prisma db pull",
-    "volumen:medir": "tsx scripts/volumen/medir-consultas.ts"
+    "volumen:medir": "tsx scripts/volumen/medir-consultas.ts",
+    "demo:cargar": "tsx scripts/datos-demo.ts"
   },
   "dependencies": {
     "@netlify/blobs": "^11.1.0",

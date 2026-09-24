@@ -89,6 +89,14 @@ const guias: Paso[] = [
     ojo: "Se importa todo o nada. Un cliente que ya existe (mismo email, mismo documento, o mismo nombre, apellido y telefono) da error: asi no se duplica."
   },
   {
+    titulo: "Ver que hay pendiente",
+    pasos: [
+      "La campanita de arriba (\"Avisos\") muestra un numero cuando hay items bajo el minimo o entregas atrasadas o para hoy.",
+      "Tocala para ver el detalle y toca un aviso: el de stock abre Stock con \"Solo bajo minimo\" y el de entregas abre el Dashboard.",
+      "Se actualiza cada vez que cambias de pantalla. No manda mails ni notificaciones al celular."
+    ]
+  },
+  {
     titulo: "Llevarte los datos a una planilla",
     pasos: [
       "En Pedidos o en Stock, aplica los filtros que quieras (en Pedidos podes elegir las fechas de alta con \"Alta desde\" y \"hasta\").",
@@ -111,6 +119,7 @@ const guias: Paso[] = [
       "En la receta de un producto vas a ver cuanto cuesta fabricarlo. Si no coincide con su costo, toca \"Usar como costo\".",
       "Cada pedido muestra su costo y su ganancia, y el Dashboard lo vendido y ganado en el mes.",
       "En Reportes elegis un mes y ves lo vendido por item y por cliente, con \"Exportar CSV\" para cada tabla.",
+      "En Items catalogo, al tocar \"Receta\" de un item ves su \"Historial de precio y costo\": cada cambio con la fecha, quien lo hizo y cuanto subio o bajo.",
       "Arriba de Reportes esta lo vendido en los ultimos 12 meses: toca una barra (o \"Ver los datos\" y \"Ver mes\") para ver el reporte de ese mes."
     ],
     ojo: "El costo de un pedido se toma cuando agregas cada item: si despues cambias el costo del producto, los pedidos ya cargados no cambian."
