@@ -51,5 +51,12 @@ export const solicitudesEspecialesController = {
     );
 
     responderExito(response, solicitud);
+  },
+
+  async convertirEnPedido(request: Request, response: Response) {
+    const params = validar(solicitudEspecialParamsSchema, request.params);
+    const pedido = await solicitudesEspecialesService.convertirEnPedido(params.id);
+
+    responderExito(response, pedido, 201);
   }
 };

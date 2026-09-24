@@ -38,6 +38,15 @@ function construirNumeroPedido(idPedido: bigint) {
   return `PED-${idPedido.toString().padStart(6, "0")}`;
 }
 
+type DatosAltaPedido = {
+  idCliente: bigint;
+  origenPedido: OrigenPedido;
+  estadoCobro?: EstadoCobro;
+  observacionesCliente?: string;
+  observacionesInternas?: string;
+  activo?: boolean;
+};
+
 export const pedidosService = {
   listar(filtros: {
     idCliente?: bigint;
@@ -59,26 +68,23 @@ export const pedidosService = {
     return pedido;
   },
 
-  async crear(data: {
-    idCliente: bigint;
-    origenPedido: OrigenPedido;
-    estadoCobro?: EstadoCobro;
-    observacionesCliente?: string;
-    observacionesInternas?: string;
-    activo?: boolean;
-  }) {
-    return prisma.$transaction(async (tx) => {
-      const cliente = await pedidosRepository.obtenerCliente(tx, data.idCliente);
+  crear(data: DatosAltaPedido) {
+    return prisma.$transaction((tx) => this.crearEnTransaccion(tx, data));
+  },
 
-      if (!cliente) {
-        throw new ErrorNoEncontrado("Cliente no encontrado");
-      }
+  // Alta con su numero de pedido, dentro de una transaccion ajena (por ejemplo, al convertir una
+  // solicitud especial: el pedido y la solicitud se guardan juntos o no se guarda nada).
+  async crearEnTransaccion(tx: Prisma.TransactionClient, data: DatosAltaPedido) {
+    const cliente = await pedidosRepository.obtenerCliente(tx, data.idCliente);
 
-      const pedido = await pedidosRepository.crear(tx, data);
+    if (!cliente) {
+      throw new ErrorNoEncontrado("Cliente no encontrado");
+    }
 
-      return pedidosRepository.actualizar(tx, pedido.idPedido, {
-        numeroPedido: construirNumeroPedido(pedido.idPedido)
-      });
+    const pedido = await pedidosRepository.crear(tx, data);
+
+    return pedidosRepository.actualizar(tx, pedido.idPedido, {
+      numeroPedido: construirNumeroPedido(pedido.idPedido)
     });
   },
 

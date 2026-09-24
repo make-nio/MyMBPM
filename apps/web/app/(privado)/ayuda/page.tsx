@@ -12,7 +12,8 @@ const guias: Paso[] = [
       "En Pedidos, toca \"Nuevo pedido\".",
       "Busca el cliente escribiendo su nombre, elegi de donde vino el pedido (Instagram, WhatsApp...) y toca \"Crear pedido\".",
       "En el detalle que se abre, toca \"Agregar item\" por cada producto: buscalo por nombre y pone la cantidad.",
-      "El precio se copia del catalogo en ese momento: si despues cambias el precio del producto, el pedido no cambia."
+      "El precio se copia del catalogo en ese momento: si despues cambias el precio del producto, el pedido no cambia.",
+      "Si empezo como solicitud especial, en Solicitudes toca \"Convertir en pedido\": se crea el pedido con el cliente y la descripcion, y despues le cargas los items."
     ]
   },
   {
@@ -91,7 +92,7 @@ const estados: Array<{ grupo: string; items: Array<[string, string]> }> = [
       ["En revision", "La estas mirando o cotizando."],
       ["Aprobada", "Se va a hacer."],
       ["Rechazada", "No se hace."],
-      ["Convertida a pedido", "Ya se cargo como pedido."]
+      ["Convertida a pedido", "Ya tiene su pedido: se crea con el boton \"Convertir en pedido\" y no cambia mas de estado."]
     ]
   }
 ];

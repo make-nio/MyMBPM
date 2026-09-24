@@ -55,3 +55,11 @@ export function cambiarEstadoSolicitudEspecial(
     }
   ).then((response) => response.data);
 }
+
+// Crea un pedido pendiente para el cliente de la solicitud y la deja convertida y vinculada.
+export function convertirSolicitudEnPedido(idSolicitudEspecial: string) {
+  return apiFetch<{ ok: true; data: { idPedido: string; numeroPedido: string | null } }>(
+    `/api/solicitudes-especiales/${idSolicitudEspecial}/convertir`,
+    { method: "POST" }
+  ).then((response) => response.data);
+}

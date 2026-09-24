@@ -14,3 +14,7 @@ solicitudesEspecialesRouter.patch(
   "/:id/estado",
   asyncHandler(solicitudesEspecialesController.cambiarEstado)
 );
+solicitudesEspecialesRouter.post(
+  "/:id/convertir",
+  asyncHandler(solicitudesEspecialesController.convertirEnPedido)
+);
