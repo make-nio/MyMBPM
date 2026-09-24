@@ -79,7 +79,13 @@ test("detalles: pedido, orden de produccion, stock y receta", async ({ page }) =
   await page.goto("/items-catalogo");
   await page.getByLabel("Buscar item").fill(receta.producto.nombre);
   await page.getByRole("button", { name: "Buscar", exact: true }).click();
-  await page.getByRole("row").filter({ hasText: receta.producto.nombre }).getByRole("button", { name: "Receta" }).click();
+  // Por la celda exacta: la fila del insumo tambien contiene el nombre del producto (va en su
+  // categoria) y, hasta que se aplica la busqueda, puede estar en la lista.
+  await page
+    .getByRole("row")
+    .filter({ has: page.getByRole("cell", { name: receta.producto.nombre, exact: true }) })
+    .getByRole("button", { name: "Receta" })
+    .click();
   await expect(page.getByRole("heading", { name: `Receta de ${receta.producto.nombre}` })).toBeVisible();
   await revisarAccesibilidad(page, "receta de un item");
 });
