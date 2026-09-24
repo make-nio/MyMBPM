@@ -125,9 +125,9 @@ Se elimino la tabla `Healthcheck` que creaba la migracion `20260310_init` y no e
 - **Unicos sobre columnas nullable.** En SQL Server un `UNIQUE` admite un solo `NULL`; en
   Postgres admite varios. Hoy no hay unicos sobre columnas nullable, pero esto destraba lo
   que `modelado-inicial-mvp.md` dejo pendiente por "friccion operativa".
-- **Idempotencia de stock.** Sigue siendo logica (ver `idempotencia-stock.md`). Postgres en
-  `READ COMMITTED` no bloquea lecturas, asi que el riesgo de duplicado concurrente es el mismo o
-  mayor que en SQL Server; ahora es viable un indice unico parcial como respaldo.
+- **Idempotencia de stock.** La verifica el service bajo lock y, desde
+  `20260924080000_unique_idempotencia_stock`, tambien un indice unico parcial
+  (`UQ_ESTADO_STOCK_IDEMPOTENCIA`, ver `idempotencia-stock.md`).
 
 ## Operacion
 
