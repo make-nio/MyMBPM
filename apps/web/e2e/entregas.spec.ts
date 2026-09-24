@@ -72,8 +72,10 @@ test("un pedido con la fecha vencida se marca atrasado y, entregado o cancelado,
 });
 
 test("el panel muestra las entregas atrasadas y las de esta semana", async ({ page }) => {
-  const atrasado = await crearPedido(unico("PRUEBA-ClientePanelAtr"), diaDesdeHoy(-1));
-  const estaSemana = await crearPedido(unico("PRUEBA-ClientePanelSem"), diaDesdeHoy(6));
+  // Las listas muestran los 5 mas urgentes (fecha mas vieja primero) y la base local puede tener
+  // pedidos con fecha de otras corridas: el atrasado es de hace 10 anios y el de la semana, de hoy.
+  const atrasado = await crearPedido(unico("PRUEBA-ClientePanelAtr"), diaDesdeHoy(-3650));
+  const estaSemana = await crearPedido(unico("PRUEBA-ClientePanelSem"), diaDesdeHoy(0));
   const masAdelante = await crearPedido(unico("PRUEBA-ClientePanelDesp"), diaDesdeHoy(8));
   const pedidos = [atrasado, estaSemana, masAdelante];
 
@@ -82,7 +84,6 @@ test("el panel muestra las entregas atrasadas y las de esta semana", async ({ pa
     const atrasados = page.getByRole("region", { name: "Entregas atrasadas" });
     const semana = page.getByRole("region", { name: "Entregas de esta semana" });
 
-    // Las listas muestran 5: la base local de E2E puede tener otros pedidos con fecha.
     await expect(atrasados).toBeVisible();
     await expect(semana).not.toContainText(atrasado.numeroPedido);
     await expect(atrasados).not.toContainText(estaSemana.numeroPedido);

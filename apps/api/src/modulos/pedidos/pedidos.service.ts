@@ -77,6 +77,8 @@ export const pedidosService = {
     idCliente?: bigint;
     estadoPedido?: EstadoPedido;
     estadoCobro?: EstadoCobro;
+    desde?: Date;
+    hasta?: Date;
     limit: number;
     offset: number;
   }) {
