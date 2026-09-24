@@ -54,6 +54,30 @@ Se configuran en Netlify: *Site configuration → Environment variables*.
 `JWT_SECRET` y las variables de base deben estar disponibles en el scope *Functions*;
 las de base tambien en *Builds* (migraciones).
 
+### `NODE_ENV=production` y devDependencies
+
+El sitio define `NODE_ENV=production` en todos los scopes, y el plan gratuito no permite
+limitarla a *Functions*. Con `NODE_ENV=production`, npm omite las devDependencies y el build
+falla. `next build` no encuentra `@types/react`, intenta instalarlas por su cuenta con yarn y,
+de paso, reescribe `apps/web/package.json` con otras versiones. Tampoco queda `vitest`.
+
+Por eso `netlify.toml` define `NPM_FLAGS = "--include=dev"` en `[build.environment]`. El flag
+funciona igual con `npm ci` y con `npm install`. En el runtime de la function, `NODE_ENV` sigue
+siendo `production`, que es lo buscado. Para reproducirlo en local:
+
+```bash
+NODE_ENV=production npm ci --include=dev && npm run build:netlify
+```
+
+### Variables sobrantes en el sitio
+
+Estas variables existen hoy en el sitio de Netlify y el codigo no las lee. Se pueden borrar:
+
+| Variable | Motivo |
+| --- | --- |
+| `CORS_ORIGIN` | ya no hay CORS: web y API comparten dominio |
+| `JWT_REFRESH_SECRET` | la API no implementa refresh tokens; solo firma con `JWT_SECRET` |
+
 Solo desarrollo local:
 
 | Variable | Donde | Uso |

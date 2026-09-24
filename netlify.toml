@@ -9,6 +9,12 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  # El sitio define NODE_ENV=production en todos los scopes (el plan gratuito no permite
+  # limitarla a Functions). Con eso npm omite las devDependencies y el build se rompe:
+  # next build no encuentra @types/react e intenta instalarlas por su cuenta con yarn.
+  # --include=dev funciona igual con npm ci y con npm install. En runtime la function
+  # sigue viendo NODE_ENV=production.
+  NPM_FLAGS = "--include=dev"
 
 [functions]
   directory = "apps/api/netlify/functions"
