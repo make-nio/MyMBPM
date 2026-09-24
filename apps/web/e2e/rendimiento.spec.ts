@@ -13,9 +13,9 @@ import { ARCHIVO_SESION_ADMIN, URL_WEB } from "./entorno";
 // Por pagina se mide PASADAS veces y se toma la mediana. El presupuesto tiene dos partes:
 //   - puntaje de rendimiento minimo: lo medido en el CI al crear la prueba menos un margen,
 //     porque el puntaje varia entre corridas del runner;
-//   - JavaScript descargado maximo (KB, sin comprimir: el servidor de prueba no usa gzip, Netlify
-//     si): casi deterministico, detecta un paquete que se cuela en el bundle aunque el puntaje
-//     todavia no lo refleje.
+//   - JavaScript descargado maximo (KB del cuerpo de los scripts, sin comprimir ni encabezados):
+//     deterministico, detecta un paquete que se cuela en el bundle aunque el puntaje todavia no
+//     lo refleje.
 // Si un cambio mejora o empeora a proposito estos numeros, actualiza PRESUPUESTO y explicalo
 // en el PR (ver README, "Presupuesto de rendimiento").
 
@@ -36,7 +36,7 @@ const DIRECTORIO_REPORTES = "rendimiento-report";
 type Medicion = { puntaje: number; jsKb: number; lcpMs: number; tbtMs: number; cls: number };
 type Resultado = Presupuesto & Medicion;
 
-type Auditoria = { numericValue?: number; details?: { items?: Array<{ resourceType?: string; transferSize?: number }> } };
+type Auditoria = { numericValue?: number; details?: { items?: Array<{ resourceType?: string; resourceSize?: number }> } };
 type ResultadoLighthouse = {
   categories: { performance: { score: number | null } };
   audits: Record<string, Auditoria>;
@@ -63,7 +63,9 @@ function medir(lhr: ResultadoLighthouse): Medicion {
 
   const bytesJs = (lhr.audits["network-requests"].details?.items ?? [])
     .filter((item) => item.resourceType === "Script")
-    .reduce((total, item) => total + (item.transferSize ?? 0), 0);
+    // resourceSize: el cuerpo del script, sin encabezados. transferSize sumaba la CSP (con los
+    // hashes de cada script inline) en cada respuesta y crecia sin que cambiara el JavaScript.
+    .reduce((total, item) => total + (item.resourceSize ?? 0), 0);
 
   return {
     puntaje: Math.round((lhr.categories.performance.score ?? 0) * 100),
