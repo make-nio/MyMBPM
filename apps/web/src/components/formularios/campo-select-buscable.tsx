@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { atributosError, ErrorCampo } from "./error-campo";
+
 export type OpcionBuscable = {
   value: string;
   label: string;
@@ -17,6 +19,7 @@ type CampoSelectBuscableProps = {
   textoVacio: string;
   // Para editar: la opcion ya elegida, aunque no este entre los resultados de la busqueda.
   opcionInicial?: OpcionBuscable | null;
+  error?: string | null;
 };
 
 export const RESULTADOS_BUSQUEDA = 20;
@@ -31,7 +34,8 @@ export function CampoSelectBuscable({
   onChange,
   buscar,
   textoVacio,
-  opcionInicial = null
+  opcionInicial = null,
+  error: errorCampo
 }: CampoSelectBuscableProps) {
   const [texto, setTexto] = useState("");
   const [opciones, setOpciones] = useState<OpcionBuscable[]>([]);
@@ -105,7 +109,7 @@ export function CampoSelectBuscable({
         type="search"
         value={texto}
       />
-      <select id={id} name={id} onChange={(event) => elegir(event.target.value)} value={value}>
+      <select {...atributosError(id, errorCampo)} id={id} name={id} onChange={(event) => elegir(event.target.value)} value={value}>
         <option value="">{textoVacio}</option>
         {conElegida.map((opcion) => (
           <option key={opcion.value} value={opcion.value}>
@@ -118,6 +122,7 @@ export function CampoSelectBuscable({
           {ayuda}
         </p>
       ) : null}
+      <ErrorCampo idCampo={id} mensaje={errorCampo} />
     </div>
   );
 }

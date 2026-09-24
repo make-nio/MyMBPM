@@ -71,7 +71,7 @@ test("ajuste manual: valida stock y motivo, y queda en los movimientos con el us
   await modal.getByLabel("Cantidad").fill("4");
   await expect(modal.getByTestId("ajuste-resultante")).toContainText("6");
   await modal.getByRole("button", { name: "Registrar ajuste" }).click();
-  await expect(modal.getByText("Indica el motivo del ajuste")).toBeVisible();
+  await expect(modal.getByLabel("Motivo")).toHaveAccessibleDescription(/Falta el motivo del ajuste/);
 
   await modal.getByLabel("Motivo").fill("Conteo fisico");
   await modal.getByRole("button", { name: "Registrar ajuste" }).click();

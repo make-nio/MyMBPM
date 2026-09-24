@@ -117,6 +117,19 @@ describe("usuariosService.crear con usuarios existentes", () => {
     await expect(usuariosService.crear(altaUsuario, administrador)).rejects.toBeInstanceOf(ErrorConflicto);
     expect(repo.crear).not.toHaveBeenCalled();
   });
+  it("el duplicado dice cual dato se repite, para marcar ese campo", async () => {
+    repo.buscarPorEmailOUsuario.mockResolvedValue({ idUsuario: 5n, email: altaUsuario.email.toUpperCase() } as never);
+    await expect(usuariosService.crear(altaUsuario, administrador)).rejects.toMatchObject({
+      message: "Ya existe un usuario con ese email: usa otro y volve a guardar",
+      detalles: { target: ["EMAIL"] }
+    });
+
+    repo.buscarPorEmailOUsuario.mockResolvedValue({ idUsuario: 5n, email: "otro@mym.test" } as never);
+    await expect(usuariosService.crear(altaUsuario, administrador)).rejects.toMatchObject({
+      message: "Ya existe un usuario con ese nombre de usuario: usa otro y volve a guardar",
+      detalles: { target: ["USUARIO"] }
+    });
+  });
 });
 
 describe("usuariosService.cambiarEstado", () => {

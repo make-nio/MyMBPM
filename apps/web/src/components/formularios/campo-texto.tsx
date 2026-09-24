@@ -1,3 +1,5 @@
+import { atributosError, ErrorCampo } from "./error-campo";
+
 type CampoTextoProps = {
   id: string;
   label: string;
@@ -9,6 +11,7 @@ type CampoTextoProps = {
   autoComplete?: string;
   minLength?: number;
   step?: string;
+  error?: string | null;
 };
 
 export function CampoTexto({
@@ -21,12 +24,14 @@ export function CampoTexto({
   required,
   autoComplete,
   minLength,
-  step
+  step,
+  error
 }: CampoTextoProps) {
   return (
     <div className="campo-formulario">
       <label htmlFor={id}>{label}</label>
       <input
+        {...atributosError(id, error)}
         autoComplete={autoComplete}
         id={id}
         minLength={minLength}
@@ -38,6 +43,7 @@ export function CampoTexto({
         type={type}
         value={value}
       />
+      <ErrorCampo idCampo={id} mensaje={error} />
     </div>
   );
 }

@@ -152,6 +152,11 @@ test("desde Stock, un producto bajo minimo propone la orden y se crea solo al co
   await page.getByRole("row").filter({ hasText: producto.nombre }).getByRole("link", { name: "Crear orden de produccion" }).click();
   await expect(modal.getByLabel("Cantidad a producir")).toHaveValue("7");
   expect(await ultimaOrden()).toBe(antes);
+  // Una cantidad invalida no crea nada y se marca en el campo.
+  await modal.getByLabel("Cantidad a producir").fill("0");
+  await modal.getByRole("button", { name: "Crear orden" }).click();
+  await expect(modal.getByLabel("Cantidad a producir")).toHaveAccessibleDescription(/Tiene que ser mayor a cero/);
+  expect(await ultimaOrden()).toBe(antes);
   await modal.getByLabel("Cantidad a producir").fill("8");
   await modal.getByRole("button", { name: "Crear orden" }).click();
   await expect(modal).toBeHidden();
