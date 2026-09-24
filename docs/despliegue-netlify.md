@@ -91,10 +91,11 @@ Se elimino la tabla `Healthcheck` que creaba la migracion `20260310_init` y no e
   - chequeo de email/usuario duplicado al crear o editar usuarios: `mode: "insensitive"`;
   - busqueda de clientes (`busqueda`): `mode: "insensitive"`.
 
-  Los indices unicos `UQ_USUARIO_EMAIL` y `UQ_USUARIO_USUARIO` en Postgres son sensibles a
-  mayusculas: la unicidad sin distinguir mayusculas la garantiza el service, no la base.
-  Bajo concurrencia podrian entrar `Admin` y `admin`. Si hace falta cerrarlo en base, el paso
-  siguiente es un indice unico sobre `LOWER(...)` o `citext`.
+  Ademas, la base garantiza la unicidad sin distinguir mayusculas con `UQ_USUARIO_EMAIL_LOWER`
+  y `UQ_USUARIO_USUARIO_LOWER`, indices unicos sobre `LOWER(...)` creados con SQL crudo en la
+  migracion inicial: `Admin` y `admin` no pueden convivir aunque lleguen dos altas a la vez.
+  Prisma no modela indices por expresion, pero tampoco los detecta como drift, asi que
+  `migrate dev` no los borra. No quitar ese bloque al tocar la migracion.
 - **Unicos sobre columnas nullable.** En SQL Server un `UNIQUE` admite un solo `NULL`; en
   Postgres admite varios. Hoy no hay unicos sobre columnas nullable, pero esto destraba lo
   que `modelado-inicial-mvp.md` dejo pendiente por "friccion operativa".
@@ -104,7 +105,15 @@ Se elimino la tabla `Healthcheck` que creaba la migracion `20260310_init` y no e
 
 ## Operacion
 
-- Primer usuario: `POST /api/usuarios` sin token funciona mientras no haya usuarios.
+- **Alta de usuarios.** `POST /api/usuarios` sin token solo funciona mientras la tabla esta
+  vacia: ese primer usuario queda como administrador (`ES_ADMINISTRADOR`) y activo. Desde ahi
+  exige sesion (401 sin token) de un administrador (403 si no lo es). El alta toma un
+  `pg_advisory_xact_lock`, asi que dos altas simultaneas con la tabla vacia no pueden crear dos
+  usuarios sin sesion.
+- **Crear el primer usuario apenas termina el primer deploy.** Hasta ese momento cualquiera que
+  conozca la URL podria reclamar el alta inicial.
+- Los demas endpoints de `/api/usuarios` (listar, editar, activar/desactivar) solo exigen sesion,
+  no rol de administrador.
 - Migraciones nuevas: `npm run prisma:migrate --workspace @myfirstproject/api -- --name <nombre>`
   contra una base local; el deploy las aplica solo.
 - Deploy previews: `prisma migrate deploy` corre contra la base que Netlify inyecte en ese

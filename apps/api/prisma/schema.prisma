@@ -20,10 +20,13 @@ model Usuario {
   usuario           String        @map("USUARIO") @db.VarChar(100)
   claveHash         String        @map("CLAVE_HASH") @db.VarChar(255)
   activo            Boolean       @default(true) @map("ACTIVO")
+  esAdministrador   Boolean       @default(false) @map("ES_ADMINISTRADOR")
   fechaAlta         DateTime      @default(now()) @map("FECHA_ALTA") @db.Timestamptz(3)
   fechaModificacion DateTime      @updatedAt @map("FECHA_MODIFICACION") @db.Timestamptz(3)
   estadosStock      EstadoStock[]
 
+  // Ademas de estos unicos, la migracion inicial crea UQ_USUARIO_EMAIL_LOWER y
+  // UQ_USUARIO_USUARIO_LOWER sobre lower(...) (SQL crudo: Prisma no modela indices por expresion).
   @@unique([email], map: "UQ_USUARIO_EMAIL")
   @@unique([usuario], map: "UQ_USUARIO_USUARIO")
   @@map("USUARIO")

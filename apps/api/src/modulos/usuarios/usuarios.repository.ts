@@ -4,6 +4,9 @@ import { prisma } from "../../lib/prisma";
 
 type PrismaOrTx = PrismaClient | Prisma.TransactionClient;
 
+// Clave arbitraria y fija del advisory lock que serializa las altas de usuario.
+const CLAVE_BLOQUEO_ALTA_USUARIOS = 4_101_001;
+
 const usuarioSelectSanitizado = {
   idUsuario: true,
   nombre: true,
@@ -11,6 +14,7 @@ const usuarioSelectSanitizado = {
   email: true,
   usuario: true,
   activo: true,
+  esAdministrador: true,
   fechaAlta: true,
   fechaModificacion: true
 } satisfies Prisma.UsuarioSelect;
@@ -43,6 +47,12 @@ export const usuariosRepository = {
     return prismaOrTx.usuario.findUnique({
       where: { idUsuario }
     });
+  },
+
+  // Serializa las altas de usuario hasta el fin de la transaccion. Sin esto, dos altas
+  // concurrentes con la tabla vacia verian 0 usuarios y entrarian las dos sin sesion.
+  async bloquearAltaUsuarios(tx: Prisma.TransactionClient) {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${CLAVE_BLOQUEO_ALTA_USUARIOS})`;
   },
 
   contarUsuarios(prismaOrTx: PrismaOrTx) {
@@ -81,6 +91,7 @@ export const usuariosRepository = {
       usuario: string;
       claveHash: string;
       activo?: boolean;
+      esAdministrador?: boolean;
     }
   ) {
     return prismaOrTx.usuario.create({

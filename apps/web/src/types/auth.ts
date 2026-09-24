@@ -5,6 +5,7 @@ export type UsuarioAutenticado = {
   email: string;
   usuario: string;
   activo: boolean;
+  esAdministrador: boolean;
   fechaAlta: string;
   fechaModificacion: string;
 };
