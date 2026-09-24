@@ -3,7 +3,8 @@
 ## Infraestructura compartida
 
 - `GET /`
-- `GET /api/health`
+- `GET /api/health` (publico, sin sesion): estado de la API y de la base. 200 si la base responde,
+  503 si no. Detalle y como apuntarle un monitor: `docs/despliegue-netlify.md`, "Monitoreo".
 
 ## Categorias
 
