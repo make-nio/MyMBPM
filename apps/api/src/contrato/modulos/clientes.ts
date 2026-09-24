@@ -40,6 +40,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/clientes",
+    acceso: "autenticado",
     resumen: "Lista clientes, paginado, con busqueda por nombre, apellido, telefono, email o documento",
     etiqueta,
     query: listarClientesQuerySchema,
@@ -48,6 +49,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/clientes/{id}",
+    acceso: "autenticado",
     resumen: "Obtiene un cliente",
     etiqueta,
     params,
@@ -56,6 +58,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/clientes/{id}/resumen",
+    acceso: "autenticado",
     resumen: "Resumen de compras del cliente: total, cantidad de pedidos y ultima compra",
     etiqueta,
     params,
@@ -64,6 +67,7 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/clientes",
+    acceso: "autenticado",
     resumen: "Da de alta un cliente",
     etiqueta,
     body: crearClienteSchema,
@@ -73,6 +77,7 @@ export const endpoints = [
   {
     metodo: "patch",
     ruta: "/api/clientes/{id}",
+    acceso: "autenticado",
     resumen: "Modifica los datos de un cliente",
     etiqueta,
     params,
@@ -82,6 +87,7 @@ export const endpoints = [
   {
     metodo: "patch",
     ruta: "/api/clientes/{id}/estado",
+    acceso: "autenticado",
     resumen: "Activa o desactiva un cliente",
     etiqueta,
     params,

@@ -26,6 +26,11 @@ export function lista<T extends ZodTypeAny>(item: T) {
 
 export type Metodo = "get" | "post" | "put" | "patch" | "delete";
 
+// publico: sin token. autenticado: cualquier usuario activo. administrador: solo administradores
+// (un operador recibe 403). POST /api/usuarios es "administrador" aunque la ruta acepta sin token:
+// sin sesion solo crea el primer usuario, cuando todavia no hay ninguno.
+export type Acceso = "publico" | "autenticado" | "administrador";
+
 export type Endpoint = {
   metodo: Metodo;
   // Con parametros al estilo OpenAPI: /api/clientes/{id}
@@ -33,8 +38,12 @@ export type Endpoint = {
   resumen: string;
   // Modulo de la API (agrupa en el OpenAPI).
   etiqueta: string;
-  // Sin token (ingreso, health, primer usuario).
-  publico?: boolean;
+  // Quien puede usarlo. Obligatorio: un endpoint nuevo sin declararlo no compila, y la matriz de
+  // autorizacion (contrato.test.ts y e2e/autorizacion.spec.ts) prueba cada uno.
+  acceso: Acceso;
+  // Con acceso "autenticado": cada usuario solo puede usarlo sobre si mismo (el {id} de la ruta es
+  // el suyo). Lo usa la matriz de autorizacion para llamarlo con el id propio.
+  soloPropio?: true;
   params?: z.AnyZodObject;
   query?: z.AnyZodObject;
   body?: ZodTypeAny;

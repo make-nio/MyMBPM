@@ -49,6 +49,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/auditoria",
+    acceso: "administrador",
     resumen: "Historial de cambios de un item o un cliente, del mas nuevo al mas viejo (solo administradores)",
     etiqueta: "auditoria",
     query: listarAuditoriaQuerySchema,
@@ -57,6 +58,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/auditoria/precios",
+    acceso: "administrador",
     resumen: "Linea de tiempo de precio y costo de un item (solo administradores)",
     etiqueta: "auditoria",
     query: historialPreciosQuerySchema,

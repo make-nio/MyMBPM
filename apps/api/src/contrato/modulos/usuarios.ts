@@ -27,9 +27,9 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/usuarios",
+    acceso: "administrador",
     resumen: "Crea un usuario (sin sesion solo el primero, que queda administrador; despues, solo un administrador)",
     etiqueta: "usuarios",
-    publico: true,
     body: crearUsuarioSchema,
     respuesta: usuario,
     status: 201
@@ -37,6 +37,8 @@ export const endpoints = [
   {
     metodo: "patch",
     ruta: "/api/usuarios/{id}/clave",
+    acceso: "autenticado",
+    soloPropio: true,
     resumen: "Cambia la clave del usuario autenticado (pide la actual)",
     etiqueta: "usuarios",
     params,
@@ -46,6 +48,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/usuarios",
+    acceso: "administrador",
     resumen: "Lista los usuarios (solo administradores)",
     etiqueta: "usuarios",
     query: listarUsuariosQuerySchema,
@@ -54,6 +57,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/usuarios/{id}",
+    acceso: "administrador",
     resumen: "Obtiene un usuario (solo administradores)",
     etiqueta: "usuarios",
     params,
@@ -62,6 +66,7 @@ export const endpoints = [
   {
     metodo: "patch",
     ruta: "/api/usuarios/{id}",
+    acceso: "administrador",
     resumen: "Edita los datos y el rol de un usuario (solo administradores)",
     etiqueta: "usuarios",
     params,
@@ -71,6 +76,7 @@ export const endpoints = [
   {
     metodo: "patch",
     ruta: "/api/usuarios/{id}/estado",
+    acceso: "administrador",
     resumen: "Activa o desactiva un usuario (solo administradores)",
     etiqueta: "usuarios",
     params,
@@ -80,6 +86,7 @@ export const endpoints = [
   {
     metodo: "patch",
     ruta: "/api/usuarios/{id}/restablecer-clave",
+    acceso: "administrador",
     resumen: "Asigna una clave nueva a otro usuario (solo administradores)",
     etiqueta: "usuarios",
     params,

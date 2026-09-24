@@ -34,6 +34,26 @@ ahí. Así, por ejemplo, un `claveHash` que se filtre en un usuario hace fallar 
 
 Si cambia una respuesta en el contrato, la web deja de compilar donde usaba lo que cambió.
 
+## Quién puede usar cada endpoint
+
+Cada endpoint declara `acceso` (obligatorio: sin eso el contrato no compila):
+
+| acceso | Quién | Sin sesión | Operador |
+|---|---|---|---|
+| `publico` | cualquiera (solo `/api/health` y el ingreso) | pasa | pasa |
+| `autenticado` | cualquier usuario activo | 401 | pasa |
+| `administrador` | solo administradores | 401 | 403 |
+
+`soloPropio` marca los endpoints `autenticado` que cada usuario solo puede usar sobre sí mismo
+(cambiar su clave). El OpenAPI lo muestra en la descripción de cada endpoint.
+
+Lo prueban dos cosas:
+
+- **`contrato.test.ts`:** el acceso declarado coincide con los middlewares de la ruta real
+  (`requerirAutenticacion`, `requerirAdministrador`).
+- **`e2e/autorizacion.spec.ts`:** llama a cada endpoint sin sesión, con un operador y con el
+  administrador contra la API real, y exige el status de la tabla. Un endpoint nuevo entra solo.
+
 ## Cómo se serializa
 
 `compartido/http/respuesta.ts` pasa los datos por JSON:

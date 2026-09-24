@@ -148,6 +148,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/pedidos",
+    acceso: "autenticado",
     resumen: "Lista pedidos con su cliente, paginado, filtrando por cliente, estado, cobro y fecha de alta",
     etiqueta,
     query: listarPedidosQuery,
@@ -156,6 +157,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/pedidos/{id}",
+    acceso: "autenticado",
     resumen: "Obtiene un pedido con su cliente y sus lineas",
     etiqueta,
     params,
@@ -164,6 +166,7 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/pedidos",
+    acceso: "autenticado",
     resumen: "Crea un pedido pendiente, sin lineas, con su numero PED-000000",
     etiqueta,
     body: crearPedidoBody,
@@ -173,6 +176,7 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/pedidos/{id}/detalles",
+    acceso: "autenticado",
     resumen: "Agrega una linea a un pedido pendiente con el precio y el costo de hoy del item",
     etiqueta,
     params,
@@ -183,6 +187,7 @@ export const endpoints = [
   {
     metodo: "patch",
     ruta: "/api/pedidos/{id}/detalles/{detalleId}",
+    acceso: "autenticado",
     resumen: "Cambia la cantidad de una linea de un pedido pendiente",
     etiqueta,
     params: paramsDetalle,
@@ -192,6 +197,7 @@ export const endpoints = [
   {
     metodo: "delete",
     ruta: "/api/pedidos/{id}/detalles/{detalleId}",
+    acceso: "autenticado",
     resumen: "Quita una linea de un pedido pendiente",
     etiqueta,
     params: paramsDetalle,
@@ -200,6 +206,7 @@ export const endpoints = [
   {
     metodo: "patch",
     ruta: "/api/pedidos/{id}/estado",
+    acceso: "autenticado",
     resumen: "Cambia estado, cobro, observaciones internas o fecha de entrega (para confirmar se usa /confirmar)",
     etiqueta,
     params,
@@ -209,6 +216,7 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/pedidos/{id}/confirmar",
+    acceso: "autenticado",
     resumen: "Confirma un pedido pendiente y descuenta su stock",
     etiqueta,
     params,
@@ -217,6 +225,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/pedidos/{id}/repeticion",
+    acceso: "autenticado",
     resumen: "Vista previa de repetir el pedido: sus lineas con el precio de hoy, sin crear nada",
     etiqueta,
     params,
@@ -225,6 +234,7 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/pedidos/{id}/repetir",
+    acceso: "autenticado",
     resumen: "Crea un pedido pendiente nuevo con las lineas repetibles del original, a precio de hoy",
     etiqueta,
     params,

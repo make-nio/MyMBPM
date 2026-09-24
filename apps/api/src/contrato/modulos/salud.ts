@@ -27,9 +27,9 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/health",
+    acceso: "publico",
     resumen: "Estado de la API y de la base (200 si responde, 503 si no)",
     etiqueta: "salud",
-    publico: true,
     sinEnvoltorio: true,
     respuesta: z.union([saludOk, saludError])
   }

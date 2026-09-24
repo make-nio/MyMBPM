@@ -118,6 +118,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/panel/resumen",
+    acceso: "autenticado",
     resumen: "Resumen del inicio: entregas, pedidos por confirmar y entregar, produccion, stock bajo, ultimos movimientos y ventas del mes",
     etiqueta,
     query: resumenPanelQuerySchema,
@@ -126,6 +127,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/panel/avisos",
+    acceso: "autenticado",
     resumen: "Cuantos avisos hay para el encabezado: stock bajo, entregas atrasadas y entregas de hoy",
     etiqueta,
     respuesta: avisosSchema

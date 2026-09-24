@@ -111,6 +111,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/produccion",
+    acceso: "autenticado",
     resumen: "Lista las ordenes de produccion, de la mas nueva a la mas vieja",
     etiqueta,
     query: listarOrdenesProduccionQuerySchema,
@@ -119,6 +120,7 @@ export const endpoints = [
   {
     metodo: "get",
     ruta: "/api/produccion/{id}",
+    acceso: "autenticado",
     resumen: "Obtiene una orden de produccion con sus detalles y consumos",
     etiqueta,
     params,
@@ -127,6 +129,7 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/produccion",
+    acceso: "autenticado",
     resumen: "Crea una orden de produccion pendiente, sin detalles",
     etiqueta,
     body: crearOrdenProduccionSchema,
@@ -136,6 +139,7 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/produccion/{id}/detalles",
+    acceso: "autenticado",
     resumen: "Agrega un producto a una orden pendiente y devuelve la orden completa",
     etiqueta,
     params,
@@ -146,6 +150,7 @@ export const endpoints = [
   {
     metodo: "patch",
     ruta: "/api/produccion/{id}/detalles/{detalleId}",
+    acceso: "autenticado",
     resumen: "Cambia cantidad u observaciones de un detalle de una orden pendiente",
     etiqueta,
     params: paramsDetalle,
@@ -155,6 +160,7 @@ export const endpoints = [
   {
     metodo: "delete",
     ruta: "/api/produccion/{id}/detalles/{detalleId}",
+    acceso: "autenticado",
     resumen: "Quita un detalle de una orden pendiente y devuelve la orden completa",
     etiqueta,
     params: paramsDetalle,
@@ -163,6 +169,7 @@ export const endpoints = [
   {
     metodo: "patch",
     ruta: "/api/produccion/{id}/estado",
+    acceso: "autenticado",
     resumen: "Cancela una orden pendiente o en proceso (no devuelve el stock consumido)",
     etiqueta,
     params,
@@ -172,6 +179,7 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/produccion/{id}/iniciar",
+    acceso: "autenticado",
     resumen: "Inicia la orden: descuenta los insumos segun la receta y registra los consumos",
     etiqueta,
     params,
@@ -180,6 +188,7 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/produccion/{id}/finalizar",
+    acceso: "autenticado",
     resumen: "Finaliza la orden: ingresa al stock los productos fabricados",
     etiqueta,
     params,

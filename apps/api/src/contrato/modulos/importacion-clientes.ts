@@ -39,6 +39,7 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/clientes/importacion/previsualizar",
+    acceso: "administrador",
     resumen: "Valida las filas de un CSV de clientes y muestra los errores por fila, sin guardar nada (solo administradores)",
     etiqueta,
     body: importacionClientesSchema,
@@ -47,6 +48,7 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/clientes/importacion",
+    acceso: "administrador",
     resumen: "Importa los clientes de un CSV, todo o nada (solo administradores)",
     etiqueta,
     body: importacionClientesSchema,

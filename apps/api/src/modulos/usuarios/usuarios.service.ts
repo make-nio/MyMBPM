@@ -66,6 +66,24 @@ export const usuariosService = {
     return usuario;
   },
 
+  // Rechaza el alta antes de validar el cuerpo: sin permiso responde 401/403 y no deja sondear la
+  // validacion. crear() lo vuelve a comprobar dentro de la transaccion (altas concurrentes).
+  async verificarPermisoAlta(usuarioSolicitante?: { idUsuario: bigint; esAdministrador: boolean }) {
+    if (usuarioSolicitante?.esAdministrador) {
+      return;
+    }
+
+    if ((await usuariosRepository.contarUsuarios(prisma)) === 0) {
+      return;
+    }
+
+    if (!usuarioSolicitante) {
+      throw new ErrorAutenticacion("Debe autenticarse para crear nuevos usuarios");
+    }
+
+    throw new ErrorProhibido("Solo un administrador puede crear usuarios");
+  },
+
   async crear(
     data: {
       nombre: string;

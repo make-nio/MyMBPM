@@ -251,3 +251,21 @@ describe("usuariosService.restablecerClave", () => {
     expect(repo.actualizar).not.toHaveBeenCalled();
   });
 });
+
+describe("usuariosService.verificarPermisoAlta", () => {
+  it("con usuarios cargados, sin sesion responde 401 y un operador 403, antes de validar el cuerpo", async () => {
+    repo.contarUsuarios.mockResolvedValue(3);
+
+    await expect(usuariosService.verificarPermisoAlta()).rejects.toBeInstanceOf(ErrorAutenticacion);
+    await expect(usuariosService.verificarPermisoAlta({ idUsuario: 2n, esAdministrador: false })).rejects.toBeInstanceOf(
+      ErrorProhibido
+    );
+    await expect(usuariosService.verificarPermisoAlta({ idUsuario: 1n, esAdministrador: true })).resolves.toBeUndefined();
+  });
+
+  it("sin usuarios deja pasar el alta inicial", async () => {
+    repo.contarUsuarios.mockResolvedValue(0);
+
+    await expect(usuariosService.verificarPermisoAlta()).resolves.toBeUndefined();
+  });
+});

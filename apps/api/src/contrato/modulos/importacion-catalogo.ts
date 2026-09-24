@@ -38,6 +38,7 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/items-catalogo/importacion/previsualizar",
+    acceso: "administrador",
     resumen: "Valida las filas de un CSV de catalogo sin crear nada (solo administradores)",
     etiqueta: "importacion-catalogo",
     body: importacionCatalogoSchema,
@@ -49,6 +50,7 @@ export const endpoints = [
   {
     metodo: "post",
     ruta: "/api/items-catalogo/importacion",
+    acceso: "administrador",
     resumen: "Importa el catalogo desde las filas de un CSV, todo o nada (solo administradores)",
     etiqueta: "importacion-catalogo",
     body: importacionCatalogoSchema,
