@@ -1,7 +1,16 @@
+import dynamic from "next/dynamic";
+
 import { UsuarioAutenticado } from "../../types/auth";
 
-import { AvisosEncabezado } from "./avisos-encabezado";
 import { BusquedaGlobal } from "./busqueda-global";
+import { MarcadorAvisos } from "./marcador-avisos";
+
+// La campanita no entra en el JS inicial de cada pantalla: se carga despues, con un marcador del
+// mismo tamanio para que el encabezado no se corra (CLS) cuando aparece.
+const AvisosEncabezado = dynamic(() => import("./avisos-encabezado").then((modulo) => modulo.AvisosEncabezado), {
+  ssr: false,
+  loading: () => <MarcadorAvisos />
+});
 
 type EncabezadoPrivadoProps = {
   usuario: UsuarioAutenticado;
