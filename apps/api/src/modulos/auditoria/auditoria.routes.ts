@@ -9,3 +9,4 @@ export const auditoriaRouter = Router();
 
 // El historial de cambios (precios, costos, datos de clientes) lo ven solo los administradores.
 auditoriaRouter.get("/", requerirAdministrador, asyncHandler(auditoriaController.listar));
+auditoriaRouter.get("/precios", requerirAdministrador, asyncHandler(auditoriaController.listarPrecios));
