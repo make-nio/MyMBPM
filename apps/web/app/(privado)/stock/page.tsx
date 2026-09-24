@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { FormularioAjusteStock } from "../../../src/components/modulos/stock/formulario-ajuste-stock";
 import { PanelItemStock } from "../../../src/components/modulos/stock/panel-item-stock";
@@ -10,56 +10,62 @@ import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
 import { MensajeError } from "../../../src/components/ui/mensaje-error";
 import { MensajeExito } from "../../../src/components/ui/mensaje-exito";
 import { Modal } from "../../../src/components/ui/modal";
+import { PieListado } from "../../../src/components/ui/pie-listado";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
+import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
 import { formatearCantidad, formatearEstado, formatearFecha } from "../../../src/lib/formato";
 import { crearAjusteStock, listarExistencias } from "../../../src/lib/modulos/stock";
 import { Existencia, TipoAjuste, TipoStock } from "../../../src/types/stock";
 
+const ESPERA_BUSQUEDA_MS = 300;
+
 export default function StockPage() {
   const modalAjuste = useModal<Existencia>();
-  const [existencias, setExistencias] = useState<Existencia[]>([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [filtroTipo, setFiltroTipo] = useState<TipoStock | "">("");
   const [soloBajoMinimo, setSoloBajoMinimo] = useState(false);
   const [busqueda, setBusqueda] = useState("");
+  const [busquedaAplicada, setBusquedaAplicada] = useState("");
   const [idSeleccionado, setIdSeleccionado] = useState<string | null>(null);
   const refDetalle = useDesplazarAlDetalle(idSeleccionado);
   const [version, setVersion] = useState(0);
+  const [cantidadBajoMinimo, setCantidadBajoMinimo] = useState<number | null>(null);
 
-  const recargar = useCallback(async () => {
-    setExistencias(await listarExistencias({ activo: true }));
-    setVersion((valor) => valor + 1);
-  }, []);
-
+  // La busqueda se aplica al dejar de escribir: filtra en la API.
   useEffect(() => {
-    recargar()
-      .catch((currentError) =>
-        setError(currentError instanceof Error ? currentError.message : "No fue posible cargar el stock")
-      )
-      .finally(() => setCargando(false));
-  }, [recargar]);
+    const espera = setTimeout(() => setBusquedaAplicada(busqueda.trim()), ESPERA_BUSQUEDA_MS);
+    return () => clearTimeout(espera);
+  }, [busqueda]);
 
-  const visibles = useMemo(() => {
-    const texto = busqueda.trim().toLowerCase();
-
-    return existencias.filter(
-      (existencia) =>
-        (!filtroTipo || existencia.tipoItem === filtroTipo) &&
-        (!soloBajoMinimo || existencia.bajoMinimo) &&
-        (!texto || existencia.nombre.toLowerCase().includes(texto))
-    );
-  }, [existencias, filtroTipo, soloBajoMinimo, busqueda]);
-
-  const stockPorItem = useMemo(
-    () => Object.fromEntries(existencias.map((existencia) => [existencia.idItemCatalogo, existencia.stockActual])),
-    [existencias]
+  const listado = useListadoPaginado<Existencia>(
+    (limit, offset) =>
+      listarExistencias({
+        activo: true,
+        tipoItem: filtroTipo || undefined,
+        soloBajoMinimo: soloBajoMinimo || undefined,
+        busqueda: busquedaAplicada || undefined,
+        limit,
+        offset
+      }),
+    [filtroTipo, soloBajoMinimo, busquedaAplicada],
+    "No fue posible cargar el stock"
   );
+  const { items: existencias, cargando, error } = listado;
   const seleccionado = existencias.find((existencia) => existencia.idItemCatalogo === idSeleccionado) ?? null;
-  const cantidadBajoMinimo = existencias.filter((existencia) => existencia.bajoMinimo).length;
+
+  // Cuantos items activos estan bajo el minimo (suelen ser pocos): para el rotulo del filtro.
+  useEffect(() => {
+    listarExistencias({ activo: true, soloBajoMinimo: true })
+      .then((bajos) => setCantidadBajoMinimo(bajos.length))
+      .catch(() => setCantidadBajoMinimo(null));
+  }, [version]);
+
+  async function recargar() {
+    await listado.recargar();
+    setVersion((valor) => valor + 1);
+  }
 
   async function registrarAjuste(payload: { tipoMovimiento: TipoAjuste; cantidad: number; observaciones: string }) {
     const existencia = modalAjuste.contexto;
@@ -89,7 +95,7 @@ export default function StockPage() {
               aria-label="Buscar item"
               className="control-filtro"
               onChange={(event) => setBusqueda(event.target.value)}
-              placeholder="Buscar por nombre"
+              placeholder="Buscar por nombre o codigo"
               value={busqueda}
             />
             <select
@@ -109,7 +115,7 @@ export default function StockPage() {
                 onChange={(event) => setSoloBajoMinimo(event.target.checked)}
                 type="checkbox"
               />
-              <span>Solo bajo minimo ({cantidadBajoMinimo})</span>
+              <span>Solo bajo minimo{cantidadBajoMinimo === null ? "" : ` (${cantidadBajoMinimo})`}</span>
             </label>
           </div>
         }
@@ -119,11 +125,11 @@ export default function StockPage() {
       {error ? <MensajeError mensaje={error} /> : null}
       {aviso ? <MensajeExito mensaje={aviso} /> : null}
       {cargando ? <EstadoCargando titulo="Cargando stock" /> : null}
-      {!cargando && !error && visibles.length === 0 ? (
+      {!cargando && !error && existencias.length === 0 ? (
         <EstadoVacio descripcion="No hay items para los filtros seleccionados." titulo="No encontramos items" />
       ) : null}
 
-      {!cargando && visibles.length > 0 ? (
+      {!cargando && existencias.length > 0 ? (
         <TablaDatos
           columns={[
             { header: "Item", cell: (existencia) => existencia.nombre },
@@ -158,14 +164,23 @@ export default function StockPage() {
               )
             }
           ]}
-          data={visibles}
+          data={existencias}
           keyExtractor={(existencia) => existencia.idItemCatalogo}
+        />
+      ) : null}
+
+      {!cargando ? (
+        <PieListado
+          cantidad={existencias.length}
+          cargandoMas={listado.cargandoMas}
+          hayMas={listado.hayMas}
+          onCargarMas={() => void listado.cargarMas()}
         />
       ) : null}
 
       {seleccionado ? (
         <div ref={refDetalle}>
-          <PanelItemStock existencia={seleccionado} stockPorItem={stockPorItem} version={version} />
+          <PanelItemStock existencia={seleccionado} version={version} />
         </div>
       ) : null}
 

@@ -105,6 +105,7 @@ test("pedido completo desde el celular: el detalle queda a la vista", async ({ p
 test("en stock, elegir un item lleva a sus movimientos", async ({ page }) => {
   const producto = await crearProductoConStock(unico("PRUEBA-ProdMovil"), 500, 4);
   await page.goto("/stock");
+  await page.getByLabel("Buscar item").fill(producto.nombre);
 
   await page
     .getByRole("row")

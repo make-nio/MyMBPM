@@ -49,3 +49,22 @@ describe("stockRepository.listarUltimosMovimientos", () => {
     expect(findMany.mock.calls[0][0].take).toBe(5);
   });
 });
+
+describe("stockRepository.listarItemsParaExistencias", () => {
+  it("busca por nombre o codigo y ordena de forma estable para paginar", async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const cliente = { itemCatalogo: { findMany } } as never;
+
+    await stockRepository.listarItemsParaExistencias(cliente, { activo: true, busqueda: "vela" });
+
+    expect(findMany.mock.calls[0][0].where).toEqual({
+      tipoItem: undefined,
+      activo: true,
+      OR: [
+        { nombre: { contains: "vela", mode: "insensitive" } },
+        { codigo: { contains: "vela", mode: "insensitive" } }
+      ]
+    });
+    expect(findMany.mock.calls[0][0].orderBy).toEqual([{ tipoItem: "asc" }, { nombre: "asc" }, { idItemCatalogo: "asc" }]);
+  });
+});
