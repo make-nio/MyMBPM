@@ -23,7 +23,8 @@ export type ItemCatalogo = {
   descripcionCompleta: string | null;
   observacionesInternas: string | null;
   precio: string | null;
-  costo: string | null;
+  // Solo llega para administradores (ver puedeVerCostos en la API).
+  costo?: string | null;
   tipoMaterial: string | null;
   color: string | null;
   imagenPrincipal: string | null;

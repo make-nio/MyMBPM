@@ -131,3 +131,66 @@ test("un operador no recibe ni ve costos: ni en la API ni en la pantalla", async
   await expect(page.getByRole("region", { name: "Costo por receta" })).toHaveCount(0);
   await page.close();
 });
+
+test("costo del item: un operador no lo recibe, no lo ve en el formulario y no lo puede cambiar", async ({ browser }) => {
+  const usuario = unico("prueba-operador-item").toLowerCase();
+  await api("POST", "/api/usuarios", {
+    nombre: "Operador",
+    apellido: "PRUEBA",
+    email: `${usuario}@mymbpm.test`,
+    usuario,
+    password: "clave-operador-1"
+  });
+  const login = await fetch(`${URL_WEB}/api/autenticacion/login`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ identificador: usuario, password: "clave-operador-1" })
+  });
+  const token = ((await login.json()) as { data: { token: string } }).data.token;
+
+  const { idCategoria } = await crearCategoria(unico("PRUEBA-CatItemOculto"));
+  const insumo = await crearItem({ idCategoria, nombre: unico("PRUEBA-InsItemOculto"), tipoItem: "INSUMO", costo: 50 });
+  const producto = await crearItem({ idCategoria, nombre: unico("PRUEBA-ProdItemOculto"), tipoItem: "PRODUCTO", precio: 900, costo: 400 });
+  await api("POST", `/api/items-catalogo/${producto.idItemCatalogo}/componentes`, {
+    idItemCatalogoHijo: insumo.idItemCatalogo,
+    cantidadRequerida: 2,
+    unidadMedida: "UN"
+  });
+  const orden = await api<{ idOrdenProduccion: string }>("POST", "/api/produccion", {});
+  await api("POST", `/api/produccion/${orden.idOrdenProduccion}/detalles`, {
+    idItemCatalogoProducto: producto.idItemCatalogo,
+    cantidad: 1
+  });
+
+  // Ninguna respuesta le lleva el costo: item, listado, receta ni orden de produccion.
+  const comoOperador = <T>(metodo: string, ruta: string, cuerpo?: unknown) => api<T>(metodo, ruta, cuerpo, token);
+  expect(JSON.stringify(await comoOperador("GET", `/api/items-catalogo/${producto.idItemCatalogo}`))).not.toMatch(/"costo"/);
+  expect(JSON.stringify(await comoOperador("GET", `/api/items-catalogo?busqueda=${producto.nombre}`))).not.toMatch(/"costo"/);
+  expect(JSON.stringify(await comoOperador("GET", `/api/items-catalogo/${producto.idItemCatalogo}/componentes`))).not.toMatch(/"costo"/);
+  expect(JSON.stringify(await comoOperador("GET", `/api/produccion/${orden.idOrdenProduccion}`))).not.toMatch(/"costo"/);
+  expect(await api("GET", `/api/items-catalogo/${producto.idItemCatalogo}`)).toMatchObject({ costo: "400" });
+
+  // No lo puede cambiar; editar otra cosa lo deja igual.
+  await expect(comoOperador("PATCH", `/api/items-catalogo/${producto.idItemCatalogo}`, { costo: 1 })).rejects.toThrow(/403/);
+
+  const page = await browser.newPage({ storageState: { cookies: [], origins: [] } });
+  await page.goto("/ingresar");
+  await page.getByLabel("Usuario o email").fill(usuario);
+  await page.getByLabel("Clave").fill("clave-operador-1");
+  await page.getByRole("button", { name: /ingresar/i }).click();
+  await expect(page).toHaveURL(/\/panel$/);
+
+  await page.goto("/items-catalogo");
+  await page.getByLabel("Buscar item").fill(producto.nombre);
+  await page.getByRole("button", { name: "Buscar", exact: true }).click();
+  await page.getByRole("row").filter({ hasText: producto.nombre }).getByRole("button", { name: "Editar" }).click();
+  const modal = page.getByRole("dialog", { name: "Editar item" });
+  await expect(modal.getByLabel("Precio")).toBeVisible();
+  await expect(modal.getByLabel("Costo")).toHaveCount(0);
+  await modal.getByLabel("Precio").fill("950");
+  await modal.getByRole("button", { name: "Guardar item" }).click();
+  await expect(modal).toBeHidden();
+  await page.close();
+
+  expect(await api("GET", `/api/items-catalogo/${producto.idItemCatalogo}`)).toMatchObject({ precio: "950", costo: "400" });
+});

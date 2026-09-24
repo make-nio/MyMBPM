@@ -44,3 +44,18 @@ Las altas, ediciones y activaciones de **items del catalogo** y **clientes** que
   registro, y queda un aviso en el log. Se pregunta con `to_regclass` antes del INSERT porque
   en Postgres un INSERT fallido aborta toda la transaccion.
 
+## Costos: solo para quien puede verlos
+
+`puedeVerCostos(usuario)` (`compartido/dominio/permisos.ts`) decide quien ve costos: hoy, solo
+administradores.
+
+- **Respuestas:** `ocultarCostosSinPermiso`, en todas las rutas privadas, quita `costo` y
+  `costoUnitario` de cualquier respuesta, a cualquier profundidad. Asi no se escapan en items
+  incluidos dentro de pedidos, ordenes o recetas, ni en endpoints nuevos.
+- **Panel:** no calcula `ventasDelMes`.
+- **Pedido:** ademas lo filtra explicitamente (`pedidosService.presentar`).
+- **Altas y ediciones de items:** `rechazarCostoSinPermiso` responde 403 si alguien sin permiso
+  manda `costo`.
+
+Para abrirlo a operadores se cambia solo `puedeVerCostos`.
+
