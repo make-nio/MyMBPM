@@ -107,3 +107,17 @@ test("detalle de un producto: capacidad segun receta y movimientos con su origen
   const movimientos = panel.getByRole("region", { name: "Movimientos" });
   await expect(movimientos.getByRole("row").nth(1)).toContainText(new RegExp(`Egreso pedido\\s*Pedido #${pedido.idPedido}\\s*3\\s*-2\\s*1`));
 });
+
+test("el historial de stock no expone datos sensibles del usuario", async () => {
+  const { idCategoria } = await crearCategoria(unico("PRUEBA-CatSeguridad"));
+  const item = await crearItem({ idCategoria, nombre: unico("PRUEBA-Seguridad"), tipoItem: "INSUMO" });
+  await ajustarStock(item.idItemCatalogo, 1, "INSUMO");
+
+  const historial = await api<Array<{ usuario: Record<string, unknown> | null }>>(
+    "GET",
+    `/api/stock/historial?idItemCatalogo=${item.idItemCatalogo}`
+  );
+
+  expect(historial).toHaveLength(1);
+  expect(Object.keys(historial[0].usuario ?? {}).sort()).toEqual(["apellido", "idUsuario", "nombre"]);
+});

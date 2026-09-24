@@ -38,6 +38,14 @@ type ListarHistorialFiltros = {
   offset: number;
 };
 
+// Datos del usuario que se devuelven junto a un movimiento. Nunca incluir claveHash: el
+// historial lo ve cualquier usuario autenticado.
+export const usuarioDelMovimiento = {
+  idUsuario: true,
+  nombre: true,
+  apellido: true
+} satisfies Prisma.UsuarioSelect;
+
 export const stockRepository = {
   obtenerUltimoEstado(prismaOrTx: PrismaOrTx, idItemCatalogo: bigint, tipoStock: string) {
     return prismaOrTx.estadoStock.findFirst({
@@ -58,7 +66,7 @@ export const stockRepository = {
         tipoStock: filtros.tipoStock
       },
       include: {
-        usuario: true
+        usuario: { select: usuarioDelMovimiento }
       },
       orderBy: {
         idEstadoStock: "desc"
