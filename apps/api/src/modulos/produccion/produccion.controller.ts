@@ -4,7 +4,6 @@ import { responderExito } from "../../compartido/http/respuesta";
 import { validar } from "../../compartido/validaciones/validar";
 
 import {
-  accionProduccionSchema,
   actualizarEstadoProduccionSchema,
   actualizarDetalleProduccionSchema,
   agregarDetalleProduccionSchema,
@@ -70,16 +69,15 @@ export const produccionController = {
 
   async iniciar(request: Request, response: Response) {
     const params = validar(ordenProduccionParamsSchema, request.params);
-    const body = validar(accionProduccionSchema, request.body ?? {});
-    const orden = await produccionService.iniciar(params.id, body.idUsuario);
+    // Los movimientos de stock quedan a nombre del usuario de la sesion, no de un idUsuario del body.
+    const orden = await produccionService.iniciar(params.id, request.usuarioAutenticado?.idUsuario);
 
     responderExito(response, orden);
   },
 
   async finalizar(request: Request, response: Response) {
     const params = validar(ordenProduccionParamsSchema, request.params);
-    const body = validar(accionProduccionSchema, request.body ?? {});
-    const orden = await produccionService.finalizar(params.id, body.idUsuario);
+    const orden = await produccionService.finalizar(params.id, request.usuarioAutenticado?.idUsuario);
 
     responderExito(response, orden);
   }
