@@ -41,6 +41,9 @@ Filtros soportados en listado:
 
 - `GET /api/clientes`
 - `GET /api/clientes/:id`
+- `GET /api/clientes/:id/resumen`: `totalComprado`, `pedidosComprados` y `fechaUltimaCompra`, con el
+  criterio de "vendido" de reportes (pedidos activos, confirmados y no cancelados). Solo importes de
+  venta, sin costos: lo ve cualquier usuario. El historial se lee con `GET /api/pedidos?idCliente=`.
 - `POST /api/clientes`
 - `PATCH /api/clientes/:id`
 - `PATCH /api/clientes/:id/estado`

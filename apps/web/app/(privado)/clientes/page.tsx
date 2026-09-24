@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { useUsuarioAutenticado } from "../../../src/components/auth/contexto-sesion";
 import { HistorialCambios } from "../../../src/components/modulos/auditoria/historial-cambios";
+import { FichaCliente } from "../../../src/components/modulos/clientes/ficha-cliente";
 import { FormularioCliente } from "../../../src/components/modulos/clientes/formulario-cliente";
 import { EncabezadoModulo } from "../../../src/components/ui/encabezado-modulo";
 import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
@@ -12,6 +13,7 @@ import { MensajeError } from "../../../src/components/ui/mensaje-error";
 import { Modal } from "../../../src/components/ui/modal";
 import { PieListado } from "../../../src/components/ui/pie-listado";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
+import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
 import {
@@ -31,6 +33,8 @@ export default function ClientesPage() {
   const [busqueda, setBusqueda] = useState("");
   const [busquedaAplicada, setBusquedaAplicada] = useState("");
   const [filtroActivo, setFiltroActivo] = useState<FiltroActivo>("todos");
+  const [idFicha, setIdFicha] = useState<string | null>(null);
+  const refFicha = useDesplazarAlDetalle(idFicha);
 
   const listado = useListadoPaginado<Cliente>(
     (limit, offset) =>
@@ -44,6 +48,7 @@ export default function ClientesPage() {
     "No fue posible cargar los clientes"
   );
   const { items: clientes, cargando, error, recargar } = listado;
+  const clienteFicha = clientes.find((cliente) => cliente.idCliente === idFicha) ?? null;
 
   async function guardarCliente(payload: Parameters<typeof crearCliente>[0]) {
     if (modalCliente.contexto) {
@@ -126,6 +131,9 @@ export default function ClientesPage() {
               header: "Acciones",
               cell: (cliente) => (
                 <div className="acciones-tabla">
+                  <button className="boton-secundario" onClick={() => setIdFicha(cliente.idCliente)} type="button">
+                    Ficha
+                  </button>
                   <button
                     className="boton-secundario"
                     onClick={() => modalCliente.abrir(cliente)}
@@ -161,6 +169,12 @@ export default function ClientesPage() {
           hayMas={listado.hayMas}
           onCargarMas={() => void listado.cargarMas()}
         />
+      ) : null}
+
+      {clienteFicha ? (
+        <div ref={refFicha}>
+          <FichaCliente cliente={clienteFicha} />
+        </div>
       ) : null}
 
       <Modal

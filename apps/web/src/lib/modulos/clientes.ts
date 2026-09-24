@@ -1,5 +1,5 @@
 import { apiFetch, buildQuery } from "../api";
-import { Cliente, ClientePayload } from "../../types/clientes";
+import { Cliente, ClientePayload, ResumenCliente } from "../../types/clientes";
 
 type FiltrosClientes = {
   busqueda?: string;
@@ -48,5 +48,12 @@ export function nombreCliente(cliente: { nombre: string; apellido?: string | nul
 export function buscarOpcionesClientes(texto: string, limit: number) {
   return listarClientes({ busqueda: texto || undefined, activo: true, limit }).then((clientes) =>
     clientes.map((cliente) => ({ value: cliente.idCliente, label: nombreCliente(cliente) }))
+  );
+}
+
+// Total comprado y cantidad de pedidos (criterio "vendido"), para la ficha del cliente.
+export function obtenerResumenCliente(idCliente: string) {
+  return apiFetch<{ ok: true; data: ResumenCliente }>(`/api/clientes/${idCliente}/resumen`).then(
+    (response) => response.data
   );
 }
