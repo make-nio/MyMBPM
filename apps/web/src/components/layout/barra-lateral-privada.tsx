@@ -31,6 +31,10 @@ const accesosPrincipales = [
   {
     href: "/produccion",
     label: "Produccion"
+  },
+  {
+    href: "/stock",
+    label: "Stock"
   }
 ];
 
@@ -41,8 +45,6 @@ const accesosAdministracion = [
     label: "Usuarios"
   }
 ];
-
-const proximosModulos = ["Stock"];
 
 export function BarraLateralPrivada({ esAdministrador }: { esAdministrador: boolean }) {
   const pathname = usePathname();
@@ -60,7 +62,7 @@ export function BarraLateralPrivada({ esAdministrador }: { esAdministrador: bool
 
       <nav className="barra-lateral__navegacion">
         <section>
-          <p className="barra-lateral__seccion-titulo">Accesos iniciales</p>
+          <p className="barra-lateral__seccion-titulo">Modulos</p>
           <div className="barra-lateral__lista">
             {accesos.map((item) => (
               <Link
@@ -74,17 +76,6 @@ export function BarraLateralPrivada({ esAdministrador }: { esAdministrador: bool
               >
                 {item.label}
               </Link>
-            ))}
-          </div>
-        </section>
-
-        <section>
-          <p className="barra-lateral__seccion-titulo">Modulos siguientes</p>
-          <div className="barra-lateral__lista">
-            {proximosModulos.map((item) => (
-              <span className="barra-lateral__placeholder" key={item}>
-                {item}
-              </span>
             ))}
           </div>
         </section>

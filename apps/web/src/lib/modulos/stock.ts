@@ -1,5 +1,5 @@
 import { apiFetch, buildQuery } from "../api";
-import { MovimientoStock, StockActual, TipoStock } from "../../types/stock";
+import { Existencia, MovimientoStock, StockActual, TipoAjuste, TipoStock } from "../../types/stock";
 
 export function obtenerStockActual(idItemCatalogo: string, tipoStock: TipoStock = "PRODUCTO") {
   return apiFetch<{ ok: true; data: StockActual }>(
@@ -21,4 +21,24 @@ export function listarMovimientosStock(filtros: {
       offset: filtros.offset ?? 0
     })}`
   ).then((response) => response.data);
+}
+
+export function listarExistencias(filtros: { tipoItem?: TipoStock; activo?: boolean } = {}) {
+  return apiFetch<{ ok: true; data: Existencia[] }>(
+    `/api/stock/existencias${buildQuery({ tipoItem: filtros.tipoItem, activo: filtros.activo })}`
+  ).then((response) => response.data);
+}
+
+// Ajuste manual: el usuario lo toma la API de la sesion y el origen queda MANUAL.
+export function crearAjusteStock(payload: {
+  idItemCatalogo: string;
+  tipoStock: TipoStock;
+  tipoMovimiento: TipoAjuste;
+  cantidad: number;
+  observaciones: string;
+}) {
+  return apiFetch<{ ok: true; data: MovimientoStock }>("/api/stock/ajustes", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  }).then((response) => response.data);
 }
