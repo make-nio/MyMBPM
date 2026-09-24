@@ -54,6 +54,22 @@ Lo prueban dos cosas:
 - **`e2e/autorizacion.spec.ts`:** llama a cada endpoint sin sesión, con un operador y con el
   administrador contra la API real, y exige el status de la tabla. Un endpoint nuevo entra solo.
 
+### Alcance por registro
+
+Hay un solo negocio: los datos del negocio (pedidos, producción, stock, clientes, catálogo,
+solicitudes) son de todos los usuarios con sesión, sin dueño por registro. Lo que no es de todos:
+
+| Qué | Quién lo alcanza | Si no |
+|---|---|---|
+| La clave propia (`PATCH /api/usuarios/{id}/clave`, `soloPropio`) | Solo el mismo usuario | 403 (a otro usuario, incluso a un administrador) |
+| Usuarios, auditoría, reportes, importaciones | Administradores | 403 |
+| Costos y márgenes | Administradores | No llegan (`costos-solo-con-permiso`); mandar `costo` sin permiso da 403 |
+| Una línea de pedido o de orden, un componente o una imagen | Solo desde su propio pedido, orden o ítem (`/{id}/.../{detalleId}`) | 404 |
+
+Además, un usuario desactivado pierde el acceso con el mismo token y un administrador que pasa a
+operador pierde lo de administrador enseguida: cada solicitud relee el usuario de la base. Lo prueba
+`e2e/registros-ajenos.spec.ts`.
+
 ## Cómo se serializa
 
 `compartido/http/respuesta.ts` pasa los datos por JSON:
