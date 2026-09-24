@@ -3,9 +3,11 @@ type CampoTextoProps = {
   label: string;
   value: string;
   onChange: (value: string) => void;
-  type?: "text" | "email" | "number";
+  type?: "text" | "email" | "number" | "password";
   placeholder?: string;
   required?: boolean;
+  autoComplete?: string;
+  minLength?: number;
 };
 
 export function CampoTexto({
@@ -15,13 +17,17 @@ export function CampoTexto({
   onChange,
   type = "text",
   placeholder,
-  required
+  required,
+  autoComplete,
+  minLength
 }: CampoTextoProps) {
   return (
     <div className="campo-formulario">
       <label htmlFor={id}>{label}</label>
       <input
+        autoComplete={autoComplete}
         id={id}
+        minLength={minLength}
         name={id}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}

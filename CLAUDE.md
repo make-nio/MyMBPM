@@ -110,8 +110,8 @@ La cobertura (umbral 50 % de líneas, backend y front) se publica en el resumen 
 
 - **Backend:** todos los módulos hechos (catálogo, clientes, pedidos, stock, producción,
   usuarios, autenticación, solicitudes especiales).
-- **Web:** ingreso, panel, y administración de categorías, ítems del catálogo, clientes y
-  solicitudes especiales.
+- **Web:** ingreso, panel, y administración de categorías, ítems del catálogo, clientes,
+  solicitudes especiales y usuarios (sólo administradores).
 - **Falta la web de stock, pedidos y producción**, que es lo que más usa Maxi.
 - Hay pruebas de los services de stock, pedidos, producción y usuarios, E2E de las pantallas y
   CI en GitHub Actions.
