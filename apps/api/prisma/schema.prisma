@@ -32,6 +32,18 @@ model Usuario {
   @@map("USUARIO")
 }
 
+// Ingresos fallidos, para limitar intentos por cuenta y por IP (ver autenticacion.service).
+// CLAVE es "usuario:<id>", "identificador:<texto>" (si no existe la cuenta) o "ip:<ip>".
+model IntentoLogin {
+  idIntentoLogin BigInt   @id @default(autoincrement()) @map("ID_INTENTO_LOGIN") @db.BigInt
+  clave          String   @map("CLAVE") @db.VarChar(200)
+  fecha          DateTime @default(now()) @map("FECHA") @db.Timestamptz(3)
+
+  @@index([clave, fecha], map: "IX_INTENTO_LOGIN_CLAVE_FECHA")
+  @@index([fecha], map: "IX_INTENTO_LOGIN_FECHA")
+  @@map("INTENTO_LOGIN")
+}
+
 model Categoria {
   idCategoria       BigInt         @id @default(autoincrement()) @map("ID_CATEGORIA") @db.BigInt
   nombre            String         @map("NOMBRE") @db.VarChar(120)
