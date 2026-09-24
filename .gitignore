@@ -27,3 +27,6 @@ apps/web/out/
 # Respaldos de la base: tienen datos de clientes y el repositorio es publico.
 *.ndjson.gz
 **/rendimiento-report/
+
+# Reporte de la corrida nocturna de E2E (scripts/resumen-e2e-nocturno.mjs)
+apps/web/e2e-nocturno.json
