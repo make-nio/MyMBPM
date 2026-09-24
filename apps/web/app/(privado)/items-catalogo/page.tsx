@@ -398,7 +398,7 @@ export default function ItemsCatalogoPage() {
                 {itemSeleccionado && esAdministrador ? (
                   <CostoReceta
                     componentes={componentes}
-                    costoCargado={itemSeleccionado.costo}
+                    costoCargado={itemSeleccionado.costo ?? null}
                     onUsarComoCosto={(costo) => void usarComoCosto(itemSeleccionado, costo)}
                   />
                 ) : null}

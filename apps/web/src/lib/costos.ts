@@ -23,7 +23,7 @@ export function calcularMargenPedido(total: string, lineas: LineaConCosto[]) {
 type ComponenteConCosto = {
   cantidadRequerida: string;
   activo: boolean;
-  itemCatalogoComponente?: { nombre: string; costo: string | null } | null;
+  itemCatalogoComponente?: { nombre: string; costo?: string | null } | null;
 };
 
 // Costo de fabricar una unidad segun su receta: cantidad de cada insumo por su costo cargado.
