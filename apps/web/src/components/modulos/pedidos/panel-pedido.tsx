@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { EstadoCargando } from "../../ui/estado-cargando";
@@ -204,21 +205,28 @@ export function PanelPedido({ idPedido, onCambio }: PanelPedidoProps) {
           ) : null}
         </div>
 
-        {pendiente ? (
-          <div className="acciones-tabla">
-            <button className="boton-secundario" onClick={() => modalLinea.abrir(null)} type="button">
-              Agregar item
-            </button>
-            <button
-              className="boton-primario"
-              disabled={detalles.length === 0}
-              onClick={() => modalConfirmacion.abrir(null)}
-              type="button"
-            >
-              Confirmar pedido
-            </button>
-          </div>
-        ) : null}
+        <div className="acciones-tabla">
+          {detalles.length > 0 ? (
+            <Link className="boton-secundario" href={`/pedidos/comprobante?pedido=${idPedido}`}>
+              Comprobante
+            </Link>
+          ) : null}
+          {pendiente ? (
+            <>
+              <button className="boton-secundario" onClick={() => modalLinea.abrir(null)} type="button">
+                Agregar item
+              </button>
+              <button
+                className="boton-primario"
+                disabled={detalles.length === 0}
+                onClick={() => modalConfirmacion.abrir(null)}
+                type="button"
+              >
+                Confirmar pedido
+              </button>
+            </>
+          ) : null}
+        </div>
       </div>
 
       {error ? <MensajeError mensaje={error} /> : null}
