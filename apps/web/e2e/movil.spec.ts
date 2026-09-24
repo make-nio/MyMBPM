@@ -125,6 +125,17 @@ test("la busqueda global entra a lo ancho del celular", async ({ page }) => {
   expect((cerrar?.x ?? 0) + (cerrar?.width ?? 0)).toBeLessThanOrEqual((caja?.x ?? 0) + (caja?.width ?? 0));
 });
 
+test("los avisos del encabezado entran a lo ancho del celular", async ({ page }) => {
+  await page.goto("/panel");
+  await page.getByRole("button", { name: /^Avisos:/ }).click();
+  const avisos = page.getByRole("region", { name: "Avisos" });
+  await expect(avisos).toBeVisible();
+
+  const caja = await avisos.boundingBox();
+  expect(caja?.x ?? -1).toBeGreaterThanOrEqual(0);
+  expect((caja?.x ?? 0) + (caja?.width ?? 0)).toBeLessThanOrEqual(375);
+});
+
 test("en stock, elegir un item lleva a sus movimientos", async ({ page }) => {
   const producto = await crearProductoConStock(unico("PRUEBA-ProdMovil"), 500, 4);
   await page.goto("/stock");

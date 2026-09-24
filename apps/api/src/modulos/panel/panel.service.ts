@@ -79,5 +79,17 @@ export const panelService = {
       // Lo confirmado este mes (hora de Argentina), sin cancelados. Solo con permiso de ver costos.
       ...(vendidosDelMes ? { ventasDelMes: { desde: mes.desde, ...calcularVentas(vendidosDelMes) } } : {})
     };
+  },
+
+  // Los avisos del encabezado: solo cuantos hay de cada cosa, calculado al consultar.
+  async obtenerAvisos(ahora = new Date()) {
+    const hoy = inicioDelDiaArgentina(ahora);
+    const [bajoMinimo, entregasAtrasadas, entregasHoy] = await Promise.all([
+      stockService.obtenerExistencias(prisma, { activo: true, soloBajoMinimo: true }),
+      panelRepository.contarPedidosConEntregaEntre(prisma, ESTADOS_ABIERTOS, hoy),
+      panelRepository.contarPedidosConEntregaEntre(prisma, ESTADOS_ABIERTOS, sumarDias(hoy, 1), hoy)
+    ]);
+
+    return { stockBajo: bajoMinimo.length, entregasAtrasadas, entregasHoy };
   }
 };

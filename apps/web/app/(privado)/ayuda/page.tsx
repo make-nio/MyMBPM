@@ -76,6 +76,14 @@ const guias: Paso[] = [
     ]
   },
   {
+    titulo: "Ver que hay pendiente",
+    pasos: [
+      "La campanita de arriba (\"Avisos\") muestra un numero cuando hay items bajo el minimo o entregas atrasadas o para hoy.",
+      "Tocala para ver el detalle y toca un aviso: el de stock abre Stock con \"Solo bajo minimo\" y el de entregas abre el Dashboard.",
+      "Se actualiza cada vez que cambias de pantalla. No manda mails ni notificaciones al celular."
+    ]
+  },
+  {
     titulo: "Llevarte los datos a una planilla",
     pasos: [
       "En Pedidos o en Stock, aplica los filtros que quieras (en Pedidos podes elegir las fechas de alta con \"Alta desde\" y \"hasta\").",
