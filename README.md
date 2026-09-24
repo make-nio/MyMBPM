@@ -205,7 +205,7 @@ npm run prisma:migrate --workspace @myfirstproject/api -- --name <nombre>
 - `confirmar pedido`, `iniciar produccion`, `finalizar produccion` y los ajustes manuales corren con `prisma.$transaction(...)`.
 - Cada ingreso o egreso toma un lock por item y tipo de stock (`pg_advisory_xact_lock`) antes de leer el stock anterior: dos operaciones concurrentes sobre el mismo item se serializan. Las operaciones con varios items los bloquean en orden de id para no provocar deadlocks.
 - La validacion de stock se hace dentro de la misma transaccion donde se registra el egreso.
-- Los ajustes manuales solo aceptan `AJUSTE_POSITIVO` y `AJUSTE_NEGATIVO`; el usuario sale de la sesion y el origen es siempre `MANUAL`.
+- Los ajustes manuales solo aceptan `AJUSTE_POSITIVO` y `AJUSTE_NEGATIVO`, exigen motivo (`observaciones`, 400 si falta o esta vacio); el usuario sale de la sesion y el origen es siempre `MANUAL`.
 - Los movimientos de pedidos y produccion quedan a nombre del usuario de la sesion.
 - `GET /api/stock/existencias` devuelve el stock vigente de cada item: los productos contra su stock de `PRODUCTO` y los insumos contra el de `INSUMO`.
 

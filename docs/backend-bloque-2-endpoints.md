@@ -4,7 +4,7 @@
 
 - `GET /api/stock/actual?idItemCatalogo=1&tipoStock=PRODUCTO`
 - `GET /api/stock/historial?idItemCatalogo=1&tipoStock=PRODUCTO&limit=20&offset=0`
-- `POST /api/stock/ajustes`
+- `POST /api/stock/ajustes` (`observaciones` obligatorio: el motivo del ajuste)
 
 ## Pedidos
 
