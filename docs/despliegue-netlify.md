@@ -176,6 +176,9 @@ Reglas para PRs con migraciones mientras sea asi:
   renombre o cambie tipos: el deploy de produccion aplica la migracion y el codigo nuevo casi a la
   vez, y el codigo anterior sigue sirviendo requests mientras tanto.
 - Avisarlo en la descripcion del PR.
+- Si el codigo nuevo lee una tabla nueva, tiene que tolerar que falte (Prisma `P2021`) para que el
+  preview no se rompa. Ejemplo: `INTENTO_LOGIN` (limite de intentos de ingreso). Sin la tabla, el
+  ingreso funciona sin limite y deja un aviso en el log (`autenticacion.repository.ts`).
 
 ### Propuesta: rama de base por deploy preview
 

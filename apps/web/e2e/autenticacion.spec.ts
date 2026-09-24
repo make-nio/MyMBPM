@@ -1,5 +1,6 @@
+import { api } from "./api";
 import { ADMIN_E2E } from "./entorno";
-import { expect, test } from "./fixtures";
+import { expect, test, unico } from "./fixtures";
 
 test.describe("sin sesion", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
@@ -61,4 +62,42 @@ test("si no se puede verificar la sesion, ofrece reintentar sin cerrarla", async
   fallar = false;
   await page.getByRole("button", { name: "Reintentar" }).click();
   await expect(page.getByRole("heading", { name: "Categorias", exact: true, level: 1 })).toBeVisible();
+});
+
+test.describe("limite de intentos", () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test("5 claves incorrectas bloquean la cuenta aunque despues se use la correcta", async ({ page }) => {
+    const usuario = unico("prueba-bloqueo").toLowerCase();
+    await api("POST", "/api/usuarios", {
+      nombre: "Bloqueo",
+      apellido: "PRUEBA",
+      email: `${usuario}@mymbpm.test`,
+      usuario,
+      password: "clave-correcta-1"
+    });
+
+    await page.goto("/ingresar");
+    const error = page.locator(".mensaje-error, [role=alert]").first();
+
+    for (let intento = 1; intento <= 5; intento++) {
+      await page.getByLabel("Usuario o email").fill(usuario);
+      await page.getByLabel("Clave").fill(`clave-incorrecta-${intento}`);
+      await page.getByRole("button", { name: /ingresar/i }).click();
+      await expect(error).toContainText("Credenciales invalidas");
+    }
+
+    // Por email cuenta como la misma cuenta, y con la clave correcta tampoco entra.
+    await page.getByLabel("Usuario o email").fill(`${usuario}@mymbpm.test`);
+    await page.getByLabel("Clave").fill("clave-correcta-1");
+    await page.getByRole("button", { name: /ingresar/i }).click();
+    await expect(error).toContainText(/Demasiados intentos fallidos\. Proba de nuevo en 1[45] minutos/);
+    await expect(page).toHaveURL(/\/ingresar$/);
+
+    // Otra cuenta desde la misma IP sigue pudiendo entrar.
+    await page.getByLabel("Usuario o email").fill(ADMIN_E2E.usuario);
+    await page.getByLabel("Clave").fill(ADMIN_E2E.password);
+    await page.getByRole("button", { name: /ingresar/i }).click();
+    await expect(page).toHaveURL(/\/panel$/);
+  });
 });

@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 
+import { obtenerIpCliente } from "../../compartido/http/ip-cliente";
 import { responderExito } from "../../compartido/http/respuesta";
 import { validar } from "../../compartido/validaciones/validar";
 
@@ -9,7 +10,7 @@ import { loginSchema } from "./autenticacion.schemas";
 export const autenticacionController = {
   async login(request: Request, response: Response) {
     const body = validar(loginSchema, request.body);
-    const data = await autenticacionService.login(body);
+    const data = await autenticacionService.login(body, { ip: obtenerIpCliente(request) });
 
     responderExito(response, data);
   },
