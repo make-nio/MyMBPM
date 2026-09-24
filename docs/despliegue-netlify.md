@@ -184,6 +184,9 @@ Reglas para PRs con migraciones mientras sea asi:
 - Si el codigo nuevo lee una tabla nueva, tiene que tolerar que falte (Prisma `P2021`) para que el
   preview no se rompa. Ejemplo: `INTENTO_LOGIN` (limite de intentos de ingreso). Sin la tabla, el
   ingreso funciona sin limite y deja un aviso en el log (`autenticacion.repository.ts`).
+  Si la escritura va **dentro de una transaccion**, atrapar el error no alcanza: Postgres aborta
+  toda la transaccion. En ese caso hay que preguntar antes si la tabla existe (`to_regclass`),
+  como hace `AUDITORIA_CAMBIO` en `auditoria.repository.ts`.
 
 ### Propuesta: rama de base por deploy preview
 

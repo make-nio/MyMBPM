@@ -13,17 +13,18 @@ datasource db {
 }
 
 model Usuario {
-  idUsuario         BigInt        @id @default(autoincrement()) @map("ID_USUARIO") @db.BigInt
-  nombre            String        @map("NOMBRE") @db.VarChar(100)
-  apellido          String        @map("APELLIDO") @db.VarChar(100)
-  email             String        @map("EMAIL") @db.VarChar(150)
-  usuario           String        @map("USUARIO") @db.VarChar(100)
-  claveHash         String        @map("CLAVE_HASH") @db.VarChar(255)
-  activo            Boolean       @default(true) @map("ACTIVO")
-  esAdministrador   Boolean       @default(false) @map("ES_ADMINISTRADOR")
-  fechaAlta         DateTime      @default(now()) @map("FECHA_ALTA") @db.Timestamptz(3)
-  fechaModificacion DateTime      @updatedAt @map("FECHA_MODIFICACION") @db.Timestamptz(3)
+  idUsuario         BigInt            @id @default(autoincrement()) @map("ID_USUARIO") @db.BigInt
+  nombre            String            @map("NOMBRE") @db.VarChar(100)
+  apellido          String            @map("APELLIDO") @db.VarChar(100)
+  email             String            @map("EMAIL") @db.VarChar(150)
+  usuario           String            @map("USUARIO") @db.VarChar(100)
+  claveHash         String            @map("CLAVE_HASH") @db.VarChar(255)
+  activo            Boolean           @default(true) @map("ACTIVO")
+  esAdministrador   Boolean           @default(false) @map("ES_ADMINISTRADOR")
+  fechaAlta         DateTime          @default(now()) @map("FECHA_ALTA") @db.Timestamptz(3)
+  fechaModificacion DateTime          @updatedAt @map("FECHA_MODIFICACION") @db.Timestamptz(3)
   estadosStock      EstadoStock[]
+  auditoriasCambio  AuditoriaCambio[]
 
   // Ademas de estos unicos, la migracion inicial crea UQ_USUARIO_EMAIL_LOWER y
   // UQ_USUARIO_USUARIO_LOWER sobre lower(...) (SQL crudo: Prisma no modela indices por expresion).
@@ -42,6 +43,22 @@ model IntentoLogin {
   @@index([clave, fecha], map: "IX_INTENTO_LOGIN_CLAVE_FECHA")
   @@index([fecha], map: "IX_INTENTO_LOGIN_FECHA")
   @@map("INTENTO_LOGIN")
+}
+
+// Registro de cambios de clientes e items del catalogo: quien cambio que y cuando. CAMBIOS es
+// [{ campo, antes, despues }] con los valores como texto (ver auditoria.service).
+model AuditoriaCambio {
+  idAuditoriaCambio BigInt   @id @default(autoincrement()) @map("ID_AUDITORIA_CAMBIO") @db.BigInt
+  entidad           String   @map("ENTIDAD") @db.VarChar(30)
+  idEntidad         BigInt   @map("ID_ENTIDAD") @db.BigInt
+  accion            String   @map("ACCION") @db.VarChar(20)
+  cambios           Json     @map("CAMBIOS")
+  idUsuario         BigInt?  @map("ID_USUARIO") @db.BigInt
+  fecha             DateTime @default(now()) @map("FECHA") @db.Timestamptz(3)
+  usuario           Usuario? @relation(fields: [idUsuario], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([entidad, idEntidad, fecha], map: "IX_AUDITORIA_CAMBIO_ENTIDAD")
+  @@map("AUDITORIA_CAMBIO")
 }
 
 model Categoria {

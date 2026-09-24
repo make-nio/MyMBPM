@@ -51,3 +51,7 @@ Filtros soportados en listado:
 - `offset`
 - `busqueda`
 - `activo`
+
+## Auditoria
+
+- `GET /api/auditoria?entidad=ITEM_CATALOGO&idEntidad=1&limit=50&offset=0` (solo administradores)
