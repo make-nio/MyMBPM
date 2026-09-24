@@ -1,5 +1,9 @@
 # Modelado Inicial MVP
 
+> Nota: este documento se escribio sobre SQL Server. Desde la migracion a Netlify la base es
+> PostgreSQL; el mapeo de tipos y los cambios de comportamiento estan en
+> [despliegue-netlify.md](despliegue-netlify.md).
+
 ## Estructura Propuesta Backend
 
 ```text
@@ -84,7 +88,7 @@ apps/web/
 ## Ajustes Realizados en Prisma
 
 - Modelos en espanol y en singular: `Usuario`, `Pedido`, `OrdenProduccion`, etc.
-- Tablas y columnas mapeadas en SQL Server en espanol, mayusculas y con `_`.
+- Tablas y columnas mapeadas en espanol, mayusculas y con `_` (hoy en PostgreSQL, con identificadores entre comillas).
 - Todas las PK definidas como `BIGINT` autoincremental.
 - `PEDIDO` se mantiene como entidad comercial principal; no se modela `VENTA`.
 - `ESTADO_STOCK` queda como historial; el stock vigente se obtiene por ultimo ID del item.
@@ -106,7 +110,7 @@ Eso genera colision. En el schema se resolvio con:
 
 ### 2. Estados modelados como `String`
 
-Para SQL Server en Prisma MVP se modelaron como `String`:
+Para el MVP (originalmente en SQL Server, sin enums nativos) se modelaron como `String`:
 
 - `TIPO_ITEM`
 - `ORIGEN_PEDIDO`
@@ -130,7 +134,7 @@ Por ahora no se define unicidad sobre campos opcionales como:
 
 Motivo:
 
-- en SQL Server una restriccion unica sobre columnas nullable puede traer friccion operativa
+- en SQL Server una restriccion unica sobre columnas nullable admitia un solo `NULL` (en PostgreSQL ya no aplica: admite varios)
 - para el MVP conviene mantener solo las PK como unica restriccion obligatoria
 
 ### 4. `SOLICITUD_ESPECIAL` con `ID_CLIENTE` opcional
@@ -150,6 +154,6 @@ Se modela como snapshot persistido y no solo calculado al vuelo. Eso simplifica 
 ## Siguiente Paso Recomendado
 
 1. generar la migracion inicial del dominio
-2. aplicar la migracion a SQL Server
+2. aplicar la migracion a la base (hoy PostgreSQL)
 3. recien ahi crear modulos base de backend por dominio
 4. despues montar el esqueleto de rutas publicas y privadas en frontend
