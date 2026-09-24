@@ -122,11 +122,28 @@ Hay dos proyectos: `chromium` (escritorio, todos los specs menos `movil.spec.ts`
 pantalla, menu plegable y un pedido completo desde el celular). `npx playwright test --project movil`
 corre solo el segundo.
 
+### Presupuesto de rendimiento (Lighthouse)
+
+`npm run test:rendimiento` (proyecto `rendimiento` de Playwright, fuera de `test:e2e`) pasa
+Lighthouse con perfil movil sobre `/ingresar` (sin sesion), `/panel` y `/pedidos` (con la sesion
+del administrador E2E), tres veces cada una, y compara la mediana con `PRESUPUESTO` en
+`apps/web/e2e/rendimiento.spec.ts`:
+
+- puntaje de rendimiento minimo: lo medido en el CI al crearlo menos un margen de 5 puntos, porque
+  el puntaje varia entre corridas;
+- JavaScript descargado maximo (sin comprimir: el servidor de prueba no usa gzip): lo medido mas
+  un 10 %. Es casi deterministico y detecta un paquete que se cuela en el bundle.
+
+Necesita el mismo entorno que los E2E (build, base local y el setup del administrador). Los
+reportes HTML quedan en `apps/web/rendimiento-report/` y en el artefacto `lighthouse` del CI, y
+la tabla en el resumen del job. Si un cambio mueve estos numeros a proposito, actualiza el
+presupuesto y explicalo en el PR.
+
 ### CI y cobertura
 
 `.github/workflows/ci.yml` corre en cada PR (hacia `main` o apilado sobre otra rama) y en cada push a `main`:
-`npm ci`, `check`, tests unitarios con cobertura, `build`, migraciones y E2E contra un Postgres
-de servicio del job. Al final, `npm run coverage:report` combina la cobertura y la publica en el
+`npm ci`, `check`, tests unitarios con cobertura, `build`, migraciones, E2E contra un Postgres
+de servicio del job y el presupuesto de Lighthouse. Al final, `npm run coverage:report` combina la cobertura y la publica en el
 resumen del job:
 
 - Backend: vitest + la API ejecutada durante los E2E.

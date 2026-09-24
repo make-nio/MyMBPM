@@ -26,3 +26,4 @@ apps/web/out/
 **/playwright-report/
 # Respaldos de la base: tienen datos de clientes y el repositorio es publico.
 *.ndjson.gz
+**/rendimiento-report/

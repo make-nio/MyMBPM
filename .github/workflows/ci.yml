@@ -73,6 +73,13 @@ jobs:
       - name: E2E con Playwright
         run: npm run test:e2e
 
+      # Lighthouse sobre ingreso, panel y pedidos, con la base que dejaron los E2E. Sin cobertura:
+      # la API instrumentada no debe entrar en la medicion.
+      - name: Presupuesto de rendimiento (Lighthouse)
+        run: npm run test:rendimiento
+        env:
+          E2E_COVERAGE: "0"
+
       # Con la base que dejaron los E2E: respaldar, restaurar en una base vacia y comparar.
       - name: Ciclo de respaldo y restauracion
         run: npm run respaldo:probar-ciclo --workspace @myfirstproject/api -- --base "$E2E_DATABASE_URL"
@@ -90,6 +97,15 @@ jobs:
             apps/web/playwright-report
             apps/web/test-results
           retention-days: 7
+
+      - name: Guardar reportes de Lighthouse
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse
+          path: apps/web/rendimiento-report
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Guardar cobertura
         if: ${{ !cancelled() }}

@@ -40,6 +40,10 @@
     "!node_modules/typescript/**"
   ]
 
+# Encabezados de seguridad (CSP con hashes de los scripts inline de Next, HSTS, nosniff, etc.): no
+# van aca sino en apps/web/out/_headers, que genera apps/web/scripts/generar-encabezados.mjs al
+# final del build de la web. Ver docs/despliegue-netlify.md.
+
 # La API responde bajo /api/* en el mismo dominio que la web (sin CORS).
 # El rewrite (200) conserva el path original, que Express enruta tal cual.
 [[redirects]]

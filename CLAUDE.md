@@ -66,7 +66,8 @@ npm run dev                                        # web (3000) + api (3002); ne
 ```
 
 **`npm run check` y `npm test` tienen que pasar antes de cada commit.** El CI
-(`.github/workflows/ci.yml`) corre ademas build, E2E y cobertura en cada PR.
+(`.github/workflows/ci.yml`) corre ademas build, E2E, cobertura y el presupuesto de Lighthouse
+(`npm run test:rendimiento`, ver README) en cada PR.
 
 ## La base de datos
 
