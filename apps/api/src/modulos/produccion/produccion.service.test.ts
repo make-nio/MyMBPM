@@ -96,6 +96,38 @@ describe("produccionService.agregarDetalle", () => {
   });
 });
 
+describe("produccionService.actualizarEstado (transiciones)", () => {
+  it.each([
+    ["EN_PROCESO", "PENDIENTE"],
+    ["FINALIZADA", "PENDIENTE"],
+    ["FINALIZADA", "CANCELADA"],
+    ["CANCELADA", "PENDIENTE"]
+  ] as const)("rechaza %s -> %s", async (actual, nuevo) => {
+    repo.obtenerPorId.mockResolvedValue(orden({ estadoProduccion: actual }));
+
+    await expect(produccionService.actualizarEstado(1n, { estadoProduccion: nuevo })).rejects.toBeInstanceOf(
+      ErrorConflicto
+    );
+    expect(repo.actualizar).not.toHaveBeenCalled();
+  });
+
+  it.each(["PENDIENTE", "EN_PROCESO"] as const)("permite cancelar una orden %s", async (actual) => {
+    repo.obtenerPorId.mockResolvedValue(orden({ estadoProduccion: actual }));
+
+    await produccionService.actualizarEstado(1n, { estadoProduccion: "CANCELADA" });
+
+    expect(repo.actualizar).toHaveBeenCalledWith(prisma, 1n, { estadoProduccion: "CANCELADA" });
+  });
+
+  it("permite actualizar observaciones sin cambiar el estado", async () => {
+    repo.obtenerPorId.mockResolvedValue(orden({ estadoProduccion: "CANCELADA" }));
+
+    await produccionService.actualizarEstado(1n, { estadoProduccion: "CANCELADA", observaciones: "sin filamento" });
+
+    expect(repo.actualizar).toHaveBeenCalled();
+  });
+});
+
 describe("produccionService.actualizarEstado", () => {
   it.each(["EN_PROCESO", "FINALIZADA"] as const)("no permite pasar a %s por el endpoint generico", async (estado) => {
     repo.obtenerPorId.mockResolvedValue(orden());
