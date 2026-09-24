@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { PanelOrden } from "../../../src/components/modulos/produccion/panel-orden";
 import { CampoTexto } from "../../../src/components/formularios/campo-texto";
@@ -15,7 +15,9 @@ import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detal
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
 import { formatearCantidad, formatearEstado, formatearFecha } from "../../../src/lib/formato";
-import { crearOrdenProduccion, listarOrdenesProduccion } from "../../../src/lib/modulos/produccion";
+import { obtenerItemCatalogo } from "../../../src/lib/modulos/items-catalogo";
+import { agregarDetalleOrden, crearOrdenProduccion, listarOrdenesProduccion } from "../../../src/lib/modulos/produccion";
+import { leerOrdenParaReponer } from "../../../src/lib/stock/reponer";
 import { ESTADOS_PRODUCCION, EstadoProduccion, OrdenProduccion } from "../../../src/types/produccion";
 
 export default function ProduccionPage() {
@@ -26,6 +28,40 @@ export default function ProduccionPage() {
   const refDetalle = useDesplazarAlDetalle(idOrdenSeleccionada);
   const [observaciones, setObservaciones] = useState("");
   const [creando, setCreando] = useState(false);
+  // Producto y cantidad propuestos desde Stock ("Crear orden de produccion"): prellenan el alta,
+  // pero la orden se crea solo cuando la persona la confirma.
+  const [productoPropuesto, setProductoPropuesto] = useState<{ idItemCatalogo: string; nombre: string } | null>(null);
+  const [cantidadPropuesta, setCantidadPropuesta] = useState("");
+
+  useEffect(() => {
+    const propuesta = leerOrdenParaReponer(window.location.search);
+
+    if (!propuesta) {
+      return;
+    }
+
+    // Sin los parametros en la direccion: recargar la pagina no vuelve a abrir el alta.
+    window.history.replaceState(null, "", window.location.pathname);
+    obtenerItemCatalogo(propuesta.idItemCatalogo)
+      .then((item) => {
+        setProductoPropuesto({ idItemCatalogo: item.idItemCatalogo, nombre: item.nombre });
+        setCantidadPropuesta(String(propuesta.cantidad));
+        setObservaciones(`Reponer stock minimo de ${item.nombre}`);
+        modalOrden.abrir(null);
+      })
+      .catch((causa: unknown) =>
+        setErrorAlta(causa instanceof Error ? causa.message : "No fue posible cargar el producto a reponer")
+      );
+    // Solo al montar: la propuesta viene en la direccion con la que se abrio la pantalla.
+  }, []);
+
+  function cerrarAlta() {
+    modalOrden.cerrar();
+    setErrorAlta(null);
+    setProductoPropuesto(null);
+    setCantidadPropuesta("");
+    setObservaciones("");
+  }
 
   const listado = useListadoPaginado<OrdenProduccion>(
     (limit, offset) => listarOrdenesProduccion({ estadoProduccion: filtroEstado || undefined, limit, offset }),
@@ -33,19 +69,43 @@ export default function ProduccionPage() {
     "No fue posible cargar las ordenes"
   );
   const { items: ordenes, cargando, recargar } = listado;
-  const error = listado.error ?? errorAlta;
+  // Con el alta abierta, su error se muestra adentro del modal.
+  const error = listado.error ?? (modalOrden.abierto ? null : errorAlta);
 
   async function crearOrden() {
     setCreando(true);
     setErrorAlta(null);
 
+    let idOrden: string | null = null;
+
+    if (productoPropuesto && !(Number(cantidadPropuesta) > 0)) {
+      setErrorAlta("La cantidad a producir tiene que ser mayor que cero");
+      setCreando(false);
+      return;
+    }
+
     try {
       const orden = await crearOrdenProduccion({ observaciones: observaciones || undefined });
-      modalOrden.cerrar();
-      setObservaciones("");
+      idOrden = orden.idOrdenProduccion;
+
+      if (productoPropuesto) {
+        await agregarDetalleOrden(orden.idOrdenProduccion, {
+          idItemCatalogoProducto: productoPropuesto.idItemCatalogo,
+          cantidad: Number(cantidadPropuesta)
+        });
+      }
+
+      cerrarAlta();
       await recargar();
       setIdOrdenSeleccionada(orden.idOrdenProduccion);
     } catch (currentError) {
+      // Si la orden se creo pero no el producto, queda a la vista para completarla a mano.
+      if (idOrden) {
+        cerrarAlta();
+        await recargar();
+        setIdOrdenSeleccionada(idOrden);
+      }
+
       setErrorAlta(currentError instanceof Error ? currentError.message : "No fue posible crear la orden");
     } finally {
       setCreando(false);
@@ -72,7 +132,10 @@ export default function ProduccionPage() {
             ))}
           </select>
         }
-        onCrear={() => modalOrden.abrir(null)}
+        onCrear={() => {
+          setProductoPropuesto(null);
+          modalOrden.abrir(null);
+        }}
         titulo="Produccion"
       />
 
@@ -133,8 +196,12 @@ export default function ProduccionPage() {
 
       <Modal
         abierto={modalOrden.abierto}
-        descripcion="Despues agregas los productos a fabricar desde el detalle."
-        onClose={modalOrden.cerrar}
+        descripcion={
+          productoPropuesto
+            ? "Propuesta para volver al stock minimo. Revisa la cantidad: la orden se crea recien al confirmar."
+            : "Despues agregas los productos a fabricar desde el detalle."
+        }
+        onClose={cerrarAlta}
         titulo="Nueva orden"
       >
         <form
@@ -144,9 +211,26 @@ export default function ProduccionPage() {
             void crearOrden();
           }}
         >
+          {errorAlta ? <MensajeError mensaje={errorAlta} /> : null}
+          {productoPropuesto ? (
+            <>
+              <p data-testid="producto-propuesto">
+                Producto: <strong>{productoPropuesto.nombre}</strong>
+              </p>
+              <CampoTexto
+                id="orden-nueva-cantidad"
+                label="Cantidad a producir"
+                onChange={setCantidadPropuesta}
+                required
+                step="1"
+                type="number"
+                value={cantidadPropuesta}
+              />
+            </>
+          ) : null}
           <CampoTexto id="orden-nueva-observaciones" label="Observaciones" onChange={setObservaciones} value={observaciones} />
           <div className="acciones-formulario">
-            <button className="boton-secundario" onClick={modalOrden.cerrar} type="button">
+            <button className="boton-secundario" onClick={cerrarAlta} type="button">
               Cancelar
             </button>
             <button className="boton-primario" disabled={creando} type="submit">
