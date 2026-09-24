@@ -5,7 +5,7 @@ import { auditoriaRepository } from "./auditoria.repository";
 import { accionDeModificacion, auditoriaService, calcularCambios, valorAuditable } from "./auditoria.service";
 
 vi.mock("./auditoria.repository", () => ({
-  auditoriaRepository: { registrar: vi.fn(), listar: vi.fn() }
+  auditoriaRepository: { registrar: vi.fn(), registrarVarios: vi.fn(), listar: vi.fn() }
 }));
 
 const repo = vi.mocked(auditoriaRepository);
@@ -89,5 +89,32 @@ describe("auditoriaService.registrarModificacion", () => {
     await auditoriaService.registrarModificacion(tx, contexto, registro, { ...registro });
 
     expect(repo.registrar).not.toHaveBeenCalled();
+  });
+});
+
+describe("auditoriaService.registrarAltas", () => {
+  it("arma un alta por registro con sus campos y la guarda en una sola llamada", async () => {
+    await auditoriaService.registrarAltas(
+      "tx" as never,
+      { entidad: "ITEM_CATALOGO", idUsuario: 7n, campos: ["nombre", "precio"] },
+      [
+        { idEntidad: 1n, registro: { nombre: "Vela", precio: null } },
+        { idEntidad: 2n, registro: { nombre: "Maceta", precio: "10" } }
+      ]
+    );
+
+    expect(repo.registrarVarios).toHaveBeenCalledWith("tx", [
+      { entidad: "ITEM_CATALOGO", idEntidad: 1n, accion: "ALTA", cambios: [{ campo: "nombre", antes: null, despues: "Vela" }], idUsuario: 7n },
+      {
+        entidad: "ITEM_CATALOGO",
+        idEntidad: 2n,
+        accion: "ALTA",
+        cambios: [
+          { campo: "nombre", antes: null, despues: "Maceta" },
+          { campo: "precio", antes: null, despues: "10" }
+        ],
+        idUsuario: 7n
+      }
+    ]);
   });
 });

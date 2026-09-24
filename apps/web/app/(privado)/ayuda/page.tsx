@@ -47,6 +47,16 @@ const guias: Paso[] = [
     ]
   },
   {
+    titulo: "Cargar el catalogo desde una planilla (administradores)",
+    pasos: [
+      "En Items catalogo, toca \"Importar CSV\" y despues \"Descargar plantilla\".",
+      "Completa la planilla en Excel o Google Sheets: una fila por item. Nombre, Tipo (Producto o Insumo) y Categoria son obligatorios; las categorias que no existen se crean solas.",
+      "Guardala como CSV y elegila en \"Archivo CSV\": vas a ver cuantas filas estan bien y, si alguna tiene un error, cual y por que.",
+      "Si hay errores, corregilos en la planilla y volve a elegir el archivo. Cuando esten todas bien, toca \"Importar\"."
+    ],
+    ojo: "Se importa todo o nada: si una sola fila tiene un error, no se carga ninguna. Un item que ya existe con el mismo nombre no se duplica: esa fila aparece con error."
+  },
+  {
     titulo: "Llevarte los datos a una planilla",
     pasos: [
       "En Pedidos o en Stock, aplica los filtros que quieras (en Pedidos podes elegir las fechas de alta con \"Alta desde\" y \"hasta\").",

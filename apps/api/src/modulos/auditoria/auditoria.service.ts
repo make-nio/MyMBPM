@@ -60,6 +60,24 @@ export const auditoriaService = {
     });
   },
 
+  // Altas de muchos registros de la misma entidad en una consulta (importaciones).
+  async registrarAltas(
+    db: PrismaOrTx,
+    contexto: Omit<Contexto, "idEntidad">,
+    registros: Array<{ idEntidad: bigint; registro: Registro }>
+  ) {
+    await auditoriaRepository.registrarVarios(
+      db,
+      registros.map(({ idEntidad, registro }) => ({
+        entidad: contexto.entidad,
+        idEntidad,
+        accion: "ALTA" as const,
+        cambios: calcularCambios(null, registro, contexto.campos),
+        idUsuario: contexto.idUsuario
+      }))
+    );
+  },
+
   async registrarModificacion(db: PrismaOrTx, contexto: Contexto, antes: Registro, despues: Registro) {
     const cambios = calcularCambios(antes, despues, contexto.campos);
 

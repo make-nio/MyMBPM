@@ -54,6 +54,24 @@ export const auditoriaRepository = {
     return db.auditoriaCambio.create({ data });
   },
 
+  // Varios registros en una sola consulta (por ejemplo, una importacion de catalogo).
+  async registrarVarios(
+    db: PrismaOrTx,
+    datos: Array<{
+      entidad: EntidadAuditada;
+      idEntidad: bigint;
+      accion: AccionAuditoria;
+      cambios: CambioAuditado[];
+      idUsuario?: bigint;
+    }>
+  ) {
+    if (datos.length === 0 || !(await hayTablaAuditoria())) {
+      return null;
+    }
+
+    return db.auditoriaCambio.createMany({ data: datos });
+  },
+
   // Solo id, nombre y apellido del usuario: nunca claveHash.
   async listar(filtros: { entidad: EntidadAuditada; idEntidad: bigint; limit: number; offset: number }) {
     if (!(await hayTablaAuditoria())) {

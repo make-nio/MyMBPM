@@ -48,3 +48,53 @@ export function descargarCsv(nombreArchivo: string, contenido: string) {
   enlace.remove();
   URL.revokeObjectURL(url);
 }
+
+// Lee un CSV (el que genera Excel o Sheets): separador ";" o "," segun el encabezado, comillas
+// dobles con "" adentro, saltos de linea dentro de comillas, BOM y CRLF. Descarta filas vacias.
+export function leerCsv(texto: string): string[][] {
+  const contenido = texto.replace(/^﻿/, "");
+  const primeraLinea = contenido.split(/\r?\n/, 1)[0] ?? "";
+  const separador = (primeraLinea.match(/;/g)?.length ?? 0) >= (primeraLinea.match(/,/g)?.length ?? 0) ? ";" : ",";
+
+  const filas: string[][] = [];
+  let fila: string[] = [];
+  let celda = "";
+  let entreComillas = false;
+
+  for (let i = 0; i < contenido.length; i++) {
+    const caracter = contenido[i];
+
+    if (entreComillas) {
+      if (caracter === '"' && contenido[i + 1] === '"') {
+        celda += '"';
+        i++;
+      } else if (caracter === '"') {
+        entreComillas = false;
+      } else {
+        celda += caracter;
+      }
+    } else if (caracter === '"') {
+      entreComillas = true;
+    } else if (caracter === separador) {
+      fila.push(celda);
+      celda = "";
+    } else if (caracter === "\n" || caracter === "\r") {
+      if (caracter === "\r" && contenido[i + 1] === "\n") {
+        i++;
+      }
+      fila.push(celda);
+      filas.push(fila);
+      fila = [];
+      celda = "";
+    } else {
+      celda += caracter;
+    }
+  }
+
+  if (celda !== "" || fila.length > 0) {
+    fila.push(celda);
+    filas.push(fila);
+  }
+
+  return filas.filter((cells) => cells.some((valor) => valor.trim() !== ""));
+}
