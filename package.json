@@ -21,6 +21,7 @@
     "build:netlify": "npm run prisma:generate --workspace @myfirstproject/api && node scripts/migrar-netlify.mjs && npm run build:web",
     "test:coverage": "npm run test:coverage --workspace @myfirstproject/api && npm run test:coverage --workspace @myfirstproject/web",
     "test:e2e": "npm run test:e2e --workspace @myfirstproject/web",
+    "test:rendimiento": "npm run test:rendimiento --workspace @myfirstproject/web",
     "coverage:report": "npm run coverage:e2e --workspace @myfirstproject/api && node scripts/reporte-cobertura.mjs"
   },
   "engines": {
