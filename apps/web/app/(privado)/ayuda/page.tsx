@@ -84,12 +84,21 @@ const guias: Paso[] = [
     ]
   },
   {
+    titulo: "Ver lo que compro un cliente",
+    pasos: [
+      "En Clientes, busca al cliente y toca \"Ficha\".",
+      "Arriba ves sus datos y el total comprado: suma los pedidos confirmados, sin los cancelados ni los que todavia estan pendientes.",
+      "Abajo esta su historial de pedidos con el estado, el cobro y el total. \"Ver pedido\" te lleva al detalle."
+    ]
+  },
+  {
     titulo: "Costos y ganancia (administradores)",
     pasos: [
       "Carga el costo de cada insumo (por ejemplo, lo que pagaste el kilo de filamento) al editarlo, en \"Costo\".",
       "En la receta de un producto vas a ver cuanto cuesta fabricarlo. Si no coincide con su costo, toca \"Usar como costo\".",
       "Cada pedido muestra su costo y su ganancia, y el Dashboard lo vendido y ganado en el mes.",
-      "En Reportes elegis un mes y ves lo vendido por item y por cliente, con \"Exportar CSV\" para cada tabla."
+      "En Reportes elegis un mes y ves lo vendido por item y por cliente, con \"Exportar CSV\" para cada tabla.",
+      "Arriba de Reportes esta lo vendido en los ultimos 12 meses: toca una barra (o \"Ver los datos\" y \"Ver mes\") para ver el reporte de ese mes."
     ],
     ojo: "El costo de un pedido se toma cuando agregas cada item: si despues cambias el costo del producto, los pedidos ya cargados no cambian."
   }

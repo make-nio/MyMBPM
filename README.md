@@ -125,7 +125,7 @@ corre solo el segundo.
 ### Presupuesto de rendimiento (Lighthouse)
 
 `npm run test:rendimiento` (proyecto `rendimiento` de Playwright, fuera de `test:e2e`) pasa
-Lighthouse con perfil movil sobre `/ingresar` (sin sesion), `/panel` y `/pedidos` (con la sesion
+Lighthouse con perfil movil sobre `/ingresar` (sin sesion), `/panel`, `/pedidos` y `/reportes` (con la sesion
 del administrador E2E), tres veces cada una, y compara la mediana con `PRESUPUESTO` en
 `apps/web/e2e/rendimiento.spec.ts`:
 

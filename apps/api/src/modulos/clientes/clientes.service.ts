@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma/client";
+
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 
 import { prisma } from "../../lib/prisma";
@@ -36,6 +38,17 @@ export const clientesService = {
     }
 
     return cliente;
+  },
+
+  async obtenerResumen(idCliente: bigint) {
+    await clientesService.obtenerPorId(idCliente);
+    const resumen = await clientesRepository.resumenCompras(idCliente);
+
+    return {
+      totalComprado: resumen._sum.total ?? new Prisma.Decimal(0),
+      pedidosComprados: resumen._count._all,
+      fechaUltimaCompra: resumen._max.fechaConfirmacion
+    };
   },
 
   crear(data: {

@@ -1148,3 +1148,52 @@ textarea {
     margin-top: 1rem;
   }
 }
+
+/* Grafico de ventas de 12 meses (Reportes): SVG propio, sin librerias. */
+.grafico-ventas__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 0.75rem;
+}
+
+.grafico-ventas__base {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.grafico-ventas__zona {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.grafico-ventas__barra {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 1;
+  pointer-events: none;
+}
+
+.grafico-ventas__barra--elegida {
+  fill: var(--accent);
+}
+
+.grafico-ventas__eje {
+  fill: var(--text);
+  font-size: 16px;
+}
+
+.grafico-ventas__datos {
+  margin-top: 0.75rem;
+}
+
+.grafico-ventas__datos summary {
+  cursor: pointer;
+  color: var(--accent-strong);
+}
+
+@media (max-width: 640px) {
+  .grafico-ventas__eje {
+    font-size: 20px;
+  }
+}
