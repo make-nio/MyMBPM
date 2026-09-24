@@ -12,6 +12,11 @@ export function FormularioLogin() {
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
   const [enviando, setEnviando] = useState(false);
+  const [sesionCerrada, setSesionCerrada] = useState(false);
+
+  useEffect(() => {
+    setSesionCerrada(new URLSearchParams(window.location.search).get("sesion") === "cerrada");
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -71,6 +76,11 @@ export function FormularioLogin() {
 
   return (
     <form className="formulario-login" onSubmit={handleSubmit}>
+      {sesionCerrada && !error ? (
+        <p className="texto-secundario" role="status">
+          Tu sesion vencio o se cerro. Ingresa de nuevo.
+        </p>
+      ) : null}
       {error ? <div className="mensaje-error">{error}</div> : null}
 
       <div className="campo-formulario">

@@ -110,6 +110,15 @@ export const usuariosRepository = {
     });
   },
 
+  // Corta las sesiones del usuario: los tokens emitidos antes de `desde` dejan de valer.
+  cerrarSesiones(prismaOrTx: PrismaOrTx, idUsuario: bigint, desde: Date) {
+    return prismaOrTx.sesionUsuario.upsert({
+      where: { idUsuario },
+      create: { idUsuario, validasDesde: desde },
+      update: { validasDesde: desde }
+    });
+  },
+
   actualizar(
     prismaOrTx: PrismaOrTx,
     idUsuario: bigint,

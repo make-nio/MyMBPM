@@ -33,7 +33,8 @@ Un archivo de texto comprimido con gzip, con una línea JSON por parte:
 - Entran **todas las tablas de negocio**, incluidos los usuarios, porque auditoría, stock y pedidos
   los referencian.
 - Del usuario **no se guarda `CLAVE_HASH`**: las claves no salen de producción.
-- **`INTENTO_LOGIN` queda afuera.**
+- **`INTENTO_LOGIN` y `USUARIO_SESION` (cortes de sesion) quedan afuera**: son de vida corta y una
+  base restaurada arranca sin sesiones.
 - Todas las tablas se leen en una misma foto de la base (transacción `REPEATABLE READ`).
 - Si una migración suma una tabla, el respaldo **falla** hasta que se la agregue en `tablas.ts`, en
   el orden correcto, o en las excluidas. Así ninguna tabla queda sin respaldar sin que nadie se entere.
@@ -94,7 +95,7 @@ momento. Si hace falta este respaldo:
    con `prisma migrate deploy` y copiar los datos desde la local:
 
    ```bash
-   pg_dump --data-only --exclude-table=_prisma_migrations --exclude-table='"INTENTO_LOGIN"' \
+   pg_dump --data-only --exclude-table=_prisma_migrations --exclude-table='"INTENTO_LOGIN"' --exclude-table='"USUARIO_SESION"' \
      "postgresql://postgres:postgres@localhost:5432/mymbpm_restaurada" > datos.sql
    psql "<url directa de la branch nueva>" --single-transaction -f datos.sql
    ```

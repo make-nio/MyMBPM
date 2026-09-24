@@ -21,3 +21,5 @@ usuariosRouter.patch(
   requerirAdministrador,
   asyncHandler(usuariosController.restablecerClave)
 );
+// Cerrar sesion en todos los dispositivos de un usuario.
+usuariosRouter.post("/:id/cerrar-sesiones", requerirAdministrador, asyncHandler(usuariosController.cerrarSesiones));

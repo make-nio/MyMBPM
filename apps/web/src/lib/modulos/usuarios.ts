@@ -44,3 +44,10 @@ export function restablecerClaveUsuario(idUsuario: string, passwordNueva: string
     body: JSON.stringify({ passwordNueva })
   }).then((response) => response.data);
 }
+
+// Cierra la sesion del usuario en todos los dispositivos (solo administradores).
+export function cerrarSesionesUsuario(idUsuario: string) {
+  return apiFetch<{ ok: true; data: { sesionesCerradas: boolean } }>(`/api/usuarios/${idUsuario}/cerrar-sesiones`, {
+    method: "POST"
+  }).then((response) => response.data);
+}

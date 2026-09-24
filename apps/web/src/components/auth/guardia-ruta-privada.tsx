@@ -3,7 +3,8 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { limpiarSesion, resolverSesionActual } from "../../lib/auth";
+import { RUTA_SESION_CERRADA } from "../../lib/api";
+import { leerToken, limpiarSesion, resolverSesionActual } from "../../lib/auth";
 import { UsuarioAutenticado } from "../../types/auth";
 
 type GuardiaRutaPrivadaProps = {
@@ -25,6 +26,8 @@ export function GuardiaRutaPrivada({ children }: GuardiaRutaPrivadaProps) {
 
     async function validarSesion() {
       let sesion;
+      // Si habia un token y la API lo rechaza, la sesion vencio o se cerro: se avisa al ingresar.
+      const habiaToken = Boolean(leerToken());
 
       try {
         sesion = await resolverSesionActual();
@@ -41,7 +44,7 @@ export function GuardiaRutaPrivada({ children }: GuardiaRutaPrivadaProps) {
       }
 
       if (!sesion) {
-        router.replace("/ingresar");
+        router.replace(habiaToken ? RUTA_SESION_CERRADA : "/ingresar");
         return;
       }
 

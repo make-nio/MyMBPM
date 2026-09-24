@@ -51,7 +51,7 @@ Se configuran en Netlify: *Site configuration → Environment variables*.
 | `NETLIFY_DATABASE_URL` | si | conexion pooled que usa la API en runtime | la inyecta Netlify DB |
 | `NETLIFY_DATABASE_URL_UNPOOLED` | si (build) | conexion directa para `prisma migrate deploy` | la inyecta Netlify DB |
 | `JWT_SECRET` | si | firma de los JWT | manual, valor largo y aleatorio |
-| `JWT_EXPIRES_IN` | no (default `8h`) | expiracion de los JWT (formato `jsonwebtoken`: `8h`, `1d`, ...) | manual |
+| `JWT_EXPIRES_IN` | no (default `8h`) | duracion de la sesion: `8h`, `90m`, `3600` (segundos). Tope en codigo: **12 h**, aunque se configure mas (`compartido/dominio/sesion.ts`) | manual |
 
 `JWT_SECRET` y las variables de base deben estar disponibles en el scope *Functions*;
 las de base tambien en *Builds* (migraciones).
@@ -145,9 +145,8 @@ Se elimino la tabla `Healthcheck` que creaba la migracion `20260310_init` y no e
   usuario sin la anterior (`PATCH /api/usuarios/:id/restablecer-clave`) y cambiarle el rol
   (`esAdministrador` en `PATCH /api/usuarios/:id`). No se puede desactivar ni quitarle el rol al
   unico administrador activo (409), por ninguna de las dos rutas, para que el sistema no quede sin
-  nadie que gestione usuarios. Los JWT ya emitidos siguen validos hasta vencer (`JWT_EXPIRES_IN`)
-  aunque se restablezca la clave; desactivar al usuario si los corta, porque cada request verifica
-  que siga activo.
+  nadie que gestione usuarios. Restablecer la clave corta las sesiones abiertas del usuario (ver
+  "Sesiones"), y desactivarlo tambien, porque cada request verifica que siga activo.
 - Migraciones nuevas: `npm run prisma:migrate --workspace @myfirstproject/api -- --name <nombre>`
   contra una base local; el deploy las aplica solo.
 - Deploy previews: no migran (ver "Migraciones y deploy previews").
@@ -214,3 +213,16 @@ para no confundirla con los pedidos de clientes.
 - Para encontrarlo: Netlify → Logs → Functions → `api`, y buscar la referencia que paso Maxi.
 - Los errores de negocio o validacion (4xx) tambien traen la referencia en la respuesta, pero no
   se registran como error ni se muestra la referencia en pantalla.
+
+## Sesiones
+
+- El token de ingreso vence a las `JWT_EXPIRES_IN` (8 h por defecto) y **nunca dura mas de 12 h**,
+  aunque la variable pida mas: un token robado vale, como mucho, una jornada.
+- **Cerrar sesiones de un usuario** (Usuarios → "Cerrar sesiones", solo administradores;
+  `POST /api/usuarios/:id/cerrar-sesiones`): guarda en `USUARIO_SESION` desde cuando valen sus
+  sesiones y `requerirAutenticacion` rechaza los tokens emitidos antes (401 "La sesion se cerro").
+  **Restablecer la clave** hace lo mismo, en la misma transaccion.
+- Si la web recibe un 401 en medio del uso (sesion vencida o cerrada), borra el token y vuelve a
+  `/ingresar?sesion=cerrada`, que muestra el aviso.
+- `USUARIO_SESION` llega con la migracion `sesiones_usuario` (aditiva). Mientras no este en la base
+  (deploy preview antes de migrar produccion) no hay cortes: el ingreso funciona igual.
