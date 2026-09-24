@@ -15,7 +15,8 @@ const pantallas: Array<{ ruta: string; titulo: string; alta?: string }> = [
   { ruta: "/usuarios", titulo: "Usuarios", alta: "Nuevo usuario" },
   { ruta: "/pedidos", titulo: "Pedidos", alta: "Nuevo pedido" },
   { ruta: "/produccion", titulo: "Produccion", alta: "Nueva orden" },
-  { ruta: "/stock", titulo: "Stock" }
+  { ruta: "/stock", titulo: "Stock" },
+  { ruta: "/ayuda", titulo: "Ayuda" }
 ];
 
 test.describe("sin sesion", () => {
