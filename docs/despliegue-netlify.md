@@ -25,7 +25,8 @@ Web y API comparten dominio, por eso no hay CORS ni `CORS_ORIGIN`.
 ### Build (`npm run build:netlify`)
 
 1. `prisma generate` (tambien corre en `postinstall` de `apps/api`).
-2. `prisma migrate deploy` contra `NETLIFY_DATABASE_URL_UNPOOLED`.
+2. `node scripts/migrar-netlify.mjs`: `prisma migrate deploy` **solo si `CONTEXT=production`**
+   (ver "Migraciones y deploy previews").
 3. `next build` de `apps/web` → `apps/web/out`.
 
 Netlify empaqueta la function con esbuild. `@prisma/client` queda como modulo externo
@@ -143,6 +144,40 @@ Se elimino la tabla `Healthcheck` que creaba la migracion `20260310_init` y no e
   para que el sistema no quede sin nadie que gestione usuarios.
 - Migraciones nuevas: `npm run prisma:migrate --workspace @myfirstproject/api -- --name <nombre>`
   contra una base local; el deploy las aplica solo.
-- Deploy previews: `prisma migrate deploy` corre contra la base que Netlify inyecte en ese
-  contexto. Verificar si Netlify DB crea una rama por preview antes de abrir PRs con migraciones
-  destructivas.
+- Deploy previews: no migran (ver "Migraciones y deploy previews").
+
+## Migraciones y deploy previews
+
+En el sitio, `NETLIFY_DATABASE_URL` y `NETLIFY_DATABASE_URL_UNPOOLED` tienen el mismo valor en
+todos los contextos. Un deploy preview usa la **base de produccion**. Si el build del preview
+corriera `prisma migrate deploy`, cualquier PR con una migracion la aplicaria en produccion antes
+de ser revisado e integrado.
+
+Por eso `scripts/migrar-netlify.mjs` decide segun `CONTEXT`:
+
+| `CONTEXT` | Que hace |
+| --- | --- |
+| `production` | `prisma migrate deploy` (falla el deploy si la migracion falla) |
+| `deploy-preview`, `branch-deploy` | no migra; corre `prisma migrate status` (solo lectura) y avisa en el log si el PR trae migraciones pendientes |
+| sin `CONTEXT` (local) | no migra; en local se usa `npm run prisma:migrate:deploy --workspace @myfirstproject/api` |
+
+Consecuencia: un preview de un PR con migracion corre contra el schema actual de produccion. Lo que
+dependa de la migracion nueva puede fallar en ese preview. Se prueba en local o en CI, que migran
+su propia base, y la migracion se aplica al integrar en `main`.
+
+Reglas para PRs con migraciones mientras sea asi:
+
+- Solo migraciones **aditivas**: tablas nuevas, o columnas nullable o con default. Nada que borre,
+  renombre o cambie tipos: el deploy de produccion aplica la migracion y el codigo nuevo casi a la
+  vez, y el codigo anterior sigue sirviendo requests mientras tanto.
+- Avisarlo en la descripcion del PR.
+
+### Propuesta: rama de base por deploy preview
+
+El producto **Netlify Database** (`@netlify/database`) crea una rama aislada de la base por deploy
+preview, copiada de produccion. Pero la URL se obtiene en runtime con `getConnectionString()` y las
+migraciones se aplican desde `netlify/database/migrations/` con su propio formato. Hoy usamos la
+variable `NETLIFY_DATABASE_URL` y Prisma Migrate. Adoptarlo implica cambiar como la API obtiene
+la conexion y como se versionan las migraciones, y conviene evaluarlo en un PR aparte. Otra
+alternativa es una rama de Neon por preview creada desde el build con la API de Neon. Con
+cualquiera de las dos, `scripts/migrar-netlify.mjs` podria volver a migrar en previews.

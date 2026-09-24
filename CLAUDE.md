@@ -50,13 +50,15 @@ Vienen de `docs/arquitectura-backend.md`. Leelo entero antes de tocar el backend
 ```bash
 npm install                                        # desde la raíz (corre prisma generate)
 npm run check                                      # tipos de web y api (tsc --noEmit, incluye tests)
-npm test                                           # vitest de los services, sin base
+npm test                                           # vitest de api (services) y web (src/lib), sin base
+npm run test:e2e                                   # Playwright; solo contra un Postgres local
 npm run build
 npm run prisma:generate --workspace @myfirstproject/api
 npm run dev                                        # web (3000) + api (3002); necesita la base
 ```
 
-**`npm run check` y `npm test` tienen que pasar antes de cada commit.**
+**`npm run check` y `npm test` tienen que pasar antes de cada commit.** El CI
+(`.github/workflows/ci.yml`) corre ademas build, E2E y cobertura en cada PR.
 
 ## La base de datos
 
@@ -78,15 +80,22 @@ Un solo sitio de Netlify (`netlify.toml`), detalle en `docs/despliegue-netlify.m
 - La web se publica como sitio estático desde `apps/web/out`.
 - La API corre como Netlify Function (`serverless-http`) bajo `/api/*`, en el mismo dominio: no
   hay CORS. En local, `next dev` reenvía `/api/*` a la API (`API_DEV_URL`).
-- El build es `npm run build:netlify`: genera Prisma, aplica migraciones y exporta la web.
+- El build es `npm run build:netlify`: genera Prisma, aplica migraciones **solo en produccion**
+  y exporta la web. Los deploy previews usan la base de produccion y no migran: las migraciones
+  tienen que ser aditivas y se avisan en el PR (ver `docs/despliegue-netlify.md`).
 - Variables del sitio: `NETLIFY_DATABASE_URL` y `NETLIFY_DATABASE_URL_UNPOOLED` (las inyecta
   Netlify DB), `JWT_SECRET` y `JWT_EXPIRES_IN`.
 
 ## Pruebas
 
-`npm test` desde la raíz corre `vitest` en `apps/api`. Las pruebas son de los **services**
-(`src/modulos/<modulo>/<modulo>.service.test.ts`), con el repository y `prisma.$transaction`
-mockeados: corren sin base. Si tocás un service, sumá o ajustá su prueba.
+`npm test` desde la raíz corre `vitest` en `apps/api` y `apps/web`. En la API las pruebas son de
+los **services** (`src/modulos/<modulo>/<modulo>.service.test.ts`), con el repository y
+`prisma.$transaction` mockeados: corren sin base. Si tocás un service, sumá o ajustá su prueba.
+
+Cada pantalla tiene su E2E en `apps/web/e2e/<modulo>.spec.ts` (Playwright). Importá `test` y
+`expect` de `e2e/fixtures.ts`, usá `unico("PRUEBA-...")` para los nombres y `e2e/api.ts` para
+preparar datos. Los E2E **nunca** corren contra la base de producción: la config lo impide.
+La cobertura (umbral 50 % de líneas, backend y front) se publica en el resumen del CI.
 
 ## Cómo se trabaja
 
@@ -104,4 +113,5 @@ mockeados: corren sin base. Si tocás un service, sumá o ajustá su prueba.
 - **Web:** ingreso, panel, y administración de categorías, ítems del catálogo, clientes y
   solicitudes especiales.
 - **Falta la web de stock, pedidos y producción**, que es lo que más usa Maxi.
-- Hay pruebas de los services de stock, pedidos, producción y usuarios. No hay pipeline de CI.
+- Hay pruebas de los services de stock, pedidos, producción y usuarios, E2E de las pantallas y
+  CI en GitHub Actions.

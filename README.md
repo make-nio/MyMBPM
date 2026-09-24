@@ -1,5 +1,7 @@
 # MLM BPM
 
+[![CI](https://github.com/make-nio/MyMBPM/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/make-nio/MyMBPM/actions/workflows/ci.yml)
+
 Base de trabajo para `MLM_BPM`, un sistema de gestion para catalogo, clientes, pedidos, stock y produccion, montado como monorepo con `npm workspaces`.
 
 ## Estructura
@@ -91,10 +93,42 @@ La web en `http://localhost:3000` reenvia `/api/*` a la API local (`API_DEV_URL`
 ```bash
 npm run build
 npm run check
-npm test
+npm test            # vitest: services de la API y logica del front (src/lib); no necesita base
+npm run test:e2e    # Playwright contra la web construida + la API + un Postgres LOCAL
 ```
 
-`npm test` corre vitest sobre los services de stock, pedidos y produccion (`apps/api/src/**/*.test.ts`), con repositories y Prisma mockeados: no necesita base.
+### E2E con Playwright
+
+Los E2E corren sobre el build real: la web exportada (`apps/web/out`) servida por
+`apps/web/e2e/servidor-estatico.mjs`, que reenvia `/api/*` a la API compilada (`apps/api/dist`),
+igual que Netlify. Crean datos que no se pueden borrar por la API (por ejemplo, movimientos de
+stock), asi que **solo corren contra un Postgres local**: la configuracion se niega a arrancar
+si `E2E_DATABASE_URL` no apunta a `localhost`.
+
+```bash
+createdb mymbpm_e2e
+export NETLIFY_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/mymbpm_e2e
+export NETLIFY_DATABASE_URL_UNPOOLED=$NETLIFY_DATABASE_URL E2E_DATABASE_URL=$NETLIFY_DATABASE_URL
+npm run build
+npm run prisma:migrate:deploy --workspace @myfirstproject/api
+npx playwright install chromium   # una vez, desde apps/web
+npm run test:e2e
+```
+
+Con la base vacia, el setup crea el administrador de pruebas con el alta inicial.
+
+### CI y cobertura
+
+`.github/workflows/ci.yml` corre en cada PR hacia `main` y en cada push a `main`:
+`npm ci`, `check`, tests unitarios con cobertura, `build`, migraciones y E2E contra un Postgres
+de servicio del job. Al final, `npm run coverage:report` combina la cobertura y la publica en el
+resumen del job:
+
+- Backend: vitest + la API ejecutada durante los E2E.
+- Front: Playwright (V8 del navegador, mapeado a los fuentes) + vitest de `src/lib`.
+
+El umbral es 50 % de lineas en cada area y es bloqueante en CI (`COBERTURA_ESTRICTA=1`).
+Para verlo en local: `E2E_COVERAGE=1 npm run build && E2E_COVERAGE=1 npm run test:e2e && npm run test:coverage && npm run coverage:report`.
 
 ## Testing HTTP desde VSCode
 
@@ -189,7 +223,7 @@ npm run prisma:migrate --workspace @myfirstproject/api -- --name <nombre>
 ## Notas PostgreSQL
 
 - Las migraciones versionadas viven en `apps/api/prisma/migrations`. Hay una sola inicial para Postgres; las de SQL Server se descartaron (no hay migracion de datos).
-- El deploy en Netlify corre `prisma migrate deploy` en cada build.
+- Solo el deploy de produccion corre `prisma migrate deploy`; los deploy previews no migran porque usan la misma base (ver [docs/despliegue-netlify.md](docs/despliegue-netlify.md)).
 - Diferencias de comportamiento respecto de SQL Server (mayusculas en login/busquedas, tipos): ver [docs/despliegue-netlify.md](docs/despliegue-netlify.md).
 
 ## Despliegue
@@ -198,4 +232,4 @@ npm run prisma:migrate --workspace @myfirstproject/api -- --name <nombre>
 npm run build:netlify
 ```
 
-Es el comando de build de `netlify.toml`: genera Prisma, migra y exporta la web a `apps/web/out`. La function se empaqueta desde `apps/api/netlify/functions`.
+Es el comando de build de `netlify.toml`: genera Prisma, migra (solo con `CONTEXT=production`) y exporta la web a `apps/web/out`. La function se empaqueta desde `apps/api/netlify/functions`.

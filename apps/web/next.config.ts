@@ -19,6 +19,8 @@ export default function nextConfig(phase: string): NextConfig {
   // como sitio estatico en apps/web/out.
   return {
     reactStrictMode: true,
-    output: "export"
+    output: "export",
+    // Solo para medir cobertura en los E2E: el build de Netlify no publica source maps.
+    productionBrowserSourceMaps: process.env.E2E_COVERAGE === "1"
   };
 }
