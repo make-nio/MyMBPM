@@ -12,9 +12,9 @@ import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
 
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
+import { crearPrismaClient } from "../src/lib/prisma";
 import { generarRespaldo, restaurarRespaldo } from "../src/respaldo/respaldo";
 import { COLUMNAS_OMITIDAS, TABLAS_RESPALDO } from "../src/respaldo/tablas";
 
@@ -30,7 +30,7 @@ function exigirBaseLocal(url: string) {
 }
 
 function cliente(url: string) {
-  return new PrismaClient({ datasources: { db: { url } } });
+  return crearPrismaClient(url);
 }
 
 function kb(bytes: number) {

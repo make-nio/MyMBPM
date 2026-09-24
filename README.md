@@ -274,7 +274,7 @@ Ejemplos: `apps/api/.env.example`, `apps/web/.env.example`. Detalle de scopes en
 
 El esquema esta en `apps/api/prisma/schema.prisma` (`provider = "postgresql"`).
 
-La API usa `NETLIFY_DATABASE_URL`; Prisma Migrate usa `NETLIFY_DATABASE_URL_UNPOOLED` (`directUrl`). `prisma migrate dev` crea su shadow database temporal, asi que el usuario local necesita permiso `CREATEDB`.
+Prisma 7: la API se conecta con el driver adapter de pg usando `NETLIFY_DATABASE_URL` (`src/lib/prisma.ts`); el CLI (generate, migrate) lee `NETLIFY_DATABASE_URL_UNPOOLED` desde `apps/api/prisma.config.ts` (que carga `apps/api/.env`). `prisma migrate dev` crea su shadow database temporal, asi que el usuario local necesita permiso `CREATEDB`.
 
 ```bash
 npm run prisma:format --workspace @myfirstproject/api
