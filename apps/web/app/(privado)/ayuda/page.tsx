@@ -43,7 +43,8 @@ const guias: Paso[] = [
       "Cada producto tiene que tener su receta (en Items catalogo, boton \"Receta\"): que insumos usa y cuanto.",
       "En Produccion, toca \"Nueva orden\" y despues \"Agregar producto\" con lo que vas a fabricar.",
       "Toca \"Iniciar produccion\": te muestra que insumos se van a usar y, al confirmar, los descuenta.",
-      "Cuando termines, toca \"Finalizar produccion\": los productos fabricados se suman al stock."
+      "Cuando termines, toca \"Finalizar produccion\": los productos fabricados se suman al stock.",
+      "Atajo: en Stock, un producto bajo minimo tiene \"Crear orden de produccion\". Abre la orden nueva con ese producto y lo que falta para llegar al minimo; revisa la cantidad y toca \"Crear orden\" (hasta ahi no se crea nada)."
     ],
     ojo: "Si cancelas una orden que ya estaba en proceso, los insumos que se usaron no vuelven al stock."
   },
