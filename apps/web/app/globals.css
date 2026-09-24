@@ -1040,6 +1040,8 @@ textarea {
 
   .comprobante__tabla tr {
     break-inside: avoid;
+  }
+}
 
 /* Busqueda global (encabezado, Ctrl+K). */
 .boton-busqueda {
