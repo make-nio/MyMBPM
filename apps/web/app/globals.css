@@ -1211,6 +1211,80 @@ textarea {
   }
 }
 
+/* Selector Lista / Tablero (Produccion). */
+.selector-vista {
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+/* Tablero de produccion: una columna por estado; en pantallas angostas quedan una debajo de otra. */
+.tablero-produccion {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.tablero-produccion__columna {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+}
+
+.tablero-produccion__columna h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.tablero-produccion__cantidad {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.tablero-produccion__lista {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tablero-produccion__tarjeta article {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface-strong);
+  overflow-wrap: anywhere;
+}
+
+.tablero-produccion__tarjeta h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.tablero-produccion__productos {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+@media (max-width: 1100px) {
+  .tablero-produccion {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .tablero-produccion {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* Historial de precio y costo de un item: una linea de tiempo con el valor anterior y el nuevo. */
 .historial-precios__lista > li {
   padding-left: 0.85rem;

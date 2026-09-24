@@ -47,6 +47,7 @@ const guias: Paso[] = [
       "En Produccion, toca \"Nueva orden\" y despues \"Agregar producto\" con lo que vas a fabricar.",
       "Toca \"Iniciar produccion\": te muestra que insumos se van a usar y, al confirmar, los descuenta.",
       "Cuando termines, toca \"Finalizar produccion\": los productos fabricados se suman al stock.",
+      "Con \"Tablero\" (arriba, al lado de \"Lista\") ves las ordenes en columnas por estado. Los botones de cada tarjeta abren el detalle con la misma confirmacion, que muestra el impacto en stock.",
       "Atajo: en Stock, un producto bajo minimo tiene \"Crear orden de produccion\". Abre la orden nueva con ese producto y lo que falta para llegar al minimo; revisa la cantidad y toca \"Crear orden\" (hasta ahi no se crea nada)."
     ],
     ojo: "Si cancelas una orden que ya estaba en proceso, los insumos que se usaron no vuelven al stock."
@@ -77,6 +78,15 @@ const guias: Paso[] = [
       "Escribi un numero de pedido (alcanza con \"755\"), el nombre o telefono de un cliente, o el nombre de un item.",
       "Toca el resultado (o usa las flechas y Enter): el pedido se abre en Pedidos y el cliente o el item, en su ficha."
     ]
+  },
+  {
+    titulo: "Cargar clientes desde una planilla (administradores)",
+    pasos: [
+      "En Clientes, toca \"Importar CSV\" y despues \"Descargar plantilla\".",
+      "Completa una fila por cliente. Solo el nombre es obligatorio; Activo es Si o No.",
+      "Elegi el archivo en \"Archivo CSV\": vas a ver cuantas filas estan bien y, si alguna tiene un error, cual y por que. Cuando esten todas bien, toca \"Importar\"."
+    ],
+    ojo: "Se importa todo o nada. Un cliente que ya existe (mismo email, mismo documento, o mismo nombre, apellido y telefono) da error: asi no se duplica."
   },
   {
     titulo: "Llevarte los datos a una planilla",
