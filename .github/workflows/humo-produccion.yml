@@ -1,0 +1,75 @@
+name: Humo de produccion
+
+# Despues de cada push a main (que Netlify publica en produccion) espera a que el deploy de ese
+# commit este en linea y lo revisa: /api/health con la base, el ingreso carga y no hay errores
+# de consola ni de CSP. Solo lectura: no inicia sesion ni escribe nada. Si falla, el check queda
+# en rojo sobre el commit de main. Ver docs/despliegue-netlify.md, "Prueba de humo".
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "Sitio a revisar (vacio: produccion)"
+        required: false
+        default: ""
+
+# Si entra otro push, esta corrida ya no importa: la de ese commit la reemplaza.
+concurrency:
+  group: humo-produccion
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  humo:
+    name: Humo del sitio publicado
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # Dominio de produccion: variable del repositorio URL_PRODUCCION, o el de Netlify.
+      URL_HUMO: ${{ inputs.url || vars.URL_PRODUCCION || 'https://mymbpm.netlify.app' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Esperar el deploy de este commit
+        if: ${{ github.event_name == 'push' }}
+        run: node apps/web/scripts/esperar-deploy.mjs "$URL_HUMO" "$GITHUB_SHA" 20
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar Chromium para Playwright
+        run: npx playwright install --with-deps chromium
+        working-directory: apps/web
+
+      - name: Prueba de humo
+        run: npm run test:humo --workspace @myfirstproject/web
+
+      - name: Resumen
+        if: ${{ always() }}
+        run: |
+          {
+            echo "### Humo de produccion"
+            echo ""
+            echo "- Sitio: $URL_HUMO"
+            echo "- Commit: \`$GITHUB_SHA\`"
+            echo "- Resultado: ${{ job.status == 'success' && '✅ en linea y sin errores' || '❌ revisar el log' }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Guardar trazas
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: humo-produccion
+          path: apps/web/test-results
+          if-no-files-found: ignore
+          retention-days: 14

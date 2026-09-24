@@ -245,3 +245,42 @@ para no confundirla con los pedidos de clientes.
   iframe de `app.netlify.com`). Solo en esos builds (`CONTEXT` distinto de `production`) la CSP
   suma `frame-src https://app.netlify.com`; en produccion no se permite ningun iframe.
 - Netlify reemplaza el HSTS por el suyo en `*.netlify.app` (`...; includeSubDomains; preload`).
+
+## Monitoreo: `/api/health`
+
+`GET /api/health` es publico (no pide sesion) y hace una sola consulta a la base, con un limite de
+5 s:
+
+```json
+{ "status": "ok", "timestamp": "2026-09-24T11:50:19.301Z",
+  "base": { "estado": "ok", "latenciaMs": 80, "ultimaMigracion": "20260924104242_sesiones_usuario" } }
+```
+
+- **200** si la base respondio; `latenciaMs` es lo que tardo la consulta y `ultimaMigracion`, la
+  ultima aplicada (sirve para confirmar que un deploy migro).
+- **503** si la base no respondio o respondio con un error: `"status": "error"` y
+  `base.motivo` ("La base no respondio en 5 s" o "La base respondio con un error"). El motivo es
+  generico a proposito: no incluye host, usuario ni el mensaje del driver. El error real queda en
+  el log de la function con su referencia (ver "Errores en produccion").
+- Sin cache (`Cache-Control: no-store`), como toda la API. Los E2E lo usan para esperar a la API.
+
+### Apuntarle un monitor externo gratuito
+
+No hay ninguno dado de alta. Cualquier servicio que haga un GET periodico y avise si el codigo no
+es 2xx sirve; por ejemplo UptimeRobot o Better Stack, que tienen plan gratuito (verificar las
+condiciones vigentes al darlo de alta):
+
+1. Crear un monitor **HTTP(s)** a `https://<sitio>.netlify.app/api/health` (el dominio de
+   produccion, no un deploy preview).
+2. Alertar cuando la respuesta no sea 2xx (el 503 ya indica base caida). Si el servicio lo permite,
+   sumar una palabra clave: que la respuesta contenga `"status":"ok"`.
+3. Timeout del monitor de 10 s o mas: la function puede arrancar en frio y la base tener que
+   despertarse (ver abajo), y el propio chequeo espera hasta 5 s a la base.
+4. Aviso por email a quien opera el sitio.
+
+**Ojo con el intervalo.** Netlify DB (Neon) suspende la base tras unos minutos sin uso y el plan
+limita las horas de computo. Cada chequeo la despierta: un monitor cada 5 minutos la mantiene
+encendida todo el mes. Antes de elegir el intervalo, mirar el consumo en el panel de Netlify DB;
+como punto de partida, cada 30 a 60 minutos alcanza para enterarse de una caida el mismo dia sin
+cambiar el consumo de forma apreciable. El primer chequeo despues de una suspension puede tardar
+mas (`latenciaMs` alto) sin que haya un problema.

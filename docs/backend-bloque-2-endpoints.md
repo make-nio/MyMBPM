@@ -45,6 +45,10 @@
     costo), `porItem` (cantidad, pedidos, vendido = suma de subtotales, costo = snapshot de cada
     linea, ganancia) y `porCliente` (pedidos, vendido = suma de totales, costo, ganancia), de mayor
     a menor vendido. La web arma el CSV de cada tabla.
+- `GET /api/reportes/ventas-por-mes` (solo administradores)
+  - Vendido y cantidad de pedidos de cada uno de los ultimos 12 meses (el actual incluido, hora de
+    Argentina), con el mismo criterio de `ventas-mes`. Vienen los 12, tambien los meses sin ventas.
+    La web lo dibuja en Reportes con un SVG propio (sin librerias de graficos).
 
 ## Busqueda global
 
