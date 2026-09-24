@@ -17,14 +17,16 @@ import { ARCHIVO_SESION_ADMIN, URL_WEB } from "./entorno";
 //     si): casi deterministico, detecta un paquete que se cuela en el bundle aunque el puntaje
 //     todavia no lo refleje.
 // Si un cambio mejora o empeora a proposito estos numeros, actualiza PRESUPUESTO y explicalo
-// en el PR (docs/rendimiento.md).
+// en el PR (ver README, "Presupuesto de rendimiento").
 
 type Presupuesto = { ruta: string; nombre: string; conSesion: boolean; puntajeMinimo: number; jsMaximoKb: number };
 
+// Medido en el runner del CI el 24/09/2026 (mediana de 3): ingreso 92 y 347 KB, panel 93 y
+// 436 KB, pedidos 92 y 394 KB.
 const PRESUPUESTO: Presupuesto[] = [
-  { ruta: "/ingresar", nombre: "Ingreso", conSesion: false, puntajeMinimo: 85, jsMaximoKb: 380 },
-  { ruta: "/panel", nombre: "Panel", conSesion: true, puntajeMinimo: 85, jsMaximoKb: 480 },
-  { ruta: "/pedidos", nombre: "Pedidos", conSesion: true, puntajeMinimo: 84, jsMaximoKb: 430 }
+  { ruta: "/ingresar", nombre: "Ingreso", conSesion: false, puntajeMinimo: 87, jsMaximoKb: 382 },
+  { ruta: "/panel", nombre: "Panel", conSesion: true, puntajeMinimo: 88, jsMaximoKb: 480 },
+  { ruta: "/pedidos", nombre: "Pedidos", conSesion: true, puntajeMinimo: 87, jsMaximoKb: 433 }
 ];
 
 const PASADAS = Number(process.env.RENDIMIENTO_PASADAS || 3);
