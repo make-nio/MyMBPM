@@ -168,6 +168,7 @@ model Pedido {
   @@index([estadoPedido], map: "IX_PEDIDO_ESTADO_PEDIDO")
   @@index([estadoCobro], map: "IX_PEDIDO_ESTADO_COBRO")
   @@index([fechaAlta], map: "IX_PEDIDO_FECHA_ALTA")
+  @@index([fechaConfirmacion], map: "IX_PEDIDO_FECHA_CONFIRMACION")
   @@map("PEDIDO")
 }
 
@@ -233,6 +234,8 @@ model EstadoStock {
   @@index([tipoStock], map: "IX_ESTADO_STOCK_TIPO_STOCK")
   @@index([tipoMovimiento], map: "IX_ESTADO_STOCK_TIPO_MOVIMIENTO")
   @@index([origenMovimiento, idReferenciaOrigen, idReferenciaDetalle, idItemCatalogo, tipoMovimiento], map: "IX_ESTADO_STOCK_IDEMPOTENCIA")
+  // Ultimo movimiento de cada item y tipo de stock (stockRepository.listarUltimosEstados).
+  @@index([idItemCatalogo, tipoStock, idEstadoStock(sort: Desc)], map: "IX_ESTADO_STOCK_ITEM_TIPO_ULTIMO")
   @@map("ESTADO_STOCK")
 }
 
