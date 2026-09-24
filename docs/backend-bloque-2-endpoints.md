@@ -36,3 +36,12 @@
 - `PATCH /api/produccion/:id/estado`
 - `POST /api/produccion/:id/iniciar`
 - `POST /api/produccion/:id/finalizar`
+
+## Reportes
+
+- `GET /api/reportes/ventas-mes?mes=2026-09` (solo administradores; sin `mes`, el mes en curso)
+  - Mismo criterio que "Este mes" del panel: pedidos activos confirmados en el mes (hora de
+    Argentina) y no cancelados. Devuelve `totales` (pedidos, vendido, costo, ganancia, lineas sin
+    costo), `porItem` (cantidad, pedidos, vendido = suma de subtotales, costo = snapshot de cada
+    linea, ganancia) y `porCliente` (pedidos, vendido = suma de totales, costo, ganancia), de mayor
+    a menor vendido. La web arma el CSV de cada tabla.
