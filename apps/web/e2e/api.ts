@@ -59,7 +59,8 @@ export function ajustarStock(
     idItemCatalogo,
     tipoStock,
     tipoMovimiento: cantidad >= 0 ? "AJUSTE_POSITIVO" : "AJUSTE_NEGATIVO",
-    cantidad: Math.abs(cantidad)
+    cantidad: Math.abs(cantidad),
+    observaciones: "PRUEBA: stock inicial para E2E"
   });
 }
 
