@@ -129,6 +129,11 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/api/pedidos
 Authorization: Bearer {{token}}
 
+### Confirmar pedido (descuenta stock; el movimiento queda a nombre del usuario del token)
+# curl -X POST http://localhost:3002/api/pedidos/1/confirmar -H "Authorization: Bearer TU_TOKEN"
+POST {{baseUrl}}/api/pedidos/{{pedidoId}}/confirmar
+Authorization: Bearer {{token}}
+
 ###
 # curl -X PATCH http://localhost:3002/api/pedidos/1/detalles/1 -H "Authorization: Bearer TU_TOKEN" -H "Content-Type: application/json" -d "{\"cantidad\":3}"
 PATCH {{baseUrl}}/api/pedidos/{{pedidoId}}/detalles/{{pedidoDetalleId}}

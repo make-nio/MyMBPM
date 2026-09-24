@@ -108,6 +108,22 @@ describe("sesion", () => {
     expect(leerToken()).toBeNull();
   });
 
+  it("ante un error de red conserva el token y relanza", async () => {
+    guardarToken("valido");
+    fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
+
+    await expect(resolverSesionActual()).rejects.toThrow("Failed to fetch");
+    expect(leerToken()).toBe("valido");
+  });
+
+  it("ante un error del servidor conserva el token", async () => {
+    guardarToken("valido");
+    fetchMock.mockResolvedValue(respuesta(503, { ok: false, error: { message: "Base no disponible" } }));
+
+    await expect(resolverSesionActual()).rejects.toMatchObject({ status: 503 });
+    expect(leerToken()).toBe("valido");
+  });
+
   it("con token valido devuelve el usuario", async () => {
     guardarToken("valido");
     fetchMock.mockResolvedValue(respuesta(200, { ok: true, data: { usuario: "admin" } }));

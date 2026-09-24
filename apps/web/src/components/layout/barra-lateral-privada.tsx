@@ -23,6 +23,10 @@ const accesosPrincipales = [
   {
     href: "/items-catalogo",
     label: "Items catalogo"
+  },
+  {
+    href: "/pedidos",
+    label: "Pedidos"
   }
 ];
 
@@ -35,7 +39,6 @@ const accesosAdministracion = [
 ];
 
 const proximosModulos = [
-  "Pedidos",
   "Produccion",
   "Stock"
 ];

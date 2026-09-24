@@ -21,6 +21,19 @@ function aDecimal(value: number | string | Prisma.Decimal | null | undefined) {
   return new Prisma.Decimal(value ?? 0);
 }
 
+// Transiciones que admite PATCH /:id/estado. CONFIRMADO solo se alcanza con confirmar(), que es
+// la operacion que descuenta stock: por eso un pedido PENDIENTE no puede pasar a preparacion o
+// entrega sin confirmarse, y uno confirmado no puede volver a PENDIENTE (se podrian editar sus
+// items despues de descontado el stock). ENTREGADO y CANCELADO son finales.
+const TRANSICIONES_ESTADO_PEDIDO: Record<EstadoPedido, readonly EstadoPedido[]> = {
+  PENDIENTE: ["CANCELADO"],
+  CONFIRMADO: ["EN_PREPARACION", "LISTO", "ENTREGADO", "CANCELADO"],
+  EN_PREPARACION: ["LISTO", "ENTREGADO", "CANCELADO"],
+  LISTO: ["EN_PREPARACION", "ENTREGADO", "CANCELADO"],
+  ENTREGADO: [],
+  CANCELADO: []
+};
+
 function construirNumeroPedido(idPedido: bigint) {
   return `PED-${idPedido.toString().padStart(6, "0")}`;
 }
@@ -215,6 +228,19 @@ export const pedidosService = {
       !ESTADOS_PEDIDO.includes(data.estadoPedido as (typeof ESTADOS_PEDIDO)[number])
     ) {
       throw new ErrorConflicto("Estado de pedido invalido");
+    }
+
+    const estadoActual = pedido.estadoPedido as EstadoPedido;
+
+    if (
+      data.estadoPedido &&
+      data.estadoPedido !== estadoActual &&
+      !TRANSICIONES_ESTADO_PEDIDO[estadoActual]?.includes(data.estadoPedido)
+    ) {
+      throw new ErrorConflicto(
+        `No se puede pasar un pedido de ${estadoActual} a ${data.estadoPedido}`,
+        { estadoActual, permitidos: TRANSICIONES_ESTADO_PEDIDO[estadoActual] ?? [] }
+      );
     }
 
     return pedidosRepository.actualizar(prisma, pedido.idPedido, data);

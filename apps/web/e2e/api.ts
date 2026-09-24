@@ -49,3 +49,28 @@ export function crearItem(input: {
 export function crearCliente(nombre: string, apellido?: string) {
   return api<{ idCliente: string }>("POST", "/api/clientes", { nombre, apellido });
 }
+
+export function ajustarStock(
+  idItemCatalogo: string,
+  cantidad: number,
+  tipoStock: "PRODUCTO" | "INSUMO" = "PRODUCTO"
+) {
+  return api("POST", "/api/stock/ajustes", {
+    idItemCatalogo,
+    tipoStock,
+    tipoMovimiento: cantidad >= 0 ? "AJUSTE_POSITIVO" : "AJUSTE_NEGATIVO",
+    cantidad: Math.abs(cantidad)
+  });
+}
+
+// Producto activo con precio y stock inicial, listo para usar en pedidos.
+export async function crearProductoConStock(nombre: string, precio: number, stock: number) {
+  const { idCategoria } = await crearCategoria(`${nombre}-cat`);
+  const producto = await crearItem({ idCategoria, nombre, tipoItem: "PRODUCTO", precio });
+
+  if (stock > 0) {
+    await ajustarStock(producto.idItemCatalogo, stock);
+  }
+
+  return producto;
+}

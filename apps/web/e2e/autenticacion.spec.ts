@@ -39,3 +39,25 @@ test("con sesion, el inicio lleva al panel", async ({ page }) => {
 
   await expect(page).toHaveURL(/\/panel$/);
 });
+
+test("recargar varias veces seguidas no cierra la sesion", async ({ page }) => {
+  await page.goto("/pedidos");
+  await page.goto("/pedidos");
+  await page.goto("/clientes");
+
+  await expect(page).toHaveURL(/\/clientes$/);
+  await expect(page.getByRole("heading", { name: "Clientes", exact: true, level: 1 })).toBeVisible();
+});
+
+test("si no se puede verificar la sesion, ofrece reintentar sin cerrarla", async ({ page }) => {
+  let fallar = true;
+  await page.route("**/api/autenticacion/me", (route) => (fallar ? route.abort("failed") : route.continue()));
+
+  await page.goto("/categorias");
+  await expect(page.getByRole("heading", { name: "No se pudo verificar la sesion" })).toBeVisible();
+  await expect(page).toHaveURL(/\/categorias$/);
+
+  fallar = false;
+  await page.getByRole("button", { name: "Reintentar" }).click();
+  await expect(page.getByRole("heading", { name: "Categorias", exact: true, level: 1 })).toBeVisible();
+});

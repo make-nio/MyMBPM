@@ -17,7 +17,8 @@ export function FormularioLogin() {
     let mounted = true;
 
     async function validarSesion() {
-      const sesion = await resolverSesionActual();
+      // Si no se puede verificar un token guardado, se muestra el formulario igual.
+      const sesion = await resolverSesionActual().catch(() => null);
 
       if (!mounted) {
         return;
