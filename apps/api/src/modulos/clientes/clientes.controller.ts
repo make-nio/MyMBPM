@@ -29,7 +29,7 @@ export const clientesController = {
 
   async crear(request: Request, response: Response) {
     const body = validar(crearClienteSchema, request.body);
-    const cliente = await clientesService.crear(body);
+    const cliente = await clientesService.crear(body, request.usuarioAutenticado?.idUsuario);
 
     responderExito(response, cliente, 201);
   },
@@ -37,7 +37,7 @@ export const clientesController = {
   async actualizar(request: Request, response: Response) {
     const params = validar(clienteParamsSchema, request.params);
     const body = validar(actualizarClienteSchema, request.body);
-    const cliente = await clientesService.actualizar(params.id, body);
+    const cliente = await clientesService.actualizar(params.id, body, request.usuarioAutenticado?.idUsuario);
 
     responderExito(response, cliente);
   },
@@ -45,7 +45,7 @@ export const clientesController = {
   async cambiarEstado(request: Request, response: Response) {
     const params = validar(clienteParamsSchema, request.params);
     const body = validar(actualizarEstadoClienteSchema, request.body);
-    const cliente = await clientesService.cambiarEstado(params.id, body.activo);
+    const cliente = await clientesService.cambiarEstado(params.id, body.activo, request.usuarioAutenticado?.idUsuario);
 
     responderExito(response, cliente);
   }

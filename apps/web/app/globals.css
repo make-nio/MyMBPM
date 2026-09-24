@@ -111,6 +111,33 @@ textarea {
   color: var(--muted);
 }
 
+.historial-cambios {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.historial-cambios__lista {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.historial-cambios__lista ul {
+  margin: 0.3rem 0 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.historial-cambios__titulo {
+  margin: 0;
+}
+
 .pie-listado {
   display: flex;
   flex-wrap: wrap;

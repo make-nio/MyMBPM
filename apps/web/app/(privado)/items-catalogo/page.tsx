@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { useUsuarioAutenticado } from "../../../src/components/auth/contexto-sesion";
+import { HistorialCambios } from "../../../src/components/modulos/auditoria/historial-cambios";
 import { FormularioComponenteItem } from "../../../src/components/modulos/items-catalogo/formulario-componente-item";
 import { FormularioItemCatalogo } from "../../../src/components/modulos/items-catalogo/formulario-item-catalogo";
 import { TablaComponentesItem } from "../../../src/components/modulos/items-catalogo/tabla-componentes-item";
@@ -37,6 +39,7 @@ import {
 type FiltroTriestado = "todos" | "si" | "no";
 
 export default function ItemsCatalogoPage() {
+  const { esAdministrador } = useUsuarioAutenticado();
   const modalItem = useModal<ItemCatalogo>();
   const modalComponente = useModal<ItemCatalogoComponente>();
   const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -302,6 +305,13 @@ export default function ItemsCatalogoPage() {
                 <p className="texto-secundario texto-secundario--compacto">
                   Imagen principal: {itemSeleccionado.imagenPrincipal || "Sin imagen"}
                 </p>
+                {esAdministrador ? (
+                  <HistorialCambios
+                    entidad="ITEM_CATALOGO"
+                    idEntidad={itemSeleccionado.idItemCatalogo}
+                    version={itemSeleccionado.fechaModificacion}
+                  />
+                ) : null}
               </>
             ) : (
               <EstadoVacio

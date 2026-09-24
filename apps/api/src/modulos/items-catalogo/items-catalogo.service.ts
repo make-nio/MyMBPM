@@ -3,7 +3,33 @@ import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 import { prisma } from "../../lib/prisma";
 
+import { auditoriaService } from "../auditoria/auditoria.service";
+
 import { itemsCatalogoRepository } from "./items-catalogo.repository";
+
+// Lo que queda en el historial de cambios del item (sobre todo precio, costo y stock minimo).
+export const CAMPOS_AUDITADOS_ITEM = [
+  "nombre",
+  "codigo",
+  "tipoItem",
+  "idCategoria",
+  "precio",
+  "costo",
+  "stockMinimo",
+  "activo",
+  "publico",
+  "slug",
+  "descripcionCorta",
+  "descripcionCompleta",
+  "observacionesInternas",
+  "tipoMaterial",
+  "color",
+  "imagenPrincipal"
+] as const;
+
+function auditoriaItem(idItemCatalogo: bigint, idUsuario?: bigint) {
+  return { entidad: "ITEM_CATALOGO" as const, idEntidad: idItemCatalogo, idUsuario, campos: CAMPOS_AUDITADOS_ITEM };
+}
 
 export const itemsCatalogoService = {
   listar(filtros: {
@@ -67,9 +93,14 @@ export const itemsCatalogoService = {
     stockMinimo?: number;
     activo?: boolean;
     publico?: boolean;
-  }) {
+  }, idUsuario?: bigint) {
     await this.validarCategoria(data.idCategoria);
-    return itemsCatalogoRepository.crear(data);
+
+    return prisma.$transaction(async (tx) => {
+      const item = await itemsCatalogoRepository.crear(data, tx);
+      await auditoriaService.registrarAlta(tx, auditoriaItem(item.idItemCatalogo, idUsuario), item);
+      return item;
+    });
   },
 
   async actualizar(
@@ -91,20 +122,37 @@ export const itemsCatalogoService = {
       stockMinimo?: number;
       activo: boolean;
       publico: boolean;
-    }>
+    }>,
+    idUsuario?: bigint
   ) {
-    await this.obtenerPorId(idItemCatalogo);
-
     if (data.idCategoria) {
       await this.validarCategoria(data.idCategoria);
     }
 
-    return itemsCatalogoRepository.actualizar(idItemCatalogo, data);
+    return this.actualizarAuditado(idItemCatalogo, data, idUsuario);
   },
 
-  async cambiarEstado(idItemCatalogo: bigint, activo: boolean) {
-    await this.obtenerPorId(idItemCatalogo);
-    return itemsCatalogoRepository.actualizar(idItemCatalogo, { activo });
+  async cambiarEstado(idItemCatalogo: bigint, activo: boolean, idUsuario?: bigint) {
+    return this.actualizarAuditado(idItemCatalogo, { activo }, idUsuario);
+  },
+
+  // El cambio y su registro en el historial van en la misma transaccion.
+  async actualizarAuditado(
+    idItemCatalogo: bigint,
+    data: Parameters<typeof itemsCatalogoRepository.actualizar>[1],
+    idUsuario?: bigint
+  ) {
+    return prisma.$transaction(async (tx) => {
+      const antes = await itemsCatalogoRepository.obtenerPorId(idItemCatalogo, tx);
+
+      if (!antes) {
+        throw new ErrorNoEncontrado("Item de catalogo no encontrado");
+      }
+
+      const item = await itemsCatalogoRepository.actualizar(idItemCatalogo, data, tx);
+      await auditoriaService.registrarModificacion(tx, auditoriaItem(idItemCatalogo, idUsuario), antes, item);
+      return item;
+    });
   },
 
   async agregarImagen(idItemCatalogo: bigint, data: { urlImagen: string; orden?: number; activo?: boolean }) {

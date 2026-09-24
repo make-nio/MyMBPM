@@ -34,7 +34,7 @@ export const itemsCatalogoController = {
 
   async crear(request: Request, response: Response) {
     const body = validar(crearItemCatalogoSchema, request.body);
-    const item = await itemsCatalogoService.crear(body);
+    const item = await itemsCatalogoService.crear(body, request.usuarioAutenticado?.idUsuario);
 
     responderExito(response, item, 201);
   },
@@ -42,7 +42,7 @@ export const itemsCatalogoController = {
   async actualizar(request: Request, response: Response) {
     const params = validar(itemCatalogoParamsSchema, request.params);
     const body = validar(actualizarItemCatalogoSchema, request.body);
-    const item = await itemsCatalogoService.actualizar(params.id, body);
+    const item = await itemsCatalogoService.actualizar(params.id, body, request.usuarioAutenticado?.idUsuario);
 
     responderExito(response, item);
   },
@@ -50,7 +50,7 @@ export const itemsCatalogoController = {
   async cambiarEstado(request: Request, response: Response) {
     const params = validar(itemCatalogoParamsSchema, request.params);
     const body = validar(actualizarEstadoItemCatalogoSchema, request.body);
-    const item = await itemsCatalogoService.cambiarEstado(params.id, body.activo);
+    const item = await itemsCatalogoService.cambiarEstado(params.id, body.activo, request.usuarioAutenticado?.idUsuario);
 
     responderExito(response, item);
   },
