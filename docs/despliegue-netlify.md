@@ -18,6 +18,7 @@ Web y API comparten dominio, por eso no hay CORS ni `CORS_ORIGIN`.
 | --- | --- | --- |
 | Configuracion del sitio | `netlify.toml` | build, publish, functions y rewrite `/api/*` |
 | Function | `apps/api/netlify/functions/api.ts` | re-exporta el handler |
+| Scheduled Function | `apps/api/netlify/functions/respaldo-diario.ts` | respaldo diario a Netlify Blobs (ver `docs/respaldos.md`) |
 | Handler | `apps/api/src/netlify.ts` | `serverless-http` sobre `createApp()`; normaliza `/.netlify/functions/api/*` a `/api/*` |
 | App Express | `apps/api/src/app.ts` | la misma que usa el servidor local (`server.ts`) |
 | Web | `apps/web/next.config.ts` | `output: "export"` en build; en `next dev` reescribe `/api/*` a la API local |

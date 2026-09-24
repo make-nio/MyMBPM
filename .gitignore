@@ -24,3 +24,5 @@ apps/web/out/
 **/e2e/.auth/
 **/test-results/
 **/playwright-report/
+# Respaldos de la base: tienen datos de clientes y el repositorio es publico.
+*.ndjson.gz
