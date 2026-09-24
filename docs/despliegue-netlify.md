@@ -140,8 +140,13 @@ Se elimino la tabla `Healthcheck` que creaba la migracion `20260310_init` y no e
 - **Gestion de usuarios.** Listar, ver, editar y activar/desactivar usuarios (`/api/usuarios`)
   exige ser administrador (middleware `requerirAdministrador`; 403 si no lo es). Cualquier usuario
   autenticado puede ver sus datos (`/api/autenticacion/me`) y cambiar su propia clave
-  (`PATCH /api/usuarios/:id/clave`). No se puede desactivar al unico administrador activo (409),
-  para que el sistema no quede sin nadie que gestione usuarios.
+  (`PATCH /api/usuarios/:id/clave`). Un administrador puede asignarle una clave nueva a otro
+  usuario sin la anterior (`PATCH /api/usuarios/:id/restablecer-clave`) y cambiarle el rol
+  (`esAdministrador` en `PATCH /api/usuarios/:id`). No se puede desactivar ni quitarle el rol al
+  unico administrador activo (409), por ninguna de las dos rutas, para que el sistema no quede sin
+  nadie que gestione usuarios. Los JWT ya emitidos siguen validos hasta vencer (`JWT_EXPIRES_IN`)
+  aunque se restablezca la clave; desactivar al usuario si los corta, porque cada request verifica
+  que siga activo.
 - Migraciones nuevas: `npm run prisma:migrate --workspace @myfirstproject/api -- --name <nombre>`
   contra una base local; el deploy las aplica solo.
 - Deploy previews: no migran (ver "Migraciones y deploy previews").

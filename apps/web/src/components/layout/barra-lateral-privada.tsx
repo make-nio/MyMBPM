@@ -26,15 +26,25 @@ const accesosPrincipales = [
   }
 ];
 
+// Solo para administradores: la API responde 403 al resto.
+const accesosAdministracion = [
+  {
+    href: "/usuarios",
+    label: "Usuarios"
+  }
+];
+
 const proximosModulos = [
   "Pedidos",
   "Produccion",
-  "Stock",
-  "Usuarios"
+  "Stock"
 ];
 
-export function BarraLateralPrivada() {
+export function BarraLateralPrivada({ esAdministrador }: { esAdministrador: boolean }) {
   const pathname = usePathname();
+  const accesos = esAdministrador
+    ? [...accesosPrincipales, ...accesosAdministracion]
+    : accesosPrincipales;
 
   return (
     <aside className="barra-lateral">
@@ -48,7 +58,7 @@ export function BarraLateralPrivada() {
         <section>
           <p className="barra-lateral__seccion-titulo">Accesos iniciales</p>
           <div className="barra-lateral__lista">
-            {accesosPrincipales.map((item) => (
+            {accesos.map((item) => (
               <Link
                 className={
                   pathname === item.href

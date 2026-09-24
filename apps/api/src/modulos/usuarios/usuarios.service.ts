@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 import { ErrorAutenticacion } from "../../compartido/errores/error-autenticacion";
@@ -7,6 +8,37 @@ import { ErrorProhibido } from "../../compartido/errores/error-prohibido";
 import { prisma } from "../../lib/prisma";
 
 import { usuariosRepository } from "./usuarios.repository";
+
+async function obtenerParaGestion(tx: Prisma.TransactionClient, idUsuario: bigint) {
+  const usuario = await usuariosRepository.obtenerPorId(tx, idUsuario);
+
+  if (!usuario) {
+    throw new ErrorNoEncontrado("Usuario no encontrado");
+  }
+
+  return usuario;
+}
+
+// Desactivar o quitarle el rol al unico administrador activo dejaria el sistema sin nadie
+// que pueda gestionar usuarios. Aplica igual desde PATCH /:id y desde PATCH /:id/estado.
+async function validarQueQuedeUnAdministradorActivo(
+  tx: Prisma.TransactionClient,
+  usuario: { activo: boolean; esAdministrador: boolean },
+  cambios: { activo?: boolean; esAdministrador?: boolean }
+) {
+  const eraAdministradorActivo = usuario.activo && usuario.esAdministrador;
+  const sigueSiendolo = (cambios.activo ?? usuario.activo) && (cambios.esAdministrador ?? usuario.esAdministrador);
+
+  if (!eraAdministradorActivo || sigueSiendolo) {
+    return;
+  }
+
+  if ((await usuariosRepository.contarAdministradoresActivos(tx)) <= 1) {
+    throw new ErrorConflicto(
+      "No se puede desactivar ni quitarle el rol al unico administrador activo"
+    );
+  }
+}
 
 export const usuariosService = {
   listar(filtros: { activo?: boolean; limit: number; offset: number }) {
@@ -81,21 +113,27 @@ export const usuariosService = {
       email: string;
       usuario: string;
       activo: boolean;
+      esAdministrador: boolean;
     }>
   ) {
-    await this.obtenerPorId(idUsuario);
+    return prisma.$transaction(async (tx) => {
+      await usuariosRepository.bloquearGestionUsuarios(tx);
 
-    const duplicado = await usuariosRepository.buscarPorEmailOUsuario(prisma, {
-      email: data.email,
-      usuario: data.usuario,
-      excluirIdUsuario: idUsuario
+      const usuario = await obtenerParaGestion(tx, idUsuario);
+      await validarQueQuedeUnAdministradorActivo(tx, usuario, data);
+
+      const duplicado = await usuariosRepository.buscarPorEmailOUsuario(tx, {
+        email: data.email,
+        usuario: data.usuario,
+        excluirIdUsuario: idUsuario
+      });
+
+      if (duplicado) {
+        throw new ErrorConflicto("Ya existe un usuario con ese email o nombre de usuario");
+      }
+
+      return usuariosRepository.actualizar(tx, idUsuario, data);
     });
-
-    if (duplicado) {
-      throw new ErrorConflicto("Ya existe un usuario con ese email o nombre de usuario");
-    }
-
-    return usuariosRepository.actualizar(prisma, idUsuario, data);
   },
 
   async cambiarEstado(idUsuario: bigint, activo: boolean) {
@@ -103,22 +141,21 @@ export const usuariosService = {
       // Mismo bloqueo que el alta: serializa los cambios que afectan a los administradores.
       await usuariosRepository.bloquearGestionUsuarios(tx);
 
-      const usuario = await usuariosRepository.obtenerPorId(tx, idUsuario);
-
-      if (!usuario) {
-        throw new ErrorNoEncontrado("Usuario no encontrado");
-      }
-
-      if (!activo && usuario.activo && usuario.esAdministrador) {
-        const administradoresActivos = await usuariosRepository.contarAdministradoresActivos(tx);
-
-        if (administradoresActivos <= 1) {
-          throw new ErrorConflicto("No se puede desactivar al unico administrador activo");
-        }
-      }
+      const usuario = await obtenerParaGestion(tx, idUsuario);
+      await validarQueQuedeUnAdministradorActivo(tx, usuario, { activo });
 
       return usuariosRepository.actualizar(tx, idUsuario, { activo });
     });
+  },
+
+  // Un administrador le asigna una clave nueva a otro usuario (por ejemplo, si la olvido).
+  // No pide la clave actual: la ruta exige rol de administrador.
+  async restablecerClave(idUsuario: bigint, passwordNueva: string) {
+    await this.obtenerPorId(idUsuario);
+
+    const claveHash = await bcrypt.hash(passwordNueva, 10);
+
+    return usuariosRepository.actualizar(prisma, idUsuario, { claveHash });
   },
 
   async cambiarClave(

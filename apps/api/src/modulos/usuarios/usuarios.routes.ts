@@ -16,3 +16,8 @@ usuariosRouter.get("/", requerirAdministrador, asyncHandler(usuariosController.l
 usuariosRouter.get("/:id", requerirAdministrador, asyncHandler(usuariosController.obtenerPorId));
 usuariosRouter.patch("/:id", requerirAdministrador, asyncHandler(usuariosController.actualizar));
 usuariosRouter.patch("/:id/estado", requerirAdministrador, asyncHandler(usuariosController.cambiarEstado));
+usuariosRouter.patch(
+  "/:id/restablecer-clave",
+  requerirAdministrador,
+  asyncHandler(usuariosController.restablecerClave)
+);

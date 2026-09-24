@@ -57,6 +57,16 @@ Authorization: Bearer {{token}}
   "password": "12345678"
 }
 
+### Restablecer la clave de otro usuario (solo administradores)
+# curl -X PATCH http://localhost:3002/api/usuarios/2/restablecer-clave -H "Authorization: Bearer TU_TOKEN" -H "Content-Type: application/json" -d "{\"passwordNueva\":\"clave-nueva-123\"}"
+PATCH {{baseUrl}}/api/usuarios/2/restablecer-clave
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "passwordNueva": "clave-nueva-123"
+}
+
 ### Categorias
 # curl http://localhost:3002/api/categorias -H "Authorization: Bearer TU_TOKEN"
 GET {{baseUrl}}/api/categorias

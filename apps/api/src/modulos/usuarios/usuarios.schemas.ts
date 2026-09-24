@@ -29,12 +29,17 @@ export const actualizarUsuarioSchema = z
     apellido: z.string().min(1).max(100).optional(),
     email: z.string().email().max(150).optional(),
     usuario: z.string().min(1).max(100).optional(),
-    activo: z.boolean().optional()
+    activo: z.boolean().optional(),
+    esAdministrador: z.boolean().optional()
   })
   .refine((data) => Object.keys(data).length > 0, "Debe enviar al menos un campo para actualizar");
 
 export const actualizarEstadoUsuarioSchema = z.object({
   activo: z.boolean()
+});
+
+export const restablecerClaveUsuarioSchema = z.object({
+  passwordNueva: z.string().min(8).max(100)
 });
 
 export const cambiarClaveUsuarioSchema = z.object({
