@@ -104,6 +104,34 @@ npm run dev
 
 La web en `http://localhost:3000` reenvia `/api/*` a la API local (`API_DEV_URL`, default `http://localhost:3002`), asi que en desarrollo tambien es mismo origen y no hace falta CORS.
 
+### Datos de demostracion
+
+Para ver la web con un negocio cargado, sobre una base **local vacia**:
+
+```bash
+createdb mymbpm_demo
+cd apps/api
+export NETLIFY_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/mymbpm_demo
+NETLIFY_DATABASE_URL_UNPOOLED=$NETLIFY_DATABASE_URL npx prisma migrate deploy
+JWT_SECRET=x npm run demo:cargar
+```
+
+`scripts/datos-demo.ts` carga los datos pasando por los services, asi que se aplican las mismas
+reglas y el stock lo mueve `stock.service`:
+
+- 12 insumos (filamentos, resina, argollas, imanes, cajas) y 18 productos, casi todos con receta,
+  precio y costo;
+- stock inicial, con algunos items bajo el minimo;
+- 10 ordenes de produccion en todos los estados;
+- 36 clientes;
+- unos 70 pedidos de los ultimos 12 meses en todos los estados, con entregas atrasadas, para hoy
+  y para la semana;
+- 5 solicitudes especiales, una ya convertida en pedido.
+
+Si no hay usuarios, crea el administrador `demo` (clave `demo-mym-2026`). **Se niega si la base
+no es local o si ya tiene items.** Los movimientos de stock quedan con la fecha del dia en que se
+cargo; los pedidos, con fechas repartidas en el anio.
+
 ## Build, checks y tests
 
 ```bash
