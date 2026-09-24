@@ -1,76 +1,18 @@
-import { Categoria } from "./categorias";
+import type { CuerpoDe, RespuestaDe } from "@contrato";
 
+import type { Afirmar, ListaCompleta } from "./contrato";
+
+// Tipos sacados del contrato de la API (apps/api/src/contrato): no se escriben a mano.
+// El listado trae la categoria y las imagenes activas; el detalle, ademas, la receta.
+export type ItemCatalogo = RespuestaDe<"get /api/items-catalogo">[number];
+export type ItemCatalogoDetalle = RespuestaDe<"get /api/items-catalogo/{id}">;
+export type ItemCatalogoImagen = ItemCatalogoDetalle["imagenes"][number];
+export type ItemCatalogoComponente = RespuestaDe<"get /api/items-catalogo/{id}/componentes">[number];
+
+export type TipoItem = ItemCatalogo["tipoItem"];
 export const TIPOS_ITEM = ["PRODUCTO", "INSUMO"] as const;
-export type TipoItem = (typeof TIPOS_ITEM)[number];
+// No compila si la lista no tiene exactamente los tipos del contrato.
+export type TiposItemCompletos = Afirmar<ListaCompleta<typeof TIPOS_ITEM, TipoItem>>;
 
-export type ItemCatalogoImagen = {
-  idItemCatalogoImagen: string;
-  idItemCatalogo: string;
-  urlImagen: string;
-  orden: number;
-  activo: boolean;
-  fechaAlta: string;
-};
-
-export type ItemCatalogo = {
-  idItemCatalogo: string;
-  idCategoria: string;
-  tipoItem: TipoItem;
-  nombre: string;
-  slug: string;
-  codigo: string | null;
-  descripcionCorta: string | null;
-  descripcionCompleta: string | null;
-  observacionesInternas: string | null;
-  precio: string | null;
-  // Solo llega para administradores (ver puedeVerCostos en la API).
-  costo?: string | null;
-  tipoMaterial: string | null;
-  color: string | null;
-  imagenPrincipal: string | null;
-  stockMinimo: number;
-  activo: boolean;
-  publico: boolean;
-  fechaAlta: string;
-  fechaModificacion: string;
-  categoria?: Categoria | null;
-  imagenes?: ItemCatalogoImagen[];
-};
-
-export type ItemCatalogoPayload = {
-  idCategoria: string;
-  tipoItem: TipoItem;
-  nombre: string;
-  slug: string;
-  codigo?: string;
-  descripcionCorta?: string;
-  descripcionCompleta?: string;
-  observacionesInternas?: string;
-  precio?: number;
-  costo?: number;
-  tipoMaterial?: string;
-  color?: string;
-  imagenPrincipal?: string;
-  stockMinimo?: number;
-  activo?: boolean;
-  publico?: boolean;
-};
-
-export type ItemCatalogoComponente = {
-  idItemCatalogoComponente: string;
-  idItemCatalogoPadre: string;
-  idItemCatalogoHijo: string;
-  cantidadRequerida: string;
-  unidadMedida: string;
-  activo: boolean;
-  fechaAlta: string;
-  fechaModificacion: string;
-  itemCatalogoComponente?: ItemCatalogo | null;
-};
-
-export type ItemCatalogoComponentePayload = {
-  idItemCatalogoHijo: string;
-  cantidadRequerida: number;
-  unidadMedida: string;
-  activo?: boolean;
-};
+export type ItemCatalogoPayload = CuerpoDe<"post /api/items-catalogo">;
+export type ItemCatalogoComponentePayload = CuerpoDe<"post /api/items-catalogo/{id}/componentes">;

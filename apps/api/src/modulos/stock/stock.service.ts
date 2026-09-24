@@ -121,6 +121,7 @@ export const stockService = {
     const filtradas = filtros.soloBajoMinimo ? existencias.filter((existencia) => existencia.bajoMinimo) : existencias;
     const desde = filtros.offset ?? 0;
 
+    // Sin limit (uso interno: panel y bajo stock cuentan todo); por HTTP siempre llega, 100 como mucho.
     return filtros.limit === undefined ? filtradas.slice(desde) : filtradas.slice(desde, desde + filtros.limit);
   },
 

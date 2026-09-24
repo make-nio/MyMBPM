@@ -1,37 +1,7 @@
-import { EstadoPedido } from "./pedidos";
-import { TipoItem } from "./items-catalogo";
+import type { RespuestaDe } from "@contrato";
 
-export type ResultadoPedido = {
-  idPedido: string;
-  numeroPedido: string | null;
-  estadoPedido: EstadoPedido;
-  total: string;
-  fechaAlta: string;
-  cliente: { nombre: string; apellido: string | null };
-};
-
-export type ResultadoCliente = {
-  idCliente: string;
-  nombre: string;
-  apellido: string | null;
-  telefono: string | null;
-  email: string | null;
-  activo: boolean;
-};
-
-export type ResultadoItem = {
-  idItemCatalogo: string;
-  nombre: string;
-  tipoItem: TipoItem;
-  categoria: string;
-  precio: string | null;
-  // Solo llega para quien puede ver costos (ver puedeVerCostos en la API).
-  costo?: string | null;
-  activo: boolean;
-};
-
-export type ResultadosBusqueda = {
-  pedidos: ResultadoPedido[];
-  clientes: ResultadoCliente[];
-  items: ResultadoItem[];
-};
+// Tipos sacados del contrato de la API (apps/api/src/contrato): no se escriben a mano.
+export type ResultadosBusqueda = RespuestaDe<"get /api/busqueda">;
+export type ResultadoPedido = ResultadosBusqueda["pedidos"][number];
+export type ResultadoCliente = ResultadosBusqueda["clientes"][number];
+export type ResultadoItem = ResultadosBusqueda["items"][number];

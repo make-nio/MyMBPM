@@ -1,3 +1,5 @@
+import type { RespuestaDe } from "@contrato";
+
 // Una fila del CSV como texto, sin convertir: la valida la API.
 export type FilaImportacionCatalogo = Partial<
   Record<
@@ -16,15 +18,7 @@ export type FilaImportacionCatalogo = Partial<
   >
 >;
 
-export type FilaValidadaCatalogo = {
-  numero: number;
-  errores: string[];
-  item: { nombre: string; tipoItem: string; categoria: string } | null;
-};
-
-export type PrevisualizacionCatalogo = {
-  filas: FilaValidadaCatalogo[];
-  resumen: { total: number; validas: number; conErrores: number; categoriasNuevas: string[] };
-};
-
-export type ResultadoImportacionCatalogo = { creados: number; categoriasCreadas: string[] };
+// Respuestas: sacadas del contrato de la API (apps/api/src/contrato).
+export type PrevisualizacionCatalogo = RespuestaDe<"post /api/items-catalogo/importacion/previsualizar">;
+export type FilaValidadaCatalogo = PrevisualizacionCatalogo["filas"][number];
+export type ResultadoImportacionCatalogo = RespuestaDe<"post /api/items-catalogo/importacion">;

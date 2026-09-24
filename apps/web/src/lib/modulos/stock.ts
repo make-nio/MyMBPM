@@ -1,10 +1,8 @@
-import { apiFetch, buildQuery } from "../api";
-import { Existencia, MovimientoStock, StockActual, TipoAjuste, TipoStock } from "../../types/stock";
+import { pedirApi } from "../api";
+import { TipoAjuste, TipoStock } from "../../types/stock";
 
 export function obtenerStockActual(idItemCatalogo: string, tipoStock: TipoStock = "PRODUCTO") {
-  return apiFetch<{ ok: true; data: StockActual }>(
-    `/api/stock/actual${buildQuery({ idItemCatalogo, tipoStock })}`
-  ).then((response) => response.data);
+  return pedirApi("get /api/stock/actual", { consulta: { idItemCatalogo, tipoStock } });
 }
 
 export function listarMovimientosStock(filtros: {
@@ -16,19 +14,19 @@ export function listarMovimientosStock(filtros: {
   limit?: number;
   offset?: number;
 }) {
-  return apiFetch<{ ok: true; data: MovimientoStock[] }>(
-    `/api/stock/historial${buildQuery({
+  return pedirApi("get /api/stock/historial", {
+    consulta: {
       idItemCatalogo: filtros.idItemCatalogo,
       tipoStock: filtros.tipoStock,
       origenMovimiento: filtros.origenMovimiento,
       idReferenciaOrigen: filtros.idReferenciaOrigen,
       limit: filtros.limit ?? 50,
       offset: filtros.offset ?? 0
-    })}`
-  ).then((response) => response.data);
+    }
+  });
 }
 
-// Sin limit la API devuelve todas; con limit, la pagina pedida (despues de aplicar los filtros).
+// La pagina pedida, despues de aplicar los filtros (100 como mucho; sin limit, 100). Para todas, cargarTodo.
 export function listarExistencias(
   filtros: {
     tipoItem?: TipoStock;
@@ -39,16 +37,16 @@ export function listarExistencias(
     offset?: number;
   } = {}
 ) {
-  return apiFetch<{ ok: true; data: Existencia[] }>(
-    `/api/stock/existencias${buildQuery({
+  return pedirApi("get /api/stock/existencias", {
+    consulta: {
       tipoItem: filtros.tipoItem,
       activo: filtros.activo,
       busqueda: filtros.busqueda,
       soloBajoMinimo: filtros.soloBajoMinimo,
       limit: filtros.limit,
       offset: filtros.offset
-    })}`
-  ).then((response) => response.data);
+    }
+  });
 }
 
 // Ajuste manual: el usuario lo toma la API de la sesion y el origen queda MANUAL.
@@ -59,8 +57,5 @@ export function crearAjusteStock(payload: {
   cantidad: number;
   observaciones: string;
 }) {
-  return apiFetch<{ ok: true; data: MovimientoStock }>("/api/stock/ajustes", {
-    method: "POST",
-    body: JSON.stringify(payload)
-  }).then((response) => response.data);
+  return pedirApi("post /api/stock/ajustes", { cuerpo: payload });
 }

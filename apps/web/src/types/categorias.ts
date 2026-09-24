@@ -1,16 +1,6 @@
-export type Categoria = {
-  idCategoria: string;
-  nombre: string;
-  slug: string;
-  descripcion: string | null;
-  activo: boolean;
-  fechaAlta: string;
-  fechaModificacion: string;
-};
+import type { CuerpoDe, RespuestaDe } from "@contrato";
 
-export type CategoriaPayload = {
-  nombre: string;
-  slug: string;
-  descripcion?: string;
-  activo?: boolean;
-};
+// Tipos sacados del contrato de la API (apps/api/src/contrato): no se escriben a mano.
+export type Categoria = RespuestaDe<"get /api/categorias/{id}">;
+
+export type CategoriaPayload = CuerpoDe<"post /api/categorias">;

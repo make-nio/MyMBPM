@@ -1,19 +1,15 @@
-import { apiFetch, buildQuery } from "../api";
+import { pedirApi } from "../api";
 import { formatearMoneda } from "../formato";
-import { CambioAuditado, EntidadAuditada, PuntoPrecio, RegistroAuditoria, ValorAuditado } from "../../types/auditoria";
+import { CambioAuditado, EntidadAuditada, ValorAuditado } from "../../types/auditoria";
 
 // Solo administradores (la API responde 403 al resto).
 export function listarHistorialCambios(entidad: EntidadAuditada, idEntidad: string, limit = 50) {
-  return apiFetch<{ ok: true; data: RegistroAuditoria[] }>(
-    `/api/auditoria${buildQuery({ entidad, idEntidad, limit })}`
-  ).then((response) => response.data);
+  return pedirApi("get /api/auditoria", { consulta: { entidad, idEntidad, limit } });
 }
 
 // Linea de tiempo de precio y costo de un item, los cambios mas nuevos primero. Solo administradores.
 export function listarHistorialPrecios(idItemCatalogo: string, limit: number, offset: number) {
-  return apiFetch<{ ok: true; data: PuntoPrecio[] }>(
-    `/api/auditoria/precios${buildQuery({ idItemCatalogo, limit, offset })}`
-  ).then((response) => response.data);
+  return pedirApi("get /api/auditoria/precios", { consulta: { idItemCatalogo, limit, offset } });
 }
 
 // "$ 100,00 → $ 120,00 (+20 %)". Sin valor anterior (alta, o antes sin cargar) solo el nuevo; sin

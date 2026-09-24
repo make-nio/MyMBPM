@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 
 import { EstadoProduccion } from "../../compartido/dominio/enums";
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
+import { LIMITES } from "../../compartido/validaciones/esquemas-comunes";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 import { prisma } from "../../lib/prisma";
 import { ordenarPorItem, stockService } from "../stock/stock.service";
@@ -48,6 +49,12 @@ export const produccionService = {
 
       if (orden.estadoProduccion !== "PENDIENTE") {
         throw new ErrorConflicto("Solo se pueden agregar detalles a ordenes pendientes");
+      }
+
+      if (orden.detalles.length >= LIMITES.lineasPorOrden) {
+        throw new ErrorConflicto(
+          `Una orden tiene como mucho ${LIMITES.lineasPorOrden} productos: suma la cantidad en uno existente o arma otra orden`
+        );
       }
 
       const item = await produccionRepository.obtenerItemCatalogo(tx, data.idItemCatalogoProducto);

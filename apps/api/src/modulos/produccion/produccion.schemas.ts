@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 import { ESTADOS_PRODUCCION } from "../../compartido/dominio/enums";
-import { idSchema, paginacionSchema } from "../../compartido/validaciones/esquemas-comunes";
+import { cantidadSchema, idSchema, paginacionSchema } from "../../compartido/validaciones/esquemas-comunes";
 
-const decimalPositivoSchema = z.coerce.number().positive();
+const decimalPositivoSchema = cantidadSchema;
 
 export const ordenProduccionParamsSchema = z.object({
   id: idSchema

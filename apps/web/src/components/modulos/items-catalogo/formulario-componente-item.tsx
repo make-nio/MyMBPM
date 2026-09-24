@@ -24,7 +24,7 @@ type FormularioComponenteItemProps = {
   }) => Promise<void>;
 };
 
-function opcionItem(item: ItemCatalogo) {
+function opcionItem(item: Pick<ItemCatalogo, "idItemCatalogo" | "nombre" | "tipoItem">) {
   return { label: `${item.nombre} (${item.tipoItem})`, value: item.idItemCatalogo };
 }
 
