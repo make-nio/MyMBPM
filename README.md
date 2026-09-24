@@ -132,7 +132,7 @@ resumen del job:
 - Backend: vitest + la API ejecutada durante los E2E.
 - Front: Playwright (V8 del navegador, mapeado a los fuentes) + vitest de `src/lib`.
 
-El umbral es 50 % de lineas en cada area y es bloqueante en CI (`COBERTURA_ESTRICTA=1`).
+El umbral es 70 % de lineas en cada area y es bloqueante en CI (`COBERTURA_ESTRICTA=1`).
 Para verlo en local: `E2E_COVERAGE=1 npm run build && E2E_COVERAGE=1 npm run test:e2e && npm run test:coverage && npm run coverage:report`.
 
 ## Testing HTTP desde VSCode

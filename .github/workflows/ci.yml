@@ -40,7 +40,7 @@ jobs:
       NETLIFY_DATABASE_URL_UNPOOLED: postgresql://postgres:postgres@localhost:5432/mymbpm_e2e
       E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mymbpm_e2e
       E2E_COVERAGE: "1"
-      COBERTURA_UMBRAL: "50"
+      COBERTURA_UMBRAL: "70"
       COBERTURA_ESTRICTA: "1"
 
     steps:
