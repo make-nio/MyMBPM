@@ -26,7 +26,7 @@ export function listarMovimientosStock(filtros: {
   });
 }
 
-// Sin limit la API devuelve todas; con limit, la pagina pedida (despues de aplicar los filtros).
+// La pagina pedida, despues de aplicar los filtros (100 como mucho; sin limit, 100). Para todas, cargarTodo.
 export function listarExistencias(
   filtros: {
     tipoItem?: TipoStock;

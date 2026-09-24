@@ -1,9 +1,8 @@
 import { z } from "zod";
 
 import { ORIGENES_MOVIMIENTO, TIPOS_ITEM, TIPOS_MOVIMIENTO, TIPOS_STOCK } from "../../compartido/dominio/enums";
-import { idSchema, paginacionSchema } from "../../compartido/validaciones/esquemas-comunes";
+import { cantidadSchema, idSchema, offsetSchema, paginacionSchema } from "../../compartido/validaciones/esquemas-comunes";
 
-const cantidadSchema = z.coerce.number().positive();
 
 export const stockActualQuerySchema = z.object({
   idItemCatalogo: idSchema,
@@ -26,7 +25,7 @@ export const bajoStockQuerySchema = paginacionSchema.extend({
     .optional()
 });
 
-// Sin limit devuelve todas (como siempre); con limit, la pagina pedida. Los filtros se aplican antes
+// De a 100 como mucho (sin limit, 100), como el resto de los listados. Los filtros se aplican antes
 // de paginar, asi "Cargar mas" sigue funcionando con busqueda y bajo minimo.
 export const existenciasQuerySchema = z.object({
   tipoItem: z.enum(TIPOS_ITEM).optional(),
@@ -39,8 +38,8 @@ export const existenciasQuerySchema = z.object({
     .enum(["true", "false"])
     .transform((value) => value === "true")
     .optional(),
-  limit: z.coerce.number().int().positive().max(100).optional(),
-  offset: z.coerce.number().int().min(0).default(0)
+  limit: z.coerce.number().int().positive().max(100).default(100),
+  offset: offsetSchema
 });
 
 // El usuario sale de la sesion y el origen es siempre MANUAL: no se aceptan del body.

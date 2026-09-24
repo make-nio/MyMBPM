@@ -7,7 +7,10 @@ import {
 } from "../../compartido/dominio/enums";
 import {
   actualizarDetallePedidoSchema,
-  actualizarEstadoPedidoSchema
+  actualizarEstadoPedidoSchema,
+  agregarDetallePedidoSchema,
+  crearPedidoSchema,
+  listarPedidosQuerySchema
 } from "../../modulos/pedidos/pedidos.schemas";
 import { clienteSchema } from "./clientes";
 
@@ -107,40 +110,6 @@ const repeticionSchema = objeto({
   total: decimal
 }).openapi("RepeticionPedido");
 
-// Para la doc: los schemas de pedidos.schemas.ts usan z.coerce.bigint (idSchema), que
-// zod-to-openapi no soporta, y el query es un ZodEffects (refine), que no entra como query.
-// Estos son equivalentes: mismos campos y restricciones.
-const idTexto = z.string().regex(/^\d+$/);
-// Un dia "AAAA-MM-DD" (hora de Argentina). Mismo formato que diaDesdeSchema / fechaEntregaSchema.
-const dia = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
-
-const listarPedidosQuery = z.object({
-  limit: z.coerce.number().int().positive().max(100).default(20),
-  offset: z.coerce.number().int().min(0).default(0),
-  idCliente: idTexto.optional(),
-  estadoPedido: z.enum(ESTADOS_PEDIDO).optional(),
-  estadoCobro: z.enum(ESTADOS_COBRO).optional(),
-  // Fecha de alta, los dos dias incluidos. desde no puede ser posterior a hasta.
-  desde: dia.optional(),
-  hasta: dia.optional()
-});
-
-const crearPedidoBody = z.object({
-  idCliente: idTexto,
-  origenPedido: z.enum(ORIGENES_PEDIDO),
-  estadoCobro: z.enum(ESTADOS_COBRO).optional(),
-  observacionesCliente: z.string().max(2000).optional(),
-  observacionesInternas: z.string().max(2000).optional(),
-  // Dia prometido de entrega; null la deja sin fecha.
-  fechaEntrega: dia.nullable().optional(),
-  activo: z.boolean().optional()
-});
-
-const agregarDetalleBody = z.object({
-  idItemCatalogo: idTexto,
-  cantidad: z.coerce.number().positive()
-});
-
 const params = objeto({ id });
 const paramsDetalle = objeto({ id, detalleId: id });
 
@@ -151,7 +120,8 @@ export const endpoints = [
     acceso: "autenticado",
     resumen: "Lista pedidos con su cliente, paginado, filtrando por cliente, estado, cobro y fecha de alta",
     etiqueta,
-    query: listarPedidosQuery,
+    // El refine (desde <= hasta) no se ve en el OpenAPI: la API lo sigue aplicando.
+    query: listarPedidosQuerySchema.innerType(),
     respuesta: lista(pedidoConClienteSchema)
   },
   {
@@ -169,7 +139,7 @@ export const endpoints = [
     acceso: "autenticado",
     resumen: "Crea un pedido pendiente, sin lineas, con su numero PED-000000",
     etiqueta,
-    body: crearPedidoBody,
+    body: crearPedidoSchema,
     respuesta: pedidoSchema,
     status: 201
   },
@@ -180,7 +150,7 @@ export const endpoints = [
     resumen: "Agrega una linea a un pedido pendiente con el precio y el costo de hoy del item",
     etiqueta,
     params,
-    body: agregarDetalleBody,
+    body: agregarDetallePedidoSchema,
     respuesta: pedidoConDetallesSchema,
     status: 201
   },

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
+import type { ZodTypeAny } from "zod";
 
 import { apiRouter } from "../routes/index";
 
@@ -49,6 +50,15 @@ describe("contrato de la API", () => {
     ]);
   });
 
+  it("toda entrada tiene tope: textos, numeros, ids y listas de cuerpos y consultas", () => {
+    const sinTope = endpoints.flatMap((endpoint) => [
+      ...("body" in endpoint && endpoint.body ? camposSinTope(endpoint.body, "body") : []),
+      ...("query" in endpoint && endpoint.query ? camposSinTope(endpoint.query, "query") : [])
+    ].map((campo) => `${endpoint.metodo} ${endpoint.ruta} ${campo}`));
+
+    expect(sinTope).toEqual([]);
+  });
+
   it("no repite endpoints", () => {
     const claves = endpoints.map((endpoint) => `${endpoint.metodo} ${endpoint.ruta}`);
     expect(new Set(claves).size).toBe(claves.length);
@@ -85,3 +95,39 @@ describe("contrato de la API", () => {
     ).not.toEqual([]);
   });
 });
+
+// Recorre un schema de entrada y devuelve los campos sin maximo (ver LIMITES en esquemas-comunes).
+function camposSinTope(schema: ZodTypeAny, ruta: string): string[] {
+  let tipo = schema as ZodTypeAny & { _def: Record<string, unknown> };
+  for (let vuelta = 0; vuelta < 10; vuelta++) {
+    const nombre = tipo._def.typeName;
+    if (nombre === "ZodOptional" || nombre === "ZodNullable" || nombre === "ZodDefault") {
+      tipo = tipo._def.innerType as typeof tipo;
+    } else if (nombre === "ZodEffects") {
+      tipo = tipo._def.schema as typeof tipo;
+    } else {
+      break;
+    }
+  }
+
+  const checks = (tipo._def.checks as Array<{ kind: string }> | undefined) ?? [];
+  const tieneMaximo = checks.some((check) => check.kind === "max" || check.kind === "length");
+
+  switch (tipo._def.typeName) {
+    case "ZodObject":
+      return Object.entries((tipo as unknown as { shape: Record<string, ZodTypeAny> }).shape).flatMap(([campo, valor]) =>
+        camposSinTope(valor, `${ruta}.${campo}`)
+      );
+    case "ZodArray":
+      return [
+        ...(tipo._def.maxLength ? [] : [`${ruta}: lista sin maximo`]),
+        ...camposSinTope(tipo._def.type as ZodTypeAny, `${ruta}[]`)
+      ];
+    case "ZodString":
+    case "ZodNumber":
+    case "ZodBigInt":
+      return tieneMaximo ? [] : [`${ruta}: sin maximo`];
+    default:
+      return [];
+  }
+}

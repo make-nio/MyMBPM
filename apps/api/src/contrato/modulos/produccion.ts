@@ -3,6 +3,7 @@ import {
   actualizarDetalleProduccionSchema,
   actualizarEstadoProduccionSchema,
   crearOrdenProduccionSchema,
+  agregarDetalleProduccionSchema,
   listarOrdenesProduccionQuerySchema
 } from "../../modulos/produccion/produccion.schemas";
 import { decimal, Endpoint, fecha, id, lista, objeto, z } from "../base";
@@ -99,14 +100,6 @@ const ordenCompletaSchema = objeto({
 const params = objeto({ id });
 const paramsDetalle = objeto({ id, detalleId: id });
 
-// agregarDetalleProduccionSchema usa idSchema (z.coerce.bigint), que zod-to-openapi no
-// soporta: equivalente para la doc.
-const agregarDetalleBody = objeto({
-  idItemCatalogoProducto: id,
-  cantidad: z.coerce.number().positive(),
-  observaciones: z.string().max(2000).optional()
-});
-
 export const endpoints = [
   {
     metodo: "get",
@@ -143,7 +136,7 @@ export const endpoints = [
     resumen: "Agrega un producto a una orden pendiente y devuelve la orden completa",
     etiqueta,
     params,
-    body: agregarDetalleBody,
+    body: agregarDetalleProduccionSchema,
     respuesta: ordenCompletaSchema,
     status: 201
   },

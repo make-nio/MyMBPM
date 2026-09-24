@@ -6,15 +6,16 @@ import {
   ORIGENES_PEDIDO
 } from "../../compartido/dominio/enums";
 import { diaArgentinaAFecha } from "../../compartido/dominio/fecha-argentina";
-import { idSchema, paginacionSchema } from "../../compartido/validaciones/esquemas-comunes";
+import { cantidadSchema, idSchema, paginacionSchema } from "../../compartido/validaciones/esquemas-comunes";
 import { diaDesdeSchema, diaHastaSchema } from "../../compartido/validaciones/esquemas-fechas";
 
-const decimalPositivoSchema = z.coerce.number().positive();
+const decimalPositivoSchema = cantidadSchema;
 
 // Fecha de entrega prometida al cliente: un dia ("2026-09-30"), sin hora. Se guarda como las
 // 00:00 de ese dia en Argentina. null la borra.
 const fechaEntregaSchema = z
   .string()
+  .max(10)
   .transform((dia, ctx) => {
     const fecha = diaArgentinaAFecha(dia);
 
