@@ -119,7 +119,7 @@ Con la base vacia, el setup crea el administrador de pruebas con el alta inicial
 
 ### CI y cobertura
 
-`.github/workflows/ci.yml` corre en cada PR hacia `main` y en cada push a `main`:
+`.github/workflows/ci.yml` corre en cada PR (hacia `main` o apilado sobre otra rama) y en cada push a `main`:
 `npm ci`, `check`, tests unitarios con cobertura, `build`, migraciones y E2E contra un Postgres
 de servicio del job. Al final, `npm run coverage:report` combina la cobertura y la publica en el
 resumen del job:

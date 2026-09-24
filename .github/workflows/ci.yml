@@ -1,8 +1,8 @@
 name: CI
 
 on:
+  # Todo PR (tambien los apilados sobre otra rama de trabajo) y cada push a main.
   pull_request:
-    branches: [main]
   push:
     branches: [main]
 
