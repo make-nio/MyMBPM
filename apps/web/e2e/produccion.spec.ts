@@ -1,6 +1,7 @@
 import type { Page } from "@playwright/test";
 
-import { crearItem, crearProductoConReceta } from "./api";
+import { revisarAccesibilidad } from "./accesibilidad";
+import { ajustarStock, api, crearCategoria, crearItem, crearProductoConReceta } from "./api";
 import { ADMIN_E2E } from "./entorno";
 import { expect, test, unico } from "./fixtures";
 
@@ -111,4 +112,56 @@ test("cancelar una orden en proceso avisa que los insumos no vuelven", async ({ 
 
   await expect(panel.getByTestId("estado-orden")).toHaveText("Cancelada");
   await expect(panel.getByRole("button", { name: "Finalizar produccion" })).toHaveCount(0);
+});
+
+test("desde Stock, un producto bajo minimo propone la orden y se crea solo al confirmar", async ({ page }) => {
+  const { idCategoria } = await crearCategoria(unico("PRUEBA-CatReponer"));
+  const producto = await crearItem({ idCategoria, nombre: unico("PRUEBA-Reponer"), tipoItem: "PRODUCTO", precio: 900, stockMinimo: 10 });
+  await ajustarStock(producto.idItemCatalogo, 3);
+  const insumo = await crearItem({ idCategoria, nombre: unico("PRUEBA-InsumoBajo"), tipoItem: "INSUMO", stockMinimo: 10 });
+  const ultimaOrden = async () =>
+    (await api<Array<{ idOrdenProduccion: string }>>("GET", "/api/produccion?limit=1"))[0]?.idOrdenProduccion ?? null;
+
+  // Los insumos se compran: no ofrecen orden de produccion.
+  await page.goto("/stock");
+  await page.getByLabel("Buscar item").fill(insumo.nombre);
+  const filaInsumo = page.getByRole("row").filter({ hasText: insumo.nombre });
+  await expect(filaInsumo).toContainText("Bajo minimo");
+  await expect(filaInsumo.getByRole("link", { name: "Crear orden de produccion" })).toHaveCount(0);
+
+  await page.getByLabel("Buscar item").fill(producto.nombre);
+  const fila = page.getByRole("row").filter({ hasText: producto.nombre });
+  await expect(fila).toContainText("Bajo minimo");
+
+  // Cancelar no crea nada.
+  const antes = await ultimaOrden();
+  await fila.getByRole("link", { name: "Crear orden de produccion" }).click();
+  await expect(page).toHaveURL(/\/produccion\/?$/);
+  const modal = page.getByRole("dialog", { name: "Nueva orden" });
+  await expect(modal.getByTestId("producto-propuesto")).toHaveText(`Producto: ${producto.nombre}`);
+  await expect(modal.getByLabel("Cantidad a producir")).toHaveValue("7");
+  await expect(modal.getByLabel("Observaciones")).toHaveValue(`Reponer stock minimo de ${producto.nombre}`);
+  await revisarAccesibilidad(page, "alta de orden propuesta desde stock");
+  await modal.getByRole("button", { name: "Cancelar" }).click();
+  await expect(modal).toBeHidden();
+  expect(await ultimaOrden()).toBe(antes);
+
+  // Con la cantidad cambiada y confirmada, la orden queda creada con ese producto.
+  await page.goto("/stock");
+  await page.getByLabel("Buscar item").fill(producto.nombre);
+  await page.getByRole("row").filter({ hasText: producto.nombre }).getByRole("link", { name: "Crear orden de produccion" }).click();
+  await expect(modal.getByLabel("Cantidad a producir")).toHaveValue("7");
+  expect(await ultimaOrden()).toBe(antes);
+  await modal.getByLabel("Cantidad a producir").fill("8");
+  await modal.getByRole("button", { name: "Crear orden" }).click();
+  await expect(modal).toBeHidden();
+
+  const panel = page.getByRole("region", { name: /^Orden \d+$/ });
+  await expect(panel.getByRole("row").filter({ hasText: producto.nombre })).toContainText("8");
+  expect(await ultimaOrden()).not.toBe(antes);
+
+  // "Nueva orden" a mano sigue sin producto propuesto.
+  await page.getByRole("button", { name: "Nueva orden" }).click();
+  await expect(modal.getByTestId("producto-propuesto")).toHaveCount(0);
+  await expect(modal.getByLabel("Observaciones")).toHaveValue("");
 });
