@@ -1,9 +1,9 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useState } from "react";
 
+import { FormularioSolicitudEspecial } from "../../../src/components/modulos/solicitudes-especiales/formulario-solicitud-especial";
 import { EncabezadoModulo } from "../../../src/components/ui/encabezado-modulo";
 import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
 import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
@@ -14,7 +14,6 @@ import { PieListado } from "../../../src/components/ui/pie-listado";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
-import { usePrecargar } from "../../../src/hooks/use-precargar";
 import {
   actualizarSolicitudEspecial,
   cambiarEstadoSolicitudEspecial,
@@ -29,14 +28,6 @@ import {
   SolicitudEspecial
 } from "../../../src/types/solicitudes-especiales";
 
-// Los formularios se ven solo al abrir su modal: no entran en el JS inicial de la pantalla y se
-// precargan cuando el navegador queda libre (usePrecargar), asi el modal abre sin esperar.
-const cargarFormularioSolicitudEspecial = () => import("../../../src/components/modulos/solicitudes-especiales/formulario-solicitud-especial").then((modulo) => modulo.FormularioSolicitudEspecial);
-const FormularioSolicitudEspecial = dynamic(cargarFormularioSolicitudEspecial, {
-  ssr: false,
-  loading: () => <EstadoCargando descripcion="Un momento." titulo="Cargando formulario" />
-});
-
 type ContextoSolicitudModal =
   | { modo: "crear"; solicitud: null }
   | { modo: "editar"; solicitud: SolicitudEspecial }
@@ -44,7 +35,6 @@ type ContextoSolicitudModal =
   | { modo: "convertir"; solicitud: SolicitudEspecial };
 
 export default function SolicitudesEspecialesPage() {
-  usePrecargar(cargarFormularioSolicitudEspecial);
   const modalSolicitud = useModal<ContextoSolicitudModal>();
   const [estadoFiltro, setEstadoFiltro] = useState<string>("todos");
   const [estadoTemporal, setEstadoTemporal] = useState<EstadoSolicitud>("PENDIENTE");

@@ -1,8 +1,8 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useState } from "react";
 
+import { FormularioCategoria } from "../../../src/components/modulos/categorias/formulario-categoria";
 import { EncabezadoModulo } from "../../../src/components/ui/encabezado-modulo";
 import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
 import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
@@ -12,7 +12,6 @@ import { PieListado } from "../../../src/components/ui/pie-listado";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
-import { usePrecargar } from "../../../src/hooks/use-precargar";
 import {
   actualizarCategoria,
   cambiarEstadoCategoria,
@@ -21,18 +20,9 @@ import {
 } from "../../../src/lib/modulos/categorias";
 import { Categoria } from "../../../src/types/categorias";
 
-// Los formularios se ven solo al abrir su modal: no entran en el JS inicial de la pantalla y se
-// precargan cuando el navegador queda libre (usePrecargar), asi el modal abre sin esperar.
-const cargarFormularioCategoria = () => import("../../../src/components/modulos/categorias/formulario-categoria").then((modulo) => modulo.FormularioCategoria);
-const FormularioCategoria = dynamic(cargarFormularioCategoria, {
-  ssr: false,
-  loading: () => <EstadoCargando descripcion="Un momento." titulo="Cargando formulario" />
-});
-
 type FiltroActivo = "todos" | "activos" | "inactivos";
 
 export default function CategoriasPage() {
-  usePrecargar(cargarFormularioCategoria);
   const modalCategoria = useModal<Categoria>();
   const [filtroActivo, setFiltroActivo] = useState<FiltroActivo>("todos");
 
