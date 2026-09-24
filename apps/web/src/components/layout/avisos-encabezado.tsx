@@ -8,6 +8,20 @@ import { listarAvisos } from "../../lib/avisos";
 import { obtenerAvisos } from "../../lib/modulos/panel";
 import { AvisosPanel } from "../../types/panel";
 
+import { IconoCampana } from "./marcador-avisos";
+
+// requestIdleCallback donde exista (Safari no lo tiene): corre la funcion cuando el navegador no
+// tiene otra cosa que hacer, o a los 2 segundos como mucho.
+function cuandoEsteLibre(funcion: () => void) {
+  if (typeof window.requestIdleCallback === "function") {
+    const id = window.requestIdleCallback(funcion, { timeout: 2000 });
+    return () => window.cancelIdleCallback(id);
+  }
+
+  const id = window.setTimeout(funcion, 200);
+  return () => window.clearTimeout(id);
+}
+
 // Campanita del encabezado: lo que falta reponer y las entregas atrasadas o de hoy. Se vuelve a
 // consultar al cambiar de pantalla; no hay notificaciones push ni mails.
 export function AvisosEncabezado() {
@@ -19,15 +33,20 @@ export function AvisosEncabezado() {
 
   useEffect(() => {
     let vigente = true;
-
-    obtenerAvisos()
-      .then((datos) => vigente && setAvisos(datos))
-      // Sin avisos no se rompe nada: la campanita queda sin contador.
-      .catch(() => vigente && setAvisos(null));
     setAbierto(false);
+
+    // Los avisos esperan a que el navegador este libre: la pantalla carga primero sus propios
+    // datos y la campanita no compite con ellos.
+    const consultar = () =>
+      obtenerAvisos()
+        .then((datos) => vigente && setAvisos(datos))
+        // Sin avisos no se rompe nada: la campanita queda sin contador.
+        .catch(() => vigente && setAvisos(null));
+    const cancelar = cuandoEsteLibre(consultar);
 
     return () => {
       vigente = false;
+      cancelar();
     };
   }, [pathname]);
 
@@ -71,16 +90,7 @@ export function AvisosEncabezado() {
         ref={refBoton}
         type="button"
       >
-        <svg aria-hidden="true" height="18" viewBox="0 0 24 24" width="18">
-          <path
-            d="M12 3a6 6 0 0 0-6 6v4l-2 3h16l-2-3V9a6 6 0 0 0-6-6zm-2 15a2 2 0 0 0 4 0"
-            fill="none"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-          />
-        </svg>
+        <IconoCampana />
         {/* Siempre ocupa su lugar, aunque todavia no haya avisos: si apareciera recien cuando
             responde la API, el boton se ensancharia y en el celular correria la pagina (CLS). */}
         <span aria-hidden="true" className="avisos-encabezado__contador" data-vacio={total === 0}>
