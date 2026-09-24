@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { GuiaAdministrador } from "../../../src/components/modulos/ayuda/guia-administrador";
+
 // Ayuda corta para quien usa el sistema todos los dias. Los nombres de botones y estados son los
 // que aparecen en pantalla: si cambian alla, cambian aca.
 
@@ -188,6 +190,8 @@ export default function AyudaPage() {
           </div>
         ))}
       </section>
+
+      <GuiaAdministrador />
 
       <p className="texto-secundario">
         Para lo que falta reponer, lo que hay para entregar y las entregas atrasadas o de esta semana, mira el{" "}

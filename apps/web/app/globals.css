@@ -159,6 +159,19 @@ textarea {
   line-height: 1.5;
 }
 
+.ayuda__tema h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.ayuda__tema ul {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding-left: 1.3rem;
+  line-height: 1.55;
+}
+
 .ayuda__estados h3 {
   margin: 1.25rem 0 0.5rem;
   font-size: 1.05rem;
