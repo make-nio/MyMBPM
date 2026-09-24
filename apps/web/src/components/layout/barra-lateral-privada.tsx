@@ -27,6 +27,10 @@ const accesosPrincipales = [
   {
     href: "/pedidos",
     label: "Pedidos"
+  },
+  {
+    href: "/produccion",
+    label: "Produccion"
   }
 ];
 
@@ -38,10 +42,7 @@ const accesosAdministracion = [
   }
 ];
 
-const proximosModulos = [
-  "Produccion",
-  "Stock"
-];
+const proximosModulos = ["Stock"];
 
 export function BarraLateralPrivada({ esAdministrador }: { esAdministrador: boolean }) {
   const pathname = usePathname();

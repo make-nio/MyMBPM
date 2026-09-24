@@ -135,6 +135,18 @@ export const produccionService = {
       throw new ErrorConflicto("Use los endpoints especificos para iniciar o finalizar produccion");
     }
 
+    // Por este endpoint solo se cancela una orden pendiente o en proceso. Volver a PENDIENTE
+    // permitiria editar los detalles despues de consumidos los insumos y que finalizar ingrese
+    // productos que no se fabricaron; FINALIZADA y CANCELADA son finales.
+    if (
+      data.estadoProduccion !== orden.estadoProduccion &&
+      !(data.estadoProduccion === "CANCELADA" && ["PENDIENTE", "EN_PROCESO"].includes(orden.estadoProduccion))
+    ) {
+      throw new ErrorConflicto(
+        `No se puede pasar una orden de ${orden.estadoProduccion} a ${data.estadoProduccion}`
+      );
+    }
+
     return produccionRepository.actualizar(prisma, orden.idOrdenProduccion, data);
   },
 

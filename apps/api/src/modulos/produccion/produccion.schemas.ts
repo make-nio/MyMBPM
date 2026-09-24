@@ -40,7 +40,3 @@ export const actualizarEstadoProduccionSchema = z.object({
   estadoProduccion: z.enum(ESTADOS_PRODUCCION),
   observaciones: z.string().max(2000).optional()
 });
-
-export const accionProduccionSchema = z.object({
-  idUsuario: idSchema.optional()
-});

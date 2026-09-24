@@ -18,7 +18,7 @@ import {
   obtenerPedido
 } from "../../../lib/modulos/pedidos";
 import { listarMovimientosStock, obtenerStockActual } from "../../../lib/modulos/stock";
-import { calcularImpactoStock, hayStockInsuficiente, ImpactoStockItem } from "../../../lib/pedidos/impacto-stock";
+import { calcularImpactoStock, hayStockInsuficiente, ImpactoStockItem } from "../../../lib/stock/impacto-stock";
 import { ItemCatalogo } from "../../../types/items-catalogo";
 import {
   ESTADOS_COBRO,
@@ -29,6 +29,7 @@ import {
   PedidoDetalle
 } from "../../../types/pedidos";
 import { MovimientoStock } from "../../../types/stock";
+import { TablaImpactoStock } from "../stock/tabla-impacto-stock";
 import { FormularioLineaPedido } from "./formulario-linea-pedido";
 
 type PanelPedidoProps = {
@@ -69,7 +70,11 @@ export function PanelPedido({ idPedido, productos, onCambio }: PanelPedidoProps)
       );
       setImpacto(
         calcularImpactoStock(
-          detalles,
+          detalles.map((detalle) => ({
+            idItemCatalogo: detalle.idItemCatalogo,
+            nombre: detalle.nombreItemSnapshot,
+            cantidad: detalle.cantidad
+          })),
           Object.fromEntries(stocks.map((stock) => [stock.idItemCatalogo, stock.stockActual]))
         )
       );
@@ -219,7 +224,7 @@ export function PanelPedido({ idPedido, productos, onCambio }: PanelPedidoProps)
       {pendiente && impacto.length > 0 ? (
         <div aria-label="Impacto en stock al confirmar" role="region">
           <p className="marca-pequena">Impacto en stock al confirmar</p>
-          <TablaImpacto impacto={impacto} />
+          <TablaImpactoStock etiquetaItem="Producto" impacto={impacto} />
           {insuficiente ? (
             <MensajeError mensaje="No hay stock suficiente para confirmar: ajusta las cantidades o produce/ingresa stock primero." />
           ) : null}
@@ -325,7 +330,7 @@ export function PanelPedido({ idPedido, productos, onCambio }: PanelPedidoProps)
         titulo="Confirmar pedido"
       >
         <div className="formulario-modulo">
-          <TablaImpacto impacto={impacto} />
+          <TablaImpactoStock etiquetaItem="Producto" impacto={impacto} />
           {insuficiente ? <MensajeError mensaje="Hay productos sin stock suficiente." /> : null}
           <div className="acciones-formulario">
             <button className="boton-secundario" onClick={modalConfirmacion.cerrar} type="button">
@@ -343,23 +348,5 @@ export function PanelPedido({ idPedido, productos, onCambio }: PanelPedidoProps)
         </div>
       </Modal>
     </section>
-  );
-}
-
-function TablaImpacto({ impacto }: { impacto: ImpactoStockItem[] }) {
-  return (
-    <TablaDatos
-      columns={[
-        { header: "Producto", cell: (item) => item.nombre },
-        { header: "Stock actual", cell: (item) => formatearCantidad(item.disponible) },
-        { header: "Sale", cell: (item) => `-${formatearCantidad(item.egreso)}` },
-        {
-          header: "Queda",
-          cell: (item) => (item.insuficiente ? `${formatearCantidad(item.resultante)} (insuficiente)` : formatearCantidad(item.resultante))
-        }
-      ]}
-      data={impacto}
-      keyExtractor={(item) => item.idItemCatalogo}
-    />
   );
 }

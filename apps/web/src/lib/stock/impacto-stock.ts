@@ -1,4 +1,9 @@
-import { PedidoDetalle } from "../../types/pedidos";
+// Una salida de stock prevista: cuanto de un item se va a descontar.
+export type EgresoPrevisto = {
+  idItemCatalogo: string;
+  nombre: string;
+  cantidad: string | number;
+};
 
 export type ImpactoStockItem = {
   idItemCatalogo: string;
@@ -9,16 +14,18 @@ export type ImpactoStockItem = {
   insuficiente: boolean;
 };
 
-// Anticipa lo que hara "Confirmar pedido": un egreso de stock de PRODUCTO por cada linea.
-// Si el mismo item aparece en varias lineas, los egresos se suman contra el mismo stock.
-// Es informativo: la validacion real la hace la API dentro de la transaccion de confirmacion.
+// Anticipa el efecto de una operacion que descuenta stock (confirmar un pedido, iniciar una
+// produccion). Si el mismo item aparece varias veces, los egresos se suman contra el mismo stock.
+// Es informativo: la validacion real la hace la API dentro de la transaccion.
+// Con sentido "ingreso" (finalizar una produccion) la cantidad se suma y nunca es insuficiente.
 export function calcularImpactoStock(
-  detalles: Pick<PedidoDetalle, "idItemCatalogo" | "nombreItemSnapshot" | "cantidad">[],
-  stockDisponible: Record<string, string | number>
+  egresos: EgresoPrevisto[],
+  stockDisponible: Record<string, string | number>,
+  sentido: "egreso" | "ingreso" = "egreso"
 ): ImpactoStockItem[] {
   const porItem = new Map<string, ImpactoStockItem>();
 
-  for (const detalle of detalles) {
+  for (const detalle of egresos) {
     const existente = porItem.get(detalle.idItemCatalogo);
     const egreso = Number(detalle.cantidad);
 
@@ -29,8 +36,8 @@ export function calcularImpactoStock(
 
     porItem.set(detalle.idItemCatalogo, {
       idItemCatalogo: detalle.idItemCatalogo,
-      nombre: detalle.nombreItemSnapshot,
-      disponible: Number(stockDisponible[detalle.idItemCatalogo] ?? 0),
+      nombre: detalle.nombre,
+      disponible: Number(stockDisponible[detalle.idItemCatalogo] ?? 0) + 0,
       egreso,
       resultante: 0,
       insuficiente: false
@@ -40,7 +47,8 @@ export function calcularImpactoStock(
   return [...porItem.values()].map((item) => {
     // Redondeo a 3 decimales (la precision de CANTIDAD) para evitar 0.30000000000000004.
     // "+ 0" normaliza -0 (por ejemplo 0.3 - 0.3), que se mostraria como "-0".
-    const resultante = Math.round((item.disponible - item.egreso) * 1000) / 1000 + 0;
+    const delta = sentido === "egreso" ? -item.egreso : item.egreso;
+    const resultante = Math.round((item.disponible + delta) * 1000) / 1000 + 0;
     return { ...item, resultante, insuficiente: resultante < 0 };
   });
 }

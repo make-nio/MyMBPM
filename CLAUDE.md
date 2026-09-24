@@ -111,8 +111,8 @@ La cobertura (umbral 50 % de líneas, backend y front) se publica en el resumen 
 - **Backend:** todos los módulos hechos (catálogo, clientes, pedidos, stock, producción,
   usuarios, autenticación, solicitudes especiales).
 - **Web:** ingreso, panel, y administración de categorías, ítems del catálogo, clientes,
-  solicitudes especiales, usuarios (sólo administradores) y pedidos (con el impacto en stock al
-  confirmar).
-- **Falta la web de stock y producción.**
+  solicitudes especiales, usuarios (sólo administradores), pedidos y producción (con el impacto
+  en stock antes y después de confirmar, iniciar o finalizar).
+- **Falta la web de stock.**
 - Hay pruebas de los services de stock, pedidos, producción y usuarios, E2E de las pantallas y
   CI en GitHub Actions.
