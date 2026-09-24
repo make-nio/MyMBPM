@@ -197,6 +197,7 @@ npm run prisma:migrate --workspace @myfirstproject/api -- --name <nombre>
 - `/api/pedidos`
 - `/api/produccion`
 - `/api/solicitudes-especiales`
+- `/api/panel/resumen` (panel de inicio: pedidos pendientes y por entregar, ordenes en proceso, stock bajo y ultimos movimientos)
 
 ### Reglas importantes ya implementadas
 

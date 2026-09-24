@@ -143,6 +143,10 @@ Authorization: Bearer {{token}}
   "observaciones": "Compra de filamento"
 }
 
+### Panel de inicio (resumen; limite = elementos por lista, 1 a 20)
+GET {{baseUrl}}/api/panel/resumen?limite=5
+Authorization: Bearer {{token}}
+
 ### Pedidos
 # curl http://localhost:3002/api/pedidos -H "Authorization: Bearer TU_TOKEN"
 GET {{baseUrl}}/api/pedidos
