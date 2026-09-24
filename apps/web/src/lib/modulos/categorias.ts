@@ -1,5 +1,5 @@
-import { apiFetch, buildQuery } from "../api";
-import { Categoria, CategoriaPayload } from "../../types/categorias";
+import { pedirApi } from "../api";
+import { CategoriaPayload } from "../../types/categorias";
 
 type FiltrosCategorias = {
   activo?: boolean;
@@ -8,35 +8,23 @@ type FiltrosCategorias = {
 };
 
 export function listarCategorias(filtros: FiltrosCategorias = {}) {
-  return apiFetch<{ ok: true; data: Categoria[] }>(
-    `/api/categorias${buildQuery({
+  return pedirApi("get /api/categorias", {
+    consulta: {
       activo: filtros.activo,
       limit: filtros.limit ?? 100,
       offset: filtros.offset ?? 0
-    })}`
-  ).then((response) => response.data);
+    }
+  });
 }
 
 export function crearCategoria(payload: CategoriaPayload) {
-  return apiFetch<{ ok: true; data: Categoria }>("/api/categorias", {
-    method: "POST",
-    body: JSON.stringify(payload)
-  }).then((response) => response.data);
+  return pedirApi("post /api/categorias", { cuerpo: payload });
 }
 
 export function actualizarCategoria(idCategoria: string, payload: Partial<CategoriaPayload>) {
-  return apiFetch<{ ok: true; data: Categoria }>(`/api/categorias/${idCategoria}`, {
-    method: "PATCH",
-    body: JSON.stringify(payload)
-  }).then((response) => response.data);
+  return pedirApi("patch /api/categorias/{id}", { params: { id: idCategoria }, cuerpo: payload });
 }
 
 export function cambiarEstadoCategoria(idCategoria: string, activo: boolean) {
-  return apiFetch<{ ok: true; data: Categoria }>(
-    `/api/categorias/${idCategoria}/estado`,
-    {
-      method: "PATCH",
-      body: JSON.stringify({ activo })
-    }
-  ).then((response) => response.data);
+  return pedirApi("patch /api/categorias/{id}/estado", { params: { id: idCategoria }, cuerpo: { activo } });
 }

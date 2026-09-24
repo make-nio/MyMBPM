@@ -1,71 +1,7 @@
-import { EstadoPedido } from "./pedidos";
-import { TipoStock } from "./stock";
+import type { RespuestaDe } from "@contrato";
 
-type PedidoResumen = {
-  idPedido: string;
-  numeroPedido: string | null;
-  estadoPedido: EstadoPedido;
-  total: string;
-  fechaAlta: string;
-  fechaEntrega: string | null;
-  cliente?: { nombre: string; apellido: string | null } | null;
-};
+// Tipos sacados del contrato de la API (apps/api/src/contrato): no se escriben a mano.
+// ventasDelMes solo llega para administradores.
+export type ResumenPanel = RespuestaDe<"get /api/panel/resumen">;
 
-type OrdenResumen = {
-  idOrdenProduccion: string;
-  fechaInicio: string | null;
-  detalles: Array<{ cantidad: string; itemCatalogoProducto?: { nombre: string } | null }>;
-};
-
-type ItemStockBajo = {
-  idItemCatalogo: string;
-  nombre: string;
-  tipoItem: TipoStock;
-  stockActual: string;
-  stockMinimo: number;
-};
-
-type MovimientoResumen = {
-  idEstadoStock: string;
-  tipoMovimiento: string;
-  stockAnterior: string;
-  stockActual: string;
-  cantidadMovimiento: string;
-  fechaAlta: string;
-  itemCatalogo?: { nombre: string } | null;
-  usuario?: { nombre: string; apellido: string } | null;
-};
-
-export type ResumenPanel = {
-  // Pedidos sin entregar con fecha prometida: vencida, o de hoy a 7 dias.
-  entregas: {
-    atrasados: { total: number; pedidos: PedidoResumen[] };
-    estaSemana: { total: number; pedidos: PedidoResumen[] };
-  };
-  pedidos: {
-    pendientes: { total: number; ultimos: PedidoResumen[] };
-    confirmados: { total: number; ultimos: PedidoResumen[] };
-  };
-  produccion: {
-    enProceso: { total: number; ordenes: OrdenResumen[] };
-    pendientes: number;
-  };
-  stockBajo: { total: number; items: ItemStockBajo[] };
-  ultimosMovimientos: MovimientoResumen[];
-  // Lo confirmado en el mes en curso (hora de Argentina), sin cancelados.
-  // Solo llega para administradores.
-  ventasDelMes?: {
-    desde: string;
-    pedidos: number;
-    vendido: string;
-    costo: string;
-    ganancia: string;
-    lineasSinCosto: number;
-  };
-};
-
-export type AvisosPanel = {
-  stockBajo: number;
-  entregasAtrasadas: number;
-  entregasHoy: number;
-};
+export type AvisosPanel = RespuestaDe<"get /api/panel/avisos">;

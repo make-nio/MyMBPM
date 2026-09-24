@@ -1,0 +1,122 @@
+# Contrato de la API
+
+Qué recibe y qué devuelve cada endpoint de `/api/*`. Es la fuente de verdad de las respuestas:
+si una respuesta real no lo cumple, fallan las pruebas.
+
+- **Código:** `apps/api/src/contrato/`: `base.ts` (tipos serializados y helpers) y un archivo por
+  módulo en `modulos/` con sus endpoints.
+- **Documento OpenAPI 3.1:** [`docs/openapi.json`](openapi.json). Se genera desde el código con
+  `npm run contrato:generar --workspace @myfirstproject/api` y no se edita a mano. Se puede abrir
+  con cualquier visor de OpenAPI (Swagger Editor, Redocly, la extensión de VS Code).
+
+## Cómo se comprueba
+
+| Prueba | Qué falla |
+|---|---|
+| `contrato.test.ts` (vitest, sin base) | Una ruta de Express que no está en el contrato, una del contrato que ya no existe, o `docs/openapi.json` desactualizado. |
+| E2E (`e2e/fixtures.ts` y `e2e/api.ts`) | Cualquier respuesta de `/api/*` que reciba la página o que pida `e2e/api.ts` al preparar datos y no cumpla el contrato: un campo de más o de menos, un tipo distinto o un status que no es el esperado. Los errores se validan contra el formato común `{ ok: false, error: { codigo, message, detalles?, referencia } }`. |
+
+Los objetos son estrictos: un campo nuevo en una respuesta rompe el contrato hasta que se suma
+ahí. Así, por ejemplo, un `claveHash` que se filtre en un usuario hace fallar el E2E.
+
+## La web usa el contrato
+
+- **Tipos:** los de `apps/web/src/types/` que describen lo que devuelve o recibe la API son alias
+  del contrato (`RespuestaDe<"get /api/clientes/{id}">`, `CuerpoDe<"post /api/clientes">`), que
+  la web importa solo como tipos desde `@contrato` (alias de `apps/api/src/contrato/tipos.ts` en
+  el `tsconfig` de la web). No suman JS al bundle.
+- **Llamadas:** `src/lib/modulos/*` pide cada endpoint con `pedirApi("get /api/clientes/{id}",
+  { params: { id } })`. El método y la ruta salen de la clave del contrato, y el compilador
+  controla los parámetros de ruta, el cuerpo y el tipo de la respuesta.
+- **Listas de valores** (estados, tipos, orígenes) que la web necesita para selects y filtros:
+  tienen un chequeo de compilación (`ListaCompleta`) que falla si no coinciden exactamente con
+  los enums del contrato.
+
+Si cambia una respuesta en el contrato, la web deja de compilar donde usaba lo que cambió.
+
+## Quién puede usar cada endpoint
+
+Cada endpoint declara `acceso` (obligatorio: sin eso el contrato no compila):
+
+| acceso | Quién | Sin sesión | Operador |
+|---|---|---|---|
+| `publico` | cualquiera (solo `/api/health` y el ingreso) | pasa | pasa |
+| `autenticado` | cualquier usuario activo | 401 | pasa |
+| `administrador` | solo administradores | 401 | 403 |
+
+`soloPropio` marca los endpoints `autenticado` que cada usuario solo puede usar sobre sí mismo
+(cambiar su clave). El OpenAPI lo muestra en la descripción de cada endpoint.
+
+Lo prueban dos cosas:
+
+- **`contrato.test.ts`:** el acceso declarado coincide con los middlewares de la ruta real
+  (`requerirAutenticacion`, `requerirAdministrador`).
+- **`e2e/autorizacion.spec.ts`:** llama a cada endpoint sin sesión, con un operador y con el
+  administrador contra la API real, y exige el status de la tabla. Un endpoint nuevo entra solo.
+
+### Alcance por registro
+
+Hay un solo negocio: los datos del negocio (pedidos, producción, stock, clientes, catálogo,
+solicitudes) son de todos los usuarios con sesión, sin dueño por registro. Lo que no es de todos:
+
+| Qué | Quién lo alcanza | Si no |
+|---|---|---|
+| La clave propia (`PATCH /api/usuarios/{id}/clave`, `soloPropio`) | Solo el mismo usuario | 403 (a otro usuario, incluso a un administrador) |
+| Usuarios, auditoría, reportes, importaciones | Administradores | 403 |
+| Costos y márgenes | Administradores | No llegan (`costos-solo-con-permiso`); mandar `costo` sin permiso da 403 |
+| Una línea de pedido o de orden, un componente o una imagen | Solo desde su propio pedido, orden o ítem (`/{id}/.../{detalleId}`) | 404 |
+
+Además, un usuario desactivado pierde el acceso con el mismo token y un administrador que pasa a
+operador pierde lo de administrador enseguida: cada solicitud relee el usuario de la base. Lo prueba
+`e2e/registros-ajenos.spec.ts`.
+
+## Límites de entrada
+
+Todo texto, número, id y lista que entra por un cuerpo o una consulta tiene tope.
+`contrato.test.ts` falla si un campo nuevo no lo declara, y el OpenAPI lo muestra (`maxLength`,
+`maximum`, `maxItems`). Los topes compartidos están en `LIMITES`
+(`apps/api/src/compartido/validaciones/esquemas-comunes.ts`):
+
+| Qué | Tope | Por qué |
+|---|---|---|
+| Ids | el mayor `BIGINT` de Postgres | uno más grande hacía fallar la consulta con un 500 |
+| Cantidades (pedido, orden, receta, ajuste) | 100.000 | con los otros topes, el total de un pedido entra en `Decimal(18,2)` |
+| Precio y costo | 100.000.000 | ídem |
+| Stock mínimo | 1.000.000 | |
+| Líneas por pedido y productos por orden | 100 | la línea 101 da 409 con el motivo |
+| Paginación | `limit` ≤ 100 (también existencias, que sin `limit` devolvía todo), `offset` ≤ 100.000 | "como mucho 100 filas por pedido" |
+| Textos | el largo de su columna (ya estaban) | |
+| Cuerpo JSON | 100 KB (2 MB en las importaciones de CSV) | |
+
+Los prueba `e2e/limites.spec.ts` (uno de más da 400/409 con mensaje; el justo, pasa).
+
+## Cómo se serializa
+
+`compartido/http/respuesta.ts` pasa los datos por JSON:
+
+| En Prisma | En la respuesta | En el contrato |
+|---|---|---|
+| `BigInt` (ids) | string de dígitos | `id` |
+| `Decimal` (montos, cantidades) | string (`"1500.50"`) | `decimal` |
+| `DateTime` | ISO 8601 | `fecha` |
+| campo opcional (`?`) | `null` | `.nullable()` |
+
+Los campos de costo (`costo`, `costoUnitario`) van `.optional()`: el middleware
+`costos-solo-con-permiso` los borra para quien no es administrador.
+
+## Al cambiar un endpoint
+
+1. Cambiá la respuesta en `apps/api/src/contrato/modulos/<modulo>.ts`. Para uno nuevo, sumalo
+   ahí: la prueba de rutas avisa si falta.
+2. Corré `npm run contrato:generar --workspace @myfirstproject/api` y commiteá `docs/openapi.json`.
+3. `npm run check`: si la web usaba algo que cambió, no compila y marca dónde.
+
+## Límites conocidos
+
+- Los estados (`estadoPedido`, `tipoStock` y demás) se validan contra los enums de dominio. En la
+  base son texto libre: un valor viejo fuera del enum haría fallar la validación, pero solo en
+  los E2E, que corren contra un Postgres local.
+- Un `Decimal` muy chico o muy grande se serializa en notación exponencial (`1e-7`) y no pasaría
+  `decimal`. Con las escalas de la base (2 y 3 decimales) no ocurre.
+- Algunas reglas de entrada (por ejemplo "al menos un campo" o "desde no puede ser posterior a
+  hasta") están en `.refine` y no se ven en el OpenAPI. La API las sigue aplicando.

@@ -1,9 +1,5 @@
-import { apiFetch, buildQuery } from "../api";
-import {
-  EstadoSolicitud,
-  SolicitudEspecial,
-  SolicitudEspecialPayload
-} from "../../types/solicitudes-especiales";
+import { pedirApi } from "../api";
+import { EstadoSolicitud, SolicitudEspecialPayload } from "../../types/solicitudes-especiales";
 
 type FiltrosSolicitudes = {
   idCliente?: string;
@@ -13,53 +9,38 @@ type FiltrosSolicitudes = {
 };
 
 export function listarSolicitudesEspeciales(filtros: FiltrosSolicitudes = {}) {
-  return apiFetch<{ ok: true; data: SolicitudEspecial[] }>(
-    `/api/solicitudes-especiales${buildQuery({
+  return pedirApi("get /api/solicitudes-especiales", {
+    consulta: {
       idCliente: filtros.idCliente,
       estadoSolicitud: filtros.estadoSolicitud,
       limit: filtros.limit ?? 100,
       offset: filtros.offset ?? 0
-    })}`
-  ).then((response) => response.data);
+    }
+  });
 }
 
 export function crearSolicitudEspecial(payload: SolicitudEspecialPayload) {
-  return apiFetch<{ ok: true; data: SolicitudEspecial }>("/api/solicitudes-especiales", {
-    method: "POST",
-    body: JSON.stringify(payload)
-  }).then((response) => response.data);
+  return pedirApi("post /api/solicitudes-especiales", { cuerpo: payload });
 }
 
 export function actualizarSolicitudEspecial(
   idSolicitudEspecial: string,
   payload: Partial<SolicitudEspecialPayload>
 ) {
-  return apiFetch<{ ok: true; data: SolicitudEspecial }>(
-    `/api/solicitudes-especiales/${idSolicitudEspecial}`,
-    {
-      method: "PATCH",
-      body: JSON.stringify(payload)
-    }
-  ).then((response) => response.data);
+  return pedirApi("patch /api/solicitudes-especiales/{id}", { params: { id: idSolicitudEspecial }, cuerpo: payload });
 }
 
 export function cambiarEstadoSolicitudEspecial(
   idSolicitudEspecial: string,
   estadoSolicitud: EstadoSolicitud
 ) {
-  return apiFetch<{ ok: true; data: SolicitudEspecial }>(
-    `/api/solicitudes-especiales/${idSolicitudEspecial}/estado`,
-    {
-      method: "PATCH",
-      body: JSON.stringify({ estadoSolicitud })
-    }
-  ).then((response) => response.data);
+  return pedirApi("patch /api/solicitudes-especiales/{id}/estado", {
+    params: { id: idSolicitudEspecial },
+    cuerpo: { estadoSolicitud }
+  });
 }
 
 // Crea un pedido pendiente para el cliente de la solicitud y la deja convertida y vinculada.
 export function convertirSolicitudEnPedido(idSolicitudEspecial: string) {
-  return apiFetch<{ ok: true; data: { idPedido: string; numeroPedido: string | null } }>(
-    `/api/solicitudes-especiales/${idSolicitudEspecial}/convertir`,
-    { method: "POST" }
-  ).then((response) => response.data);
+  return pedirApi("post /api/solicitudes-especiales/{id}/convertir", { params: { id: idSolicitudEspecial } });
 }

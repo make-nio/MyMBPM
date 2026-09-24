@@ -7,6 +7,7 @@ import {
   OrigenPedido
 } from "../../compartido/dominio/enums";
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
+import { LIMITES } from "../../compartido/validaciones/esquemas-comunes";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 import { prisma } from "../../lib/prisma";
 import { ordenarPorItem, stockService } from "../stock/stock.service";
@@ -185,6 +186,12 @@ export const pedidosService = {
 
       if (pedido.estadoPedido !== "PENDIENTE") {
         throw new ErrorConflicto("Solo se pueden agregar detalles a pedidos pendientes");
+      }
+
+      if (pedido.detalles.length >= LIMITES.lineasPorPedido) {
+        throw new ErrorConflicto(
+          `Un pedido tiene como mucho ${LIMITES.lineasPorPedido} lineas: suma la cantidad en una linea existente o arma otro pedido`
+        );
       }
 
       const item = await pedidosRepository.obtenerItemCatalogo(tx, data.idItemCatalogo);

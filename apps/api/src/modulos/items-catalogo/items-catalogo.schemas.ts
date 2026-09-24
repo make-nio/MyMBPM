@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 import { TIPOS_ITEM } from "../../compartido/dominio/enums";
-import { idSchema, paginacionSchema } from "../../compartido/validaciones/esquemas-comunes";
+import { cantidadSchema, idSchema, LIMITES, montoSchema, paginacionSchema } from "../../compartido/validaciones/esquemas-comunes";
 
-const decimalSchema = z.coerce.number().nonnegative();
+const decimalSchema = montoSchema;
 
 export const itemCatalogoParamsSchema = z.object({
   id: idSchema
@@ -33,7 +33,7 @@ export const crearItemCatalogoSchema = z.object({
   tipoMaterial: z.string().max(100).optional(),
   color: z.string().max(100).optional(),
   imagenPrincipal: z.string().max(500).optional(),
-  stockMinimo: z.coerce.number().int().min(0).optional(),
+  stockMinimo: z.coerce.number().int().min(0).max(LIMITES.stockMinimo).optional(),
   activo: z.boolean().optional(),
   publico: z.boolean().optional()
 });
@@ -62,13 +62,13 @@ export const listarItemsCatalogoQuerySchema = paginacionSchema.extend({
 
 export const crearImagenAdicionalSchema = z.object({
   urlImagen: z.string().min(1).max(500),
-  orden: z.coerce.number().int().positive().optional(),
+  orden: z.coerce.number().int().positive().max(LIMITES.ordenImagen).optional(),
   activo: z.boolean().optional()
 });
 
 export const crearComponenteItemCatalogoSchema = z.object({
   idItemCatalogoHijo: idSchema,
-  cantidadRequerida: z.coerce.number().positive(),
+  cantidadRequerida: cantidadSchema,
   unidadMedida: z.string().min(1).max(30),
   activo: z.boolean().optional()
 });
@@ -76,7 +76,7 @@ export const crearComponenteItemCatalogoSchema = z.object({
 export const actualizarComponenteItemCatalogoSchema = z
   .object({
     idItemCatalogoHijo: idSchema.optional(),
-    cantidadRequerida: z.coerce.number().positive().optional(),
+    cantidadRequerida: cantidadSchema.optional(),
     unidadMedida: z.string().min(1).max(30).optional(),
     activo: z.boolean().optional()
   })

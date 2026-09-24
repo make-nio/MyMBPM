@@ -1,11 +1,11 @@
 import { formatearCantidad, formatearDia, formatearEstado, formatearFecha, formatearMoneda } from "../../../lib/formato";
-import { Pedido } from "../../../types/pedidos";
+import { PedidoCompleto } from "../../../types/pedidos";
 
 export const LEYENDA_NO_FISCAL = "Documento no válido como factura";
 
 // Comprobante no fiscal para darle al cliente. Solo datos que el cliente puede ver: nunca costos,
 // ganancia ni observaciones internas, aunque la API los mande (a un administrador le llegan).
-export function ComprobantePedido({ pedido }: { pedido: Pedido }) {
+export function ComprobantePedido({ pedido }: { pedido: PedidoCompleto }) {
   const cliente = pedido.cliente;
   const nombreCliente = `${cliente?.nombre ?? ""} ${cliente?.apellido ?? ""}`.trim() || "-";
   const domicilio = [cliente?.domicilio, cliente?.localidad, cliente?.provincia].filter(Boolean).join(", ");

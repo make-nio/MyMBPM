@@ -1,3 +1,5 @@
+import { LIMITES } from "../../api/src/compartido/validaciones/esquemas-comunes";
+
 import type { Page } from "@playwright/test";
 
 import { api, ajustarStock, crearCategoria, crearCliente, crearItem, crearProductoConReceta, crearProductoConStock } from "./api";
@@ -59,8 +61,12 @@ test("produccion en curso y stock para reponer", async ({ page }) => {
   await api("POST", `/api/produccion/${orden.idOrdenProduccion}/iniciar`);
 
   // Muy por debajo del minimo: queda primero en "Reponer" (los mas urgentes primero). El minimo
-  // crece con el tiempo para que, si la base de E2E se reutiliza, gane el de esta corrida.
-  const minimo = Math.floor(Date.now() / 1000);
+  // supera en uno al faltante mas urgente que ya hay en la base (la de E2E se reutiliza entre
+  // corridas y otras pruebas dejan faltantes), sin pasar el tope de la API.
+  const resumen = await api<{ stockBajo: { items: Array<{ stockMinimo: number; stockActual: string }> } }>("GET", "/api/panel/resumen");
+  const masUrgente = resumen.stockBajo.items[0];
+  const minimo = (masUrgente ? masUrgente.stockMinimo - Number(masUrgente.stockActual) : 0) + 2;
+  expect(minimo, "la base de E2E llego al tope de stockMinimo: recreala").toBeLessThanOrEqual(LIMITES.stockMinimo);
   const { idCategoria } = await crearCategoria(unico("PRUEBA-CatPanel"));
   const faltante = await crearItem({ idCategoria, nombre: unico("PRUEBA-Faltante"), tipoItem: "INSUMO", stockMinimo: minimo });
   await ajustarStock(faltante.idItemCatalogo, 1, "INSUMO");

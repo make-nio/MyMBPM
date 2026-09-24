@@ -1,3 +1,11 @@
+import type { CuerpoDe, RespuestaDe } from "@contrato";
+
+import type { Afirmar, ListaCompleta } from "./contrato";
+
+// Tipos sacados del contrato de la API (apps/api/src/contrato): no se escriben a mano.
+export type SolicitudEspecial = RespuestaDe<"get /api/solicitudes-especiales/{id}">;
+export type EstadoSolicitud = SolicitudEspecial["estadoSolicitud"];
+
 export const ESTADOS_SOLICITUD = [
   "PENDIENTE",
   "EN_REVISION",
@@ -5,39 +13,10 @@ export const ESTADOS_SOLICITUD = [
   "RECHAZADA",
   "CONVERTIDA_A_PEDIDO"
 ] as const;
-
-export type EstadoSolicitud = (typeof ESTADOS_SOLICITUD)[number];
-
-export type SolicitudEspecial = {
-  idSolicitudEspecial: string;
-  idCliente: string | null;
-  nombreSolicitante: string;
-  telefono: string | null;
-  email: string | null;
-  descripcion: string;
-  estadoSolicitud: EstadoSolicitud;
-  observaciones: string | null;
-  fechaAlta: string;
-  fechaModificacion: string;
-  cliente?: {
-    idCliente: string;
-    nombre: string;
-    apellido: string | null;
-  } | null;
-  // Pedido creado al convertirla (ver "Convertir en pedido").
-  idPedido?: string | null;
-  pedido?: { idPedido: string; numeroPedido: string | null } | null;
-};
+// No compila si la lista no tiene exactamente los estados del contrato.
+export type EstadosSolicitudCompletos = Afirmar<ListaCompleta<typeof ESTADOS_SOLICITUD, EstadoSolicitud>>;
 
 // Desde estos estados se puede convertir en pedido (igual que en la API).
 export const ESTADOS_CONVERTIBLES: readonly EstadoSolicitud[] = ["PENDIENTE", "EN_REVISION", "APROBADA"];
 
-export type SolicitudEspecialPayload = {
-  idCliente?: string;
-  nombreSolicitante: string;
-  telefono?: string;
-  email?: string;
-  descripcion: string;
-  estadoSolicitud?: EstadoSolicitud;
-  observaciones?: string;
-};
+export type SolicitudEspecialPayload = CuerpoDe<"post /api/solicitudes-especiales">;

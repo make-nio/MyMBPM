@@ -1,23 +1,13 @@
-export type UsuarioAutenticado = {
-  idUsuario: string;
-  nombre: string;
-  apellido: string | null;
-  email: string;
-  usuario: string;
-  activo: boolean;
-  esAdministrador: boolean;
-  fechaAlta: string;
-  fechaModificacion: string;
-};
+import type { RespuestaDe } from "@contrato";
+
+// Tipos sacados del contrato de la API (apps/api/src/contrato): no se escriben a mano.
+export type UsuarioAutenticado = RespuestaDe<"get /api/autenticacion/me">;
 
 export type RespuestaApi<T> = {
   ok: boolean;
   data: T;
 };
 
-export type RespuestaLogin = RespuestaApi<{
-  token: string;
-  usuario: UsuarioAutenticado;
-}>;
+export type RespuestaLogin = RespuestaApi<RespuestaDe<"post /api/autenticacion/login">>;
 
 export type RespuestaMe = RespuestaApi<UsuarioAutenticado>;

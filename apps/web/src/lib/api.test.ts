@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { apiFetch, buildQuery, ErrorApi } from "./api";
+import { apiFetch, buildQuery, ErrorApi, pedirApi } from "./api";
 import { guardarToken, leerToken, limpiarSesion, resolverSesionActual } from "./auth";
 
 function respuesta(status: number, body: unknown) {
@@ -29,6 +29,42 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+describe("pedirApi", () => {
+  it("arma metodo y ruta desde la clave del contrato, con parametros, consulta y cuerpo", async () => {
+    fetchMock.mockResolvedValue(respuesta(200, { ok: true, data: { idPedidoDetalle: "7" } }));
+
+    const data = await pedirApi("patch /api/pedidos/{id}/detalles/{detalleId}", {
+      params: { id: "12", detalleId: "7" },
+      cuerpo: { cantidad: 3 }
+    });
+
+    expect(data).toEqual({ idPedidoDetalle: "7" });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/pedidos/12/detalles/7");
+    expect(init.method).toBe("PATCH");
+    expect(init.body).toBe(JSON.stringify({ cantidad: 3 }));
+  });
+
+  it("agrega la consulta y no manda cuerpo en un GET", async () => {
+    fetchMock.mockResolvedValue(respuesta(200, { ok: true, data: [] }));
+
+    await pedirApi("get /api/clientes", { consulta: { busqueda: "maxi", limit: 20, activo: undefined } });
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/clientes?busqueda=maxi&limit=20");
+    expect(init.method).toBe("GET");
+    expect(init.body).toBeUndefined();
+  });
+
+  it("codifica los parametros de ruta", async () => {
+    fetchMock.mockResolvedValue(respuesta(200, { ok: true, data: {} }));
+
+    await pedirApi("get /api/clientes/{id}", { params: { id: "1/2" } });
+
+    expect(fetchMock.mock.calls[0][0]).toBe("/api/clientes/1%2F2");
+  });
 });
 
 describe("buildQuery", () => {
