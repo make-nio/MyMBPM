@@ -46,4 +46,13 @@ export type ResumenPanel = {
   };
   stockBajo: { total: number; items: ItemStockBajo[] };
   ultimosMovimientos: MovimientoResumen[];
+  // Lo confirmado en el mes en curso (hora de Argentina), sin cancelados.
+  ventasDelMes: {
+    desde: string;
+    pedidos: number;
+    vendido: string;
+    costo: string;
+    ganancia: string;
+    lineasSinCosto: number;
+  };
 };

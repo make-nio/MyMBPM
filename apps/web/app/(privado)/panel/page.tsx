@@ -91,6 +91,33 @@ export default function PanelPage() {
             />
           </div>
 
+          <section aria-label="Este mes" className="tarjeta-seccion panel-mes">
+            <p className="marca-pequena">Este mes</p>
+            <dl className="panel-mes__cifras">
+              <div>
+                <dt>Vendido</dt>
+                <dd data-testid="mes-vendido">{formatearMoneda(resumen.ventasDelMes.vendido)}</dd>
+              </div>
+              <div>
+                <dt>Costo</dt>
+                <dd data-testid="mes-costo">{formatearMoneda(resumen.ventasDelMes.costo)}</dd>
+              </div>
+              <div>
+                <dt>Ganancia</dt>
+                <dd data-testid="mes-ganancia">{formatearMoneda(resumen.ventasDelMes.ganancia)}</dd>
+              </div>
+            </dl>
+            <p className="texto-secundario texto-secundario--compacto">
+              {resumen.ventasDelMes.pedidos} {resumen.ventasDelMes.pedidos === 1 ? "pedido confirmado" : "pedidos confirmados"}{" "}
+              este mes, sin contar los cancelados.
+              {resumen.ventasDelMes.lineasSinCosto > 0
+                ? ` Hay ${resumen.ventasDelMes.lineasSinCosto} ${
+                    resumen.ventasDelMes.lineasSinCosto === 1 ? "item vendido" : "items vendidos"
+                  } sin costo cargado: la ganancia real es menor.`
+                : null}
+            </p>
+          </section>
+
           <div className="panel-secciones">
             <Seccion href="/pedidos" titulo="Para confirmar" vacio="No hay pedidos pendientes.">
               {resumen.pedidos.pendientes.ultimos.map((pedido) => (

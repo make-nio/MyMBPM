@@ -9,6 +9,7 @@ import { Modal } from "../../ui/modal";
 import { TablaDatos } from "../../ui/tabla-datos";
 import { useModal } from "../../../hooks/use-modal";
 import { formatearCantidad, formatearEstado, formatearFecha, formatearMoneda } from "../../../lib/formato";
+import { calcularMargenPedido } from "../../../lib/costos";
 import {
   actualizarDetallePedido,
   actualizarEstadoPedido,
@@ -149,6 +150,7 @@ export function PanelPedido({ idPedido, onCambio }: PanelPedidoProps) {
   }
 
   const detalles = pedido.detalles ?? [];
+  const margen = calcularMargenPedido(pedido.total, detalles);
   const pendiente = pedido.estadoPedido === "PENDIENTE";
   const insuficiente = hayStockInsuficiente(impacto);
   const opcionesEstado: EstadoPedido[] = [pedido.estadoPedido, ...TRANSICIONES_ESTADO_PEDIDO[pedido.estadoPedido]];
@@ -169,6 +171,16 @@ export function PanelPedido({ idPedido, onCambio }: PanelPedidoProps) {
             <strong>{formatearEstado(pedido.estadoCobro)}</strong> · Total:{" "}
             <strong data-testid="total-pedido">{formatearMoneda(pedido.total)}</strong>
           </p>
+          {detalles.length > 0 ? (
+            <p className="texto-secundario texto-secundario--compacto">
+              Costo: <strong data-testid="costo-pedido">{formatearMoneda(margen.costo)}</strong> · Ganancia:{" "}
+              <strong data-testid="ganancia-pedido">{formatearMoneda(margen.ganancia)}</strong>
+              {margen.porcentaje === null ? null : ` (${margen.porcentaje}%)`}
+              {margen.lineasSinCosto > 0
+                ? ` · ${margen.lineasSinCosto} ${margen.lineasSinCosto === 1 ? "item sin costo cargado" : "items sin costo cargado"}`
+                : null}
+            </p>
+          ) : null}
         </div>
 
         {pendiente ? (
