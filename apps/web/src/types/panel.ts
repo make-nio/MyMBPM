@@ -7,6 +7,7 @@ type PedidoResumen = {
   estadoPedido: EstadoPedido;
   total: string;
   fechaAlta: string;
+  fechaEntrega: string | null;
   cliente?: { nombre: string; apellido: string | null } | null;
 };
 
@@ -36,6 +37,11 @@ type MovimientoResumen = {
 };
 
 export type ResumenPanel = {
+  // Pedidos sin entregar con fecha prometida: vencida, o de hoy a 7 dias.
+  entregas: {
+    atrasados: { total: number; pedidos: PedidoResumen[] };
+    estaSemana: { total: number; pedidos: PedidoResumen[] };
+  };
   pedidos: {
     pendientes: { total: number; ultimos: PedidoResumen[] };
     confirmados: { total: number; ultimos: PedidoResumen[] };
