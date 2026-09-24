@@ -28,3 +28,11 @@ export type ClientePayload = {
   observaciones?: string;
   activo?: boolean;
 };
+
+// GET /api/clientes/:id/resumen: lo que compro (criterio "vendido": pedidos confirmados y no
+// cancelados). Solo importes de venta, sin costos: lo ven todos.
+export type ResumenCliente = {
+  totalComprado: string;
+  pedidosComprados: number;
+  fechaUltimaCompra: string | null;
+};

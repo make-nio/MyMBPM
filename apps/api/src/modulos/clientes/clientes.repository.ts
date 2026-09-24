@@ -68,6 +68,22 @@ export const clientesRepository = {
     });
   },
 
+  // Lo que compro el cliente, con el criterio de "vendido" de reportes y del panel: pedidos
+  // activos, confirmados y no cancelados. Solo importes de venta, nada de costos.
+  resumenCompras(idCliente: bigint, db: PrismaOrTx = prisma) {
+    return db.pedido.aggregate({
+      where: {
+        idCliente,
+        activo: true,
+        estadoPedido: { not: "CANCELADO" },
+        fechaConfirmacion: { not: null }
+      },
+      _sum: { total: true },
+      _count: { _all: true },
+      _max: { fechaConfirmacion: true }
+    });
+  },
+
   actualizar(idCliente: bigint, data: ActualizarClienteInput, db: PrismaOrTx = prisma) {
     return db.cliente.update({
       where: { idCliente },
