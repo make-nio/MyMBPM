@@ -28,5 +28,17 @@ export const reportesRepository = {
         }
       }
     });
+  },
+
+  // Solo el total y el dia de confirmacion: para sumar lo vendido por mes (grafico de 12 meses).
+  listarTotalesVendidosEntre(prismaOrTx: PrismaOrTx, desde: Date, hasta: Date) {
+    return prismaOrTx.pedido.findMany({
+      where: {
+        activo: true,
+        estadoPedido: { not: "CANCELADO" },
+        fechaConfirmacion: { gte: desde, lt: hasta }
+      },
+      select: { total: true, fechaConfirmacion: true }
+    });
   }
 };

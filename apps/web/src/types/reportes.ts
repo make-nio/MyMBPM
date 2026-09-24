@@ -33,3 +33,7 @@ export type ReporteVentasMes = {
   porItem: VentaPorItem[];
   porCliente: VentaPorCliente[];
 };
+
+// GET /api/reportes/ventas-por-mes: vendido de los ultimos 12 meses, del mas viejo al actual.
+export type VentaDelMes = { mes: string; vendido: string; pedidos: number };
+export type ReporteVentasPorMes = { desde: string; hasta: string; meses: VentaDelMes[] };

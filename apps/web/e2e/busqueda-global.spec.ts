@@ -66,9 +66,8 @@ test("Ctrl+K busca pedidos, clientes e items y cada resultado lleva a su pantall
   await dialogo.getByLabel("Buscar pedidos, clientes e items").fill(`${marca}-Cliente`);
   await dialogo.getByRole("region", { name: "Clientes" }).getByRole("link").first().click();
   await expect(page).toHaveURL(new RegExp(`/clientes/?\\?cliente=${cliente.idCliente}$`));
-  await expect(page.getByRole("dialog", { name: "Editar cliente" })).toBeVisible();
+  await expect(page.getByRole("region", { name: `Ficha de ${marca}-Cliente` })).toBeVisible();
   await expect(page.getByLabel("Buscar cliente")).toHaveValue(`${marca}-Cliente`);
-  await page.getByRole("dialog", { name: "Editar cliente" }).getByRole("button", { name: "Cerrar" }).click();
 
   // El item abre su ficha en Items catalogo.
   await abrirConAtajo(page);
