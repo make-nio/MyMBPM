@@ -1221,6 +1221,10 @@ textarea {
   text-align: center;
 }
 
+.avisos-encabezado__contador[data-vacio="true"] {
+  visibility: hidden;
+}
+
 .avisos-encabezado__panel {
   position: absolute;
   right: 0;

@@ -81,11 +81,11 @@ export function AvisosEncabezado() {
             strokeWidth="2"
           />
         </svg>
-        {total > 0 ? (
-          <span aria-hidden="true" className="avisos-encabezado__contador">
-            {total > 99 ? "99+" : total}
-          </span>
-        ) : null}
+        {/* Siempre ocupa su lugar, aunque todavia no haya avisos: si apareciera recien cuando
+            responde la API, el boton se ensancharia y en el celular correria la pagina (CLS). */}
+        <span aria-hidden="true" className="avisos-encabezado__contador" data-vacio={total === 0}>
+          {total > 99 ? "99+" : total}
+        </span>
       </button>
 
       {abierto ? (
