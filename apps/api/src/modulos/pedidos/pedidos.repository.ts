@@ -8,6 +8,9 @@ type ListarPedidosFiltros = {
   idCliente?: bigint;
   estadoPedido?: string;
   estadoCobro?: string;
+  // Fecha de alta: desde incluida, hasta excluida.
+  desde?: Date;
+  hasta?: Date;
   limit: number;
   offset: number;
 };
@@ -41,7 +44,8 @@ export const pedidosRepository = {
       where: {
         idCliente: filtros.idCliente,
         estadoPedido: filtros.estadoPedido,
-        estadoCobro: filtros.estadoCobro
+        estadoCobro: filtros.estadoCobro,
+        fechaAlta: filtros.desde || filtros.hasta ? { gte: filtros.desde, lt: filtros.hasta } : undefined
       },
       include: {
         cliente: true

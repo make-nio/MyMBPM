@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { cargarHasta, cargarPagina, LIMITE_API, partirPagina, TAMANO_PAGINA } from "./paginacion";
+import { cargarHasta, cargarPagina, cargarTodo, LIMITE_API, partirPagina, TAMANO_PAGINA } from "./paginacion";
 
 // Simula la API: `total` filas numeradas, respetando limit y offset.
 function api(total: number) {
@@ -54,5 +54,27 @@ describe("cargarHasta", () => {
 
     expect(await cargarHasta(cargar, 0)).toEqual({ items: Array.from({ length: 10 }, (_, i) => i), hayMas: false });
     expect(cargar).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("cargarTodo", () => {
+  it("pide tandas del tope de la API hasta que una viene incompleta", async () => {
+    const filas = Array.from({ length: 2 * LIMITE_API + 7 }, (_, indice) => indice);
+    const cargar = vi.fn(async (limit: number, offset: number) => filas.slice(offset, offset + limit));
+
+    expect(await cargarTodo(cargar)).toEqual(filas);
+    expect(cargar.mock.calls).toEqual([
+      [LIMITE_API, 0],
+      [LIMITE_API, LIMITE_API],
+      [LIMITE_API, 2 * LIMITE_API]
+    ]);
+  });
+
+  it("con un multiplo exacto del tope termina con una tanda vacia", async () => {
+    const filas = Array.from({ length: LIMITE_API }, (_, indice) => indice);
+    const cargar = vi.fn(async (limit: number, offset: number) => filas.slice(offset, offset + limit));
+
+    expect(await cargarTodo(cargar)).toHaveLength(LIMITE_API);
+    expect(cargar).toHaveBeenCalledTimes(2);
   });
 });

@@ -11,6 +11,9 @@ type FiltrosPedidos = {
   idCliente?: string;
   estadoPedido?: EstadoPedido;
   estadoCobro?: EstadoCobro;
+  // Fecha de alta, AAAA-MM-DD, los dos dias incluidos.
+  desde?: string;
+  hasta?: string;
   limit?: number;
   offset?: number;
 };
@@ -23,6 +26,8 @@ export function listarPedidos(filtros: FiltrosPedidos = {}) {
       idCliente: filtros.idCliente,
       estadoPedido: filtros.estadoPedido,
       estadoCobro: filtros.estadoCobro,
+      desde: filtros.desde,
+      hasta: filtros.hasta,
       limit: filtros.limit ?? 100,
       offset: filtros.offset ?? 0
     })}`
