@@ -35,7 +35,14 @@ test("el administrador ve Usuarios en el menu y su propia fila no se puede desac
   await page.getByRole("link", { name: "Usuarios" }).click();
   await expect(page).toHaveURL(/\/usuarios$/);
 
+  // La tabla carga de a 50 y el administrador E2E es el usuario mas viejo: puede estar mas abajo.
   const propia = page.getByRole("row").filter({ hasText: ADMIN_E2E.email });
+  const cargarMas = page.getByRole("button", { name: "Cargar mas" });
+  await expect(page.getByRole("row").nth(1)).toBeVisible();
+  while ((await propia.count()) === 0 && (await cargarMas.count()) > 0) {
+    await cargarMas.click();
+    await expect(cargarMas.or(propia).first()).toBeVisible();
+  }
   await expect(propia).toContainText("(vos)");
   await expect(propia).toContainText("Administrador");
   await expect(propia.getByRole("button", { name: "Desactivar" })).toHaveCount(0);
@@ -87,7 +94,9 @@ test("restablecer clave: la persona ingresa con la nueva y, como operador, no ge
   await modal.getByLabel("Repetir clave nueva").fill("clave-nueva-123");
   await modal.getByRole("button", { name: "Restablecer clave" }).click();
   await expect(modal).toBeHidden();
-  await expect(page.getByRole("status")).toContainText(`Clave restablecida para ${usuario}`);
+  await expect(page.getByRole("status").filter({ hasText: "Clave restablecida" })).toContainText(
+    `Clave restablecida para ${usuario}`
+  );
 
   const conClaveVieja = await ingresar(browser, usuario, "clave-inicial-1");
   await expect(conClaveVieja.locator(".mensaje-error")).toBeVisible();
