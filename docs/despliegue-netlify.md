@@ -170,6 +170,11 @@ Consecuencia: un preview de un PR con migracion corre contra el schema actual de
 dependa de la migracion nueva puede fallar en ese preview. Se prueba en local o en CI, que migran
 su propia base, y la migracion se aplica al integrar en `main`.
 
+Para que nadie lo olvide, en los deploys que no son de produccion (`CONTEXT` distinto de
+`production`) la web muestra arriba de todo la franja **"Vista previa: usa la base real"**.
+`next.config.ts` pasa `CONTEXT` a la web como `NEXT_PUBLIC_CONTEXTO_DESPLIEGUE` en el build; en
+local, CI y E2E no hay `CONTEXT` y la franja no aparece.
+
 Reglas para PRs con migraciones mientras sea asi:
 
 - Solo migraciones **aditivas**: tablas nuevas, o columnas nullable o con default. Nada que borre,
