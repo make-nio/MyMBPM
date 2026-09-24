@@ -17,7 +17,8 @@ export const produccionRepository = {
         estadoProduccion: filtros.estadoProduccion
       },
       include: {
-        detalles: true,
+        // Solo el nombre del producto (para el tablero): sin costos ni el item entero.
+        detalles: { include: { itemCatalogoProducto: { select: { nombre: true } } } },
         consumos: true
       },
       orderBy: {

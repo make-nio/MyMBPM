@@ -16,11 +16,12 @@ export function createApp() {
 
   app.use(referenciaMiddleware);
   app.use(encabezadosSeguridadMiddleware);
-  // 100 KB para todo, salvo la importacion de catalogo (hasta 1000 filas de CSV).
+  // 100 KB para todo, salvo las importaciones de CSV (catalogo y clientes, hasta 1000 filas).
   const jsonGeneral = express.json();
   const jsonImportacion = express.json({ limit: "2mb" });
+  const RUTAS_IMPORTACION = ["/api/items-catalogo/importacion", "/api/clientes/importacion"];
   app.use((request, response, next) =>
-    request.path.startsWith("/api/items-catalogo/importacion")
+    RUTAS_IMPORTACION.some((ruta) => request.path.startsWith(ruta))
       ? jsonImportacion(request, response, next)
       : jsonGeneral(request, response, next)
   );

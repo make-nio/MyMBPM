@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 
-import { PanelOrden } from "../../../src/components/modulos/produccion/panel-orden";
+import { AccionOrden, PanelOrden } from "../../../src/components/modulos/produccion/panel-orden";
+import { TableroProduccion } from "../../../src/components/modulos/produccion/tablero-produccion";
 import { CampoTexto } from "../../../src/components/formularios/campo-texto";
 import { EncabezadoModulo } from "../../../src/components/ui/encabezado-modulo";
 import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
@@ -25,13 +26,32 @@ export default function ProduccionPage() {
   const [errorAlta, setErrorAlta] = useState<string | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<EstadoProduccion | "">("");
   const [idOrdenSeleccionada, setIdOrdenSeleccionada] = useState<string | null>(null);
-  const refDetalle = useDesplazarAlDetalle(idOrdenSeleccionada);
+  // Desde el tablero, la accion con la que se abre el detalle; la clave lo vuelve a montar (y a
+  // bajar hasta el) aunque se elija otra vez la misma orden.
+  const [accionInicial, setAccionInicial] = useState<AccionOrden | null>(null);
+  const [claveDetalle, setClaveDetalle] = useState(0);
+  const refDetalle = useDesplazarAlDetalle(idOrdenSeleccionada ? `${idOrdenSeleccionada}-${claveDetalle}` : null);
+  const [vista, setVista] = useState<"lista" | "tablero">("lista");
+  const [versionTablero, setVersionTablero] = useState(0);
   const [observaciones, setObservaciones] = useState("");
   const [creando, setCreando] = useState(false);
   // Producto y cantidad propuestos desde Stock ("Crear orden de produccion"): prellenan el alta,
   // pero la orden se crea solo cuando la persona la confirma.
   const [productoPropuesto, setProductoPropuesto] = useState<{ idItemCatalogo: string; nombre: string } | null>(null);
   const [cantidadPropuesta, setCantidadPropuesta] = useState("");
+
+  // /produccion?vista=tablero abre directo el tablero.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("vista") === "tablero") {
+      setVista("tablero");
+    }
+  }, []);
+
+  function abrirOrden(idOrden: string, accion: AccionOrden | null = null) {
+    setIdOrdenSeleccionada(idOrden);
+    setAccionInicial(accion);
+    setClaveDetalle((clave) => clave + 1);
+  }
 
   useEffect(() => {
     const propuesta = leerOrdenParaReponer(window.location.search);
@@ -97,13 +117,15 @@ export default function ProduccionPage() {
 
       cerrarAlta();
       await recargar();
-      setIdOrdenSeleccionada(orden.idOrdenProduccion);
+      setVersionTablero((valor) => valor + 1);
+      abrirOrden(orden.idOrdenProduccion);
     } catch (currentError) {
       // Si la orden se creo pero no el producto, queda a la vista para completarla a mano.
       if (idOrden) {
         cerrarAlta();
         await recargar();
-        setIdOrdenSeleccionada(idOrden);
+        setVersionTablero((valor) => valor + 1);
+        abrirOrden(idOrden);
       }
 
       setErrorAlta(currentError instanceof Error ? currentError.message : "No fue posible crear la orden");
@@ -118,19 +140,36 @@ export default function ProduccionPage() {
         botonLabel="Nueva orden"
         descripcion="Planifica que fabricar, inicia la produccion para consumir insumos y finalizala para ingresar productos."
         filtros={
-          <select
-            aria-label="Filtrar por estado"
-            className="control-filtro"
-            onChange={(event) => setFiltroEstado(event.target.value as EstadoProduccion | "")}
-            value={filtroEstado}
-          >
-            <option value="">Todos los estados</option>
-            {ESTADOS_PRODUCCION.map((estado) => (
-              <option key={estado} value={estado}>
-                {formatearEstado(estado)}
-              </option>
-            ))}
-          </select>
+          <div className="filtros-inline">
+            <div aria-label="Vista" className="selector-vista" role="group">
+              {(["lista", "tablero"] as const).map((opcion) => (
+                <button
+                  aria-pressed={vista === opcion}
+                  className={vista === opcion ? "boton-primario" : "boton-secundario"}
+                  key={opcion}
+                  onClick={() => setVista(opcion)}
+                  type="button"
+                >
+                  {opcion === "lista" ? "Lista" : "Tablero"}
+                </button>
+              ))}
+            </div>
+            {vista === "lista" ? (
+              <select
+                aria-label="Filtrar por estado"
+                className="control-filtro"
+                onChange={(event) => setFiltroEstado(event.target.value as EstadoProduccion | "")}
+                value={filtroEstado}
+              >
+                <option value="">Todos los estados</option>
+                {ESTADOS_PRODUCCION.map((estado) => (
+                  <option key={estado} value={estado}>
+                    {formatearEstado(estado)}
+                  </option>
+                ))}
+              </select>
+            ) : null}
+          </div>
         }
         onCrear={() => {
           setProductoPropuesto(null);
@@ -139,13 +178,16 @@ export default function ProduccionPage() {
         titulo="Produccion"
       />
 
-      {error ? <MensajeError mensaje={error} /> : null}
-      {cargando ? <EstadoCargando titulo="Cargando ordenes de produccion" /> : null}
-      {!cargando && !error && ordenes.length === 0 ? (
+      {vista === "tablero" && errorAlta && !modalOrden.abierto ? <MensajeError mensaje={errorAlta} /> : null}
+      {vista === "tablero" ? <TableroProduccion onElegir={abrirOrden} version={versionTablero} /> : null}
+
+      {vista === "lista" && error ? <MensajeError mensaje={error} /> : null}
+      {vista === "lista" && cargando ? <EstadoCargando titulo="Cargando ordenes de produccion" /> : null}
+      {vista === "lista" && !cargando && !error && ordenes.length === 0 ? (
         <EstadoVacio descripcion="No hay ordenes para el filtro seleccionado." titulo="No encontramos ordenes" />
       ) : null}
 
-      {!cargando && ordenes.length > 0 ? (
+      {vista === "lista" && !cargando && ordenes.length > 0 ? (
         <TablaDatos
           columns={[
             { header: "Orden", cell: (orden) => `#${orden.idOrdenProduccion}` },
@@ -166,7 +208,7 @@ export default function ProduccionPage() {
               cell: (orden) => (
                 <button
                   className="boton-secundario"
-                  onClick={() => setIdOrdenSeleccionada(orden.idOrdenProduccion)}
+                  onClick={() => abrirOrden(orden.idOrdenProduccion)}
                   type="button"
                 >
                   Ver
@@ -179,7 +221,7 @@ export default function ProduccionPage() {
         />
       ) : null}
 
-      {!cargando ? (
+      {vista === "lista" && !cargando ? (
         <PieListado
           cantidad={ordenes.length}
           cargandoMas={listado.cargandoMas}
@@ -190,7 +232,15 @@ export default function ProduccionPage() {
 
       {idOrdenSeleccionada ? (
         <div ref={refDetalle}>
-          <PanelOrden idOrdenProduccion={idOrdenSeleccionada} onCambio={() => void recargar()} />
+          <PanelOrden
+            accionInicial={accionInicial}
+            idOrdenProduccion={idOrdenSeleccionada}
+            key={`${idOrdenSeleccionada}-${claveDetalle}`}
+            onCambio={() => {
+              void recargar();
+              setVersionTablero((valor) => valor + 1);
+            }}
+          />
         </div>
       ) : null}
 
