@@ -214,3 +214,34 @@ para no confundirla con los pedidos de clientes.
 - Para encontrarlo: Netlify → Logs → Functions → `api`, y buscar la referencia que paso Maxi.
 - Los errores de negocio o validacion (4xx) tambien traen la referencia en la respuesta, pero no
   se registran como error ni se muestra la referencia en pantalla.
+
+## Encabezados de seguridad
+
+`apps/web/scripts/generar-encabezados.mjs` corre al final de `npm run build` de la web y escribe
+`apps/web/out/_headers`, que Netlify aplica a todo el sitio (`/*`):
+
+| Encabezado | Valor |
+| --- | --- |
+| `Content-Security-Policy` | `default-src 'self'`; `script-src 'self'` + el hash sha256 de cada script inline del export de Next (sin `'unsafe-inline'`); `style-src 'self' 'unsafe-inline'` (React usa `style=""`); `img-src 'self' data:`; `connect-src 'self'`; `object-src 'none'`; `base-uri 'self'`; `form-action 'self'`; `frame-ancestors 'none'` |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` (sin `preload`) |
+| `X-Content-Type-Options` | `nosniff` |
+| `X-Frame-Options` | `DENY` (para navegadores que no leen `frame-ancestors`) |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `Permissions-Policy` | camara, microfono, geolocalizacion, pagos, USB y topics deshabilitados |
+| `Cross-Origin-Opener-Policy` | `same-origin` |
+
+- Los hashes cambian con cada build (el contenido de los scripts inline lo arma Next), por eso se
+  generan en el build y no se escriben a mano. Es **una sola CSP** para todo el sitio: si dos reglas
+  de Netlify dieran CSP para la misma ruta, el navegador aplicaria las dos y la pagina se bloquearia.
+- `CSP_SOLO_REPORTE=1` en el build la publica como `Content-Security-Policy-Report-Only`: no bloquea,
+  solo avisa en la consola. Sirve para diagnosticar si algo falla en produccion sin romper el sitio.
+- La API (`/api/*`) pone ademas sus propios encabezados (`encabezados-seguridad.middleware.ts`):
+  `nosniff`, `X-Frame-Options`, `Referrer-Policy` y `Cache-Control: no-store` (las respuestas tienen
+  datos de clientes y costos), sin `X-Powered-By`.
+- El servidor de los E2E (`e2e/servidor-estatico.mjs`) aplica el mismo `_headers`: toda la suite corre
+  con la CSP de produccion, y `e2e/seguridad.spec.ts` recorre las pantallas y sus altas sin
+  violaciones en la consola.
+- En los deploy previews Netlify inyecta su barra de comentarios (`/.netlify/scripts/cdp`, que abre un
+  iframe de `app.netlify.com`). Solo en esos builds (`CONTEXT` distinto de `production`) la CSP
+  suma `frame-src https://app.netlify.com`; en produccion no se permite ningun iframe.
+- Netlify reemplaza el HSTS por el suyo en `*.netlify.app` (`...; includeSubDomains; preload`).

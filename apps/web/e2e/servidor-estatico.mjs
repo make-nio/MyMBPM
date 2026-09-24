@@ -1,7 +1,9 @@
 // Servidor para las pruebas E2E: emula lo que hace Netlify en produccion.
 // - Sirve el export estatico de apps/web/out con "pretty URLs" (/panel -> panel.html).
 // - Reenvia /api/* a la API Express, como el rewrite de netlify.toml hacia la function.
-import { createReadStream, existsSync, statSync } from "node:fs";
+// - Aplica los encabezados de out/_headers (los genera scripts/generar-encabezados.mjs), como
+//   Netlify: asi los E2E corren con la misma CSP que produccion.
+import { createReadStream, existsSync, readFileSync, statSync } from "node:fs";
 import { createServer, request as httpRequest } from "node:http";
 import { extname, join, normalize, resolve } from "node:path";
 
@@ -21,6 +23,39 @@ const tipos = {
   ".ico": "image/x-icon",
   ".woff2": "font/woff2"
 };
+
+// Formato de _headers de Netlify: una ruta ("/*" o exacta) y debajo, con sangria, "Nombre: valor".
+function leerEncabezados() {
+  const archivo = join(raiz, "_headers");
+  if (!existsSync(archivo)) {
+    return [];
+  }
+
+  const reglas = [];
+  for (const linea of readFileSync(archivo, "utf8").split("\n")) {
+    if (!linea.trim()) {
+      continue;
+    }
+    if (!/^\s/.test(linea)) {
+      reglas.push({ ruta: linea.trim(), encabezados: {} });
+    } else if (reglas.length > 0) {
+      const separador = linea.indexOf(":");
+      reglas[reglas.length - 1].encabezados[linea.slice(0, separador).trim()] = linea.slice(separador + 1).trim();
+    }
+  }
+  return reglas;
+}
+
+const reglasEncabezados = leerEncabezados();
+
+function encabezadosPara(pathname) {
+  return Object.assign(
+    {},
+    ...reglasEncabezados
+      .filter((regla) => regla.ruta === pathname || (regla.ruta.endsWith("/*") && pathname.startsWith(regla.ruta.slice(0, -1))))
+      .map((regla) => regla.encabezados)
+  );
+}
 
 function resolverArchivo(pathname) {
   const relativo = normalize(decodeURIComponent(pathname)).replace(/^(\.\.[/\\])+/, "");
@@ -72,7 +107,10 @@ createServer((req, res) => {
   const status = archivo ? 200 : 404;
   const destino = archivo ?? join(raiz, "404.html");
 
-  res.writeHead(status, { "content-type": tipos[extname(destino)] ?? "application/octet-stream" });
+  res.writeHead(status, {
+    ...encabezadosPara(pathname),
+    "content-type": tipos[extname(destino)] ?? "application/octet-stream"
+  });
   createReadStream(destino).pipe(res);
 }).listen(puerto, () => {
   console.log(`Web estatica en http://localhost:${puerto} (API: ${apiUrl.origin}, raiz: ${raiz})`);
