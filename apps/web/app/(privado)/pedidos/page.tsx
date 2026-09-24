@@ -1,9 +1,9 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
 import { FormularioPedido } from "../../../src/components/modulos/pedidos/formulario-pedido";
-import { PanelPedido } from "../../../src/components/modulos/pedidos/panel-pedido";
 import { BotonExportarCsv } from "../../../src/components/ui/boton-exportar-csv";
 import { EncabezadoModulo } from "../../../src/components/ui/encabezado-modulo";
 import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
@@ -27,6 +27,13 @@ import {
   Pedido,
   PedidoAltaPayload
 } from "../../../src/types/pedidos";
+
+// El detalle del pedido (items, impacto en stock, confirmar, repetir) se ve solo al elegir uno: su
+// codigo no entra en el JS inicial de la pantalla, que primero tiene que mostrar la lista.
+const PanelPedido = dynamic(
+  () => import("../../../src/components/modulos/pedidos/panel-pedido").then((modulo) => modulo.PanelPedido),
+  { ssr: false, loading: () => <EstadoCargando titulo="Cargando pedido" /> }
+);
 
 export default function PedidosPage() {
   const modalPedido = useModal();
