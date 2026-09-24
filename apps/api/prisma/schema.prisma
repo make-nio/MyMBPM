@@ -165,6 +165,8 @@ model Pedido {
   cliente               Cliente         @relation(fields: [idCliente], references: [idCliente], onDelete: NoAction, onUpdate: NoAction)
   detalles              PedidoDetalle[]
 
+  solicitudEspecial SolicitudEspecial?
+
   @@index([idCliente], map: "IX_PEDIDO_ID_CLIENTE")
   @@index([numeroPedido], map: "IX_PEDIDO_NUMERO_PEDIDO")
   @@index([estadoPedido], map: "IX_PEDIDO_ESTADO_PEDIDO")
@@ -201,9 +203,12 @@ model SolicitudEspecial {
   descripcion         String   @map("DESCRIPCION") @db.VarChar(4000)
   estadoSolicitud     String   @default("PENDIENTE") @map("ESTADO_SOLICITUD") @db.VarChar(30)
   observaciones       String?  @map("OBSERVACIONES") @db.VarChar(2000)
+  // Pedido creado al convertir la solicitud (a lo sumo uno).
+  idPedido            BigInt?  @unique(map: "UQ_SOLICITUD_ESPECIAL_ID_PEDIDO") @map("ID_PEDIDO") @db.BigInt
   fechaAlta           DateTime @default(now()) @map("FECHA_ALTA") @db.Timestamptz(3)
   fechaModificacion   DateTime @updatedAt @map("FECHA_MODIFICACION") @db.Timestamptz(3)
   cliente             Cliente? @relation(fields: [idCliente], references: [idCliente], onDelete: NoAction, onUpdate: NoAction)
+  pedido              Pedido?  @relation(fields: [idPedido], references: [idPedido], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([idCliente], map: "IX_SOLICITUD_ESPECIAL_ID_CLIENTE")
   @@index([estadoSolicitud], map: "IX_SOLICITUD_ESPECIAL_ESTADO_SOLICITUD")
