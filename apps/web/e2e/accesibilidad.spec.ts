@@ -29,6 +29,13 @@ test("busqueda global con resultados", async ({ page }) => {
   await revisarAccesibilidad(page, "busqueda global");
 });
 
+test("avisos del encabezado abiertos", async ({ page }) => {
+  await page.goto("/panel");
+  await page.getByRole("button", { name: /^Avisos:/ }).click();
+  await expect(page.getByRole("region", { name: "Avisos" })).toBeVisible();
+  await revisarAccesibilidad(page, "avisos del encabezado");
+});
+
 test.describe("sin sesion", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 

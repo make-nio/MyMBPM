@@ -7,3 +7,4 @@ import { panelController } from "./panel.controller";
 export const panelRouter = Router();
 
 panelRouter.get("/resumen", asyncHandler(panelController.obtenerResumen));
+panelRouter.get("/avisos", asyncHandler(panelController.obtenerAvisos));
