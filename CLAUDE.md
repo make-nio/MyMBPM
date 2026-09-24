@@ -130,6 +130,7 @@ tablas de `TablaDatos` se ven como tarjetas. Si sumás una pantalla, agregala a 
   movimientos), y administración de categorías, ítems del catálogo, clientes,
   solicitudes especiales, usuarios (sólo administradores), pedidos, producción (con el impacto en
   stock antes y después de confirmar, iniciar o finalizar) y stock (existencias, movimientos y
-  ajustes).
+  ajustes), y una página de Ayuda para el día a día (`/ayuda`; si cambia un botón o un estado,
+  actualizala).
 - Hay pruebas de los services de stock, pedidos, producción y usuarios, E2E de las pantallas y
   CI en GitHub Actions.

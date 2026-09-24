@@ -14,7 +14,8 @@ const pantallas = [
   "/usuarios",
   "/pedidos",
   "/produccion",
-  "/stock"
+  "/stock",
+  "/ayuda"
 ];
 
 async function anchoDePagina(page: Page) {

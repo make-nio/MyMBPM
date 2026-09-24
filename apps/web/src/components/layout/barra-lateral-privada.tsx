@@ -35,6 +35,10 @@ const accesosPrincipales = [
   {
     href: "/stock",
     label: "Stock"
+  },
+  {
+    href: "/ayuda",
+    label: "Ayuda"
   }
 ];
 
