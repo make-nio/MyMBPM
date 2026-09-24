@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { prisma } from "../../lib/prisma";
@@ -15,7 +16,13 @@ vi.mock("../auditoria/auditoria.service", () => ({
 }));
 
 vi.mock("./clientes.repository", () => ({
-  clientesRepository: { listar: vi.fn(), obtenerPorId: vi.fn(), crear: vi.fn(), actualizar: vi.fn() }
+  clientesRepository: {
+    listar: vi.fn(),
+    obtenerPorId: vi.fn(),
+    crear: vi.fn(),
+    actualizar: vi.fn(),
+    resumenCompras: vi.fn()
+  }
 }));
 
 const repo = vi.mocked(clientesRepository);
@@ -53,5 +60,40 @@ describe("clientesService: historial de cambios", () => {
 
     expect(repo.crear).toHaveBeenCalledWith({ nombre: "Ana" }, tx);
     expect(auditoria.registrarAlta).toHaveBeenCalledWith(tx, expect.objectContaining({ entidad: "CLIENTE", idEntidad: 3n }), cliente);
+  });
+});
+
+describe("clientesService.obtenerResumen", () => {
+  it("devuelve lo comprado (vendido) del cliente", async () => {
+    const ultima = new Date("2026-09-20T12:00:00Z");
+    repo.obtenerPorId.mockResolvedValue({ idCliente: 3n } as never);
+    repo.resumenCompras.mockResolvedValue({
+      _sum: { total: new Prisma.Decimal("4500.50") },
+      _count: { _all: 3 },
+      _max: { fechaConfirmacion: ultima }
+    } as never);
+
+    const resumen = await clientesService.obtenerResumen(3n);
+
+    expect(repo.resumenCompras).toHaveBeenCalledWith(3n);
+    expect(resumen).toEqual({ totalComprado: new Prisma.Decimal("4500.50"), pedidosComprados: 3, fechaUltimaCompra: ultima });
+  });
+
+  it("sin compras devuelve cero, no null", async () => {
+    repo.obtenerPorId.mockResolvedValue({ idCliente: 4n } as never);
+    repo.resumenCompras.mockResolvedValue({ _sum: { total: null }, _count: { _all: 0 }, _max: { fechaConfirmacion: null } } as never);
+
+    const resumen = await clientesService.obtenerResumen(4n);
+
+    expect(resumen.totalComprado.toString()).toBe("0");
+    expect(resumen.pedidosComprados).toBe(0);
+    expect(resumen.fechaUltimaCompra).toBeNull();
+  });
+
+  it("un cliente que no existe es 404 y no consulta pedidos", async () => {
+    repo.obtenerPorId.mockResolvedValue(null);
+
+    await expect(clientesService.obtenerResumen(99n)).rejects.toThrow("Cliente no encontrado");
+    expect(repo.resumenCompras).not.toHaveBeenCalled();
   });
 });

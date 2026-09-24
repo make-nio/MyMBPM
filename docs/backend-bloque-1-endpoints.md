@@ -3,7 +3,8 @@
 ## Infraestructura compartida
 
 - `GET /`
-- `GET /api/health`
+- `GET /api/health` (publico, sin sesion): estado de la API y de la base. 200 si la base responde,
+  503 si no. Detalle y como apuntarle un monitor: `docs/despliegue-netlify.md`, "Monitoreo".
 
 ## Categorias
 
@@ -41,6 +42,9 @@ Filtros soportados en listado:
 
 - `GET /api/clientes`
 - `GET /api/clientes/:id`
+- `GET /api/clientes/:id/resumen`: `totalComprado`, `pedidosComprados` y `fechaUltimaCompra`, con el
+  criterio de "vendido" de reportes (pedidos activos, confirmados y no cancelados). Solo importes de
+  venta, sin costos: lo ve cualquier usuario. El historial se lee con `GET /api/pedidos?idCliente=`.
 - `POST /api/clientes`
 - `PATCH /api/clientes/:id`
 - `PATCH /api/clientes/:id/estado`

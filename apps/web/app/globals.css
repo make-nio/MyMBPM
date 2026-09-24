@@ -159,6 +159,19 @@ textarea {
   line-height: 1.5;
 }
 
+.ayuda__tema h3 {
+  margin: 1.25rem 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.ayuda__tema ul {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding-left: 1.3rem;
+  line-height: 1.55;
+}
+
 .ayuda__estados h3 {
   margin: 1.25rem 0 0.5rem;
   font-size: 1.05rem;
@@ -1146,5 +1159,54 @@ textarea {
 
   .busqueda-global {
     margin-top: 1rem;
+  }
+}
+
+/* Grafico de ventas de 12 meses (Reportes): SVG propio, sin librerias. */
+.grafico-ventas__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 0.75rem;
+}
+
+.grafico-ventas__base {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.grafico-ventas__zona {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.grafico-ventas__barra {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 1;
+  pointer-events: none;
+}
+
+.grafico-ventas__barra--elegida {
+  fill: var(--accent);
+}
+
+.grafico-ventas__eje {
+  fill: var(--text);
+  font-size: 16px;
+}
+
+.grafico-ventas__datos {
+  margin-top: 0.75rem;
+}
+
+.grafico-ventas__datos summary {
+  cursor: pointer;
+  color: var(--accent-strong);
+}
+
+@media (max-width: 640px) {
+  .grafico-ventas__eje {
+    font-size: 20px;
   }
 }

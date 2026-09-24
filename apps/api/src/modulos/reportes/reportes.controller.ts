@@ -12,5 +12,9 @@ export const reportesController = {
     const reporte = await reportesService.ventasDelMes(query);
 
     responderExito(response, reporte);
+  },
+
+  async ventasPorMes(_request: Request, response: Response) {
+    responderExito(response, await reportesService.ventasPorMes());
   }
 };

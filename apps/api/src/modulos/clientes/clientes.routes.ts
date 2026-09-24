@@ -8,6 +8,7 @@ export const clientesRouter = Router();
 
 clientesRouter.get("/", asyncHandler(clientesController.listar));
 clientesRouter.get("/:id", asyncHandler(clientesController.obtenerPorId));
+clientesRouter.get("/:id/resumen", asyncHandler(clientesController.obtenerResumen));
 clientesRouter.post("/", asyncHandler(clientesController.crear));
 clientesRouter.patch("/:id", asyncHandler(clientesController.actualizar));
 clientesRouter.patch("/:id/estado", asyncHandler(clientesController.cambiarEstado));
