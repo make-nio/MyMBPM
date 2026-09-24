@@ -880,6 +880,8 @@ textarea {
    solo la hoja: sin menu, encabezado, franja de vista previa ni botones. */
 .pagina-comprobante {
   display: grid;
+  /* minmax(0, 1fr): la hoja se angosta con la pantalla en vez de estirar la pagina. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.25rem;
 }
 
@@ -904,6 +906,13 @@ textarea {
 
 .comprobante p {
   margin: 0;
+}
+
+/* Nombres largos sin espacios (clientes, items) cortan en vez de desbordar. */
+.comprobante__cliente p,
+.comprobante__tabla td,
+.comprobante__observaciones {
+  overflow-wrap: anywhere;
 }
 
 .comprobante__encabezado {
@@ -988,6 +997,11 @@ textarea {
   .comprobante__tabla td {
     padding: 0.4rem 0.25rem;
     font-size: 0.9rem;
+  }
+
+  /* "Precio unitario" en dos renglones antes que desbordar; los importes siguen enteros. */
+  .comprobante__tabla thead .comprobante__numerica {
+    white-space: normal;
   }
 }
 
