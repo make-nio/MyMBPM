@@ -8,7 +8,7 @@ vi.mock("../../lib/prisma", () => ({
   prisma: { $queryRaw: vi.fn(), auditoriaCambio: { create: vi.fn(), findMany: vi.fn() } }
 }));
 
-const tx = { auditoriaCambio: { create: vi.fn() } };
+const tx = { auditoriaCambio: { create: vi.fn(), createMany: vi.fn() } };
 const registro = { entidad: "CLIENTE" as const, idEntidad: 3n, accion: "ALTA" as const, cambios: [], idUsuario: 8n };
 
 beforeEach(() => {
@@ -27,6 +27,16 @@ describe("auditoriaRepository con la tabla", () => {
     expect(tx.auditoriaCambio.create).toHaveBeenCalledTimes(2);
     expect(tx.auditoriaCambio.create).toHaveBeenCalledWith({ data: registro });
     expect(prisma.$queryRaw).toHaveBeenCalledTimes(1);
+  });
+
+  it("registra varios en una sola consulta y no consulta si no hay nada", async () => {
+    vi.mocked(prisma.$queryRaw).mockResolvedValue([{ existe: true }] as never);
+
+    await auditoriaRepository.registrarVarios(tx as never, [registro, { ...registro, idEntidad: 4n }]);
+    await auditoriaRepository.registrarVarios(tx as never, []);
+
+    expect(tx.auditoriaCambio.createMany).toHaveBeenCalledTimes(1);
+    expect(tx.auditoriaCambio.createMany).toHaveBeenCalledWith({ data: [registro, { ...registro, idEntidad: 4n }] });
   });
 
   it("lista sin datos sensibles del usuario", async () => {

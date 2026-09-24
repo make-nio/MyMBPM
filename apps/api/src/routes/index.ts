@@ -11,6 +11,7 @@ import { autenticacionRouter } from "../modulos/autenticacion/autenticacion.rout
 import { healthRouter } from "./health.routes";
 import { categoriasRouter } from "../modulos/categorias/categorias.routes";
 import { clientesRouter } from "../modulos/clientes/clientes.routes";
+import { importacionCatalogoRouter } from "../modulos/importacion-catalogo/importacion-catalogo.routes";
 import { itemsCatalogoRouter } from "../modulos/items-catalogo/items-catalogo.routes";
 import { panelRouter } from "../modulos/panel/panel.routes";
 import { pedidosRouter } from "../modulos/pedidos/pedidos.routes";
@@ -32,6 +33,7 @@ rutasPrivadasRouter.use(requerirAutenticacion);
 rutasPrivadasRouter.use(ocultarCostosSinPermiso);
 rutasPrivadasRouter.use("/usuarios", usuariosRouter);
 rutasPrivadasRouter.use("/categorias", categoriasRouter);
+rutasPrivadasRouter.use("/items-catalogo/importacion", importacionCatalogoRouter);
 rutasPrivadasRouter.use("/items-catalogo", itemsCatalogoRouter);
 rutasPrivadasRouter.use("/clientes", clientesRouter);
 rutasPrivadasRouter.use("/stock", stockRouter);

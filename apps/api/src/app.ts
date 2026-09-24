@@ -13,7 +13,14 @@ export function createApp() {
   getEnv();
 
   app.use(referenciaMiddleware);
-  app.use(express.json());
+  // 100 KB para todo, salvo la importacion de catalogo (hasta 1000 filas de CSV).
+  const jsonGeneral = express.json();
+  const jsonImportacion = express.json({ limit: "2mb" });
+  app.use((request, response, next) =>
+    request.path.startsWith("/api/items-catalogo/importacion")
+      ? jsonImportacion(request, response, next)
+      : jsonGeneral(request, response, next)
+  );
 
   app.get("/", (_request, response) => {
     response.json({
