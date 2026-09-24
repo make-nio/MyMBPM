@@ -6,6 +6,7 @@ import { AccionesFormulario } from "../../formularios/acciones-formulario";
 import { CampoSelect } from "../../formularios/campo-select";
 import { CampoSelectBuscable } from "../../formularios/campo-select-buscable";
 import { CampoTextarea } from "../../formularios/campo-textarea";
+import { CampoTexto } from "../../formularios/campo-texto";
 import { MensajeError } from "../../ui/mensaje-error";
 import { formatearEstado } from "../../../lib/formato";
 import { buscarOpcionesClientes } from "../../../lib/modulos/clientes";
@@ -29,6 +30,7 @@ export function FormularioPedido({ onCancel, onSubmit }: FormularioPedidoProps) 
   const [estadoCobro, setEstadoCobro] = useState<EstadoCobro>("PENDIENTE");
   const [observacionesCliente, setObservacionesCliente] = useState("");
   const [observacionesInternas, setObservacionesInternas] = useState("");
+  const [fechaEntrega, setFechaEntrega] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,7 +51,8 @@ export function FormularioPedido({ onCancel, onSubmit }: FormularioPedidoProps) 
         origenPedido,
         estadoCobro,
         observacionesCliente: observacionesCliente || undefined,
-        observacionesInternas: observacionesInternas || undefined
+        observacionesInternas: observacionesInternas || undefined,
+        fechaEntrega: fechaEntrega || undefined
       });
     } catch (currentError) {
       setError(currentError instanceof Error ? currentError.message : "No fue posible crear el pedido");
@@ -82,6 +85,13 @@ export function FormularioPedido({ onCancel, onSubmit }: FormularioPedidoProps) 
         onChange={(value) => setEstadoCobro(value as EstadoCobro)}
         options={ESTADOS_COBRO.map((estado) => ({ label: formatearEstado(estado), value: estado }))}
         value={estadoCobro}
+      />
+      <CampoTexto
+        id="pedido-fecha-entrega"
+        label="Entrega prometida (opcional)"
+        onChange={setFechaEntrega}
+        type="date"
+        value={fechaEntrega}
       />
       <CampoTextarea
         id="pedido-observaciones-cliente"

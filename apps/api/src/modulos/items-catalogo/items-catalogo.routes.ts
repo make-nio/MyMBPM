@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import { asyncHandler } from "../../compartido/http/async-handler";
+import { rechazarCostoSinPermiso } from "../../compartido/middlewares/costos-solo-con-permiso.middleware";
 
 import { itemsCatalogoController } from "./items-catalogo.controller";
 
@@ -8,8 +9,9 @@ export const itemsCatalogoRouter = Router();
 
 itemsCatalogoRouter.get("/", asyncHandler(itemsCatalogoController.listar));
 itemsCatalogoRouter.get("/:id", asyncHandler(itemsCatalogoController.obtenerPorId));
-itemsCatalogoRouter.post("/", asyncHandler(itemsCatalogoController.crear));
-itemsCatalogoRouter.patch("/:id", asyncHandler(itemsCatalogoController.actualizar));
+// El costo solo lo cargan quienes pueden verlo (puedeVerCostos).
+itemsCatalogoRouter.post("/", rechazarCostoSinPermiso, asyncHandler(itemsCatalogoController.crear));
+itemsCatalogoRouter.patch("/:id", rechazarCostoSinPermiso, asyncHandler(itemsCatalogoController.actualizar));
 itemsCatalogoRouter.patch("/:id/estado", asyncHandler(itemsCatalogoController.cambiarEstado));
 itemsCatalogoRouter.get("/:id/componentes", asyncHandler(itemsCatalogoController.listarComponentes));
 itemsCatalogoRouter.post("/:id/componentes", asyncHandler(itemsCatalogoController.agregarComponente));

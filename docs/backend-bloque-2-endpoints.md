@@ -13,11 +13,18 @@
 
 ## Pedidos
 
-- `GET /api/pedidos`
+- `GET /api/pedidos?estadoPedido=CONFIRMADO&desde=2026-09-01&hasta=2026-09-30&limit=100&offset=0`
+  - `desde` y `hasta` (opcionales, `AAAA-MM-DD`) filtran por fecha de alta, los dos dias incluidos,
+    en hora de Argentina. Un rango invertido es 400. La web los usa para el listado y para
+    "Exportar CSV", que arma el archivo en el navegador pidiendo todas las paginas.
 - `GET /api/pedidos/:id`
 - `POST /api/pedidos`
+  - Opcional `fechaEntrega`: el dia de entrega prometido al cliente (`"2026-09-30"`). Se guarda
+    en `FECHA_ENTREGA` como las 00:00 de ese dia en Argentina.
 - `POST /api/pedidos/:id/detalles`
 - `PATCH /api/pedidos/:id/estado`
+  - Tambien acepta `fechaEntrega` (`"AAAA-MM-DD"` o `null` para borrarla), salvo en pedidos
+    `ENTREGADO` o `CANCELADO` (409).
 - `POST /api/pedidos/:id/confirmar`
 
 ## Produccion
@@ -29,3 +36,12 @@
 - `PATCH /api/produccion/:id/estado`
 - `POST /api/produccion/:id/iniciar`
 - `POST /api/produccion/:id/finalizar`
+
+## Reportes
+
+- `GET /api/reportes/ventas-mes?mes=2026-09` (solo administradores; sin `mes`, el mes en curso)
+  - Mismo criterio que "Este mes" del panel: pedidos activos confirmados en el mes (hora de
+    Argentina) y no cancelados. Devuelve `totales` (pedidos, vendido, costo, ganancia, lineas sin
+    costo), `porItem` (cantidad, pedidos, vendido = suma de subtotales, costo = snapshot de cada
+    linea, ganancia) y `porCliente` (pedidos, vendido = suma de totales, costo, ganancia), de mayor
+    a menor vendido. La web arma el CSV de cada tabla.

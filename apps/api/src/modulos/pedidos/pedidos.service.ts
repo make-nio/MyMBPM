@@ -34,15 +34,51 @@ const TRANSICIONES_ESTADO_PEDIDO: Record<EstadoPedido, readonly EstadoPedido[]> 
   CANCELADO: []
 };
 
+const ESTADOS_CERRADOS: readonly EstadoPedido[] = ["ENTREGADO", "CANCELADO"];
+
 function construirNumeroPedido(idPedido: bigint) {
   return `PED-${idPedido.toString().padStart(6, "0")}`;
 }
 
+type DatosAltaPedido = {
+  idCliente: bigint;
+  origenPedido: OrigenPedido;
+  estadoCobro?: EstadoCobro;
+  observacionesCliente?: string;
+  observacionesInternas?: string;
+  fechaEntrega?: Date | null;
+  activo?: boolean;
+};
+
+type PedidoConDetalles = NonNullable<Awaited<ReturnType<typeof pedidosRepository.obtenerPorId>>>;
+
+// Sin permiso para ver costos, el pedido sale sin el costo de cada linea ni el del item: el
+// margen se calcula con esos datos. Precio y total son de venta y se ven igual.
+export function ocultarCostos(pedido: PedidoConDetalles) {
+  return {
+    ...pedido,
+    detalles: (pedido.detalles ?? []).map(({ costoUnitario: _costo, itemCatalogo, ...detalle }) => {
+      if (!itemCatalogo) {
+        return detalle;
+      }
+
+      const { costo: _costoItem, ...itemSinCosto } = itemCatalogo;
+      return { ...detalle, itemCatalogo: itemSinCosto };
+    })
+  };
+}
+
 export const pedidosService = {
+  presentar<T extends PedidoConDetalles | null>(pedido: T, verCostos: boolean) {
+    return pedido && !verCostos ? ocultarCostos(pedido) : pedido;
+  },
+
   listar(filtros: {
     idCliente?: bigint;
     estadoPedido?: EstadoPedido;
     estadoCobro?: EstadoCobro;
+    desde?: Date;
+    hasta?: Date;
     limit: number;
     offset: number;
   }) {
@@ -59,26 +95,23 @@ export const pedidosService = {
     return pedido;
   },
 
-  async crear(data: {
-    idCliente: bigint;
-    origenPedido: OrigenPedido;
-    estadoCobro?: EstadoCobro;
-    observacionesCliente?: string;
-    observacionesInternas?: string;
-    activo?: boolean;
-  }) {
-    return prisma.$transaction(async (tx) => {
-      const cliente = await pedidosRepository.obtenerCliente(tx, data.idCliente);
+  crear(data: DatosAltaPedido) {
+    return prisma.$transaction((tx) => this.crearEnTransaccion(tx, data));
+  },
 
-      if (!cliente) {
-        throw new ErrorNoEncontrado("Cliente no encontrado");
-      }
+  // Alta con su numero de pedido, dentro de una transaccion ajena (por ejemplo, al convertir una
+  // solicitud especial: el pedido y la solicitud se guardan juntos o no se guarda nada).
+  async crearEnTransaccion(tx: Prisma.TransactionClient, data: DatosAltaPedido) {
+    const cliente = await pedidosRepository.obtenerCliente(tx, data.idCliente);
 
-      const pedido = await pedidosRepository.crear(tx, data);
+    if (!cliente) {
+      throw new ErrorNoEncontrado("Cliente no encontrado");
+    }
 
-      return pedidosRepository.actualizar(tx, pedido.idPedido, {
-        numeroPedido: construirNumeroPedido(pedido.idPedido)
-      });
+    const pedido = await pedidosRepository.crear(tx, data);
+
+    return pedidosRepository.actualizar(tx, pedido.idPedido, {
+      numeroPedido: construirNumeroPedido(pedido.idPedido)
     });
   },
 
@@ -215,9 +248,16 @@ export const pedidosService = {
       estadoPedido?: EstadoPedido;
       estadoCobro?: EstadoCobro;
       observacionesInternas?: string;
+      fechaEntrega?: Date | null;
     }
   ) {
     const pedido = await this.obtenerPorId(idPedido);
+
+    // La fecha prometida sirve mientras el pedido esta abierto: entregado o cancelado ya no se
+    // promete nada y la fecha queda como estaba.
+    if (data.fechaEntrega !== undefined && ESTADOS_CERRADOS.includes(pedido.estadoPedido as EstadoPedido)) {
+      throw new ErrorConflicto("No se puede cambiar la fecha de entrega de un pedido entregado o cancelado");
+    }
 
     if (data.estadoPedido === "CONFIRMADO") {
       throw new ErrorConflicto("Use el endpoint especifico para confirmar pedidos");

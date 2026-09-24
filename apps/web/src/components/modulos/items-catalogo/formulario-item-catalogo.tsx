@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 
 import { Categoria } from "../../../types/categorias";
+import { useUsuarioAutenticado } from "../../auth/contexto-sesion";
 import { ItemCatalogo, TIPOS_ITEM } from "../../../types/items-catalogo";
 import { AccionesFormulario } from "../../formularios/acciones-formulario";
 import { CampoCheckbox } from "../../formularios/campo-checkbox";
@@ -49,6 +50,8 @@ export function FormularioItemCatalogo({
   onCancel,
   onSubmit
 }: FormularioItemCatalogoProps) {
+  // El costo solo lo ven y lo cargan los administradores (la API tampoco lo manda ni lo acepta).
+  const { esAdministrador } = useUsuarioAutenticado();
   const [idCategoria, setIdCategoria] = useState(item?.idCategoria ?? "");
   const [tipoItem, setTipoItem] = useState<(typeof TIPOS_ITEM)[number]>(item?.tipoItem ?? "PRODUCTO");
   const [nombre, setNombre] = useState(item?.nombre ?? "");
@@ -95,7 +98,7 @@ export function FormularioItemCatalogo({
         descripcionCompleta: descripcionCompleta || undefined,
         observacionesInternas: observacionesInternas || undefined,
         precio: toNumberOrUndefined(precio),
-        costo: toNumberOrUndefined(costo),
+        costo: esAdministrador ? toNumberOrUndefined(costo) : undefined,
         tipoMaterial: tipoMaterial || undefined,
         color: color || undefined,
         imagenPrincipal: imagenPrincipal || undefined,
@@ -147,7 +150,9 @@ export function FormularioItemCatalogo({
         value={imagenPrincipal}
       />
       <CampoTexto id="item-precio" label="Precio" onChange={setPrecio} type="number" value={precio} />
-      <CampoTexto id="item-costo" label="Costo" onChange={setCosto} type="number" value={costo} />
+      {esAdministrador ? (
+        <CampoTexto id="item-costo" label="Costo" onChange={setCosto} type="number" value={costo} />
+      ) : null}
       <CampoTexto
         id="item-stock-minimo"
         label="Stock minimo"

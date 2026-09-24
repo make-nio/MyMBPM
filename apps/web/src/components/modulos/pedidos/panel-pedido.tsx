@@ -8,7 +8,16 @@ import { MensajeError } from "../../ui/mensaje-error";
 import { Modal } from "../../ui/modal";
 import { TablaDatos } from "../../ui/tabla-datos";
 import { useModal } from "../../../hooks/use-modal";
-import { formatearCantidad, formatearEstado, formatearFecha, formatearMoneda } from "../../../lib/formato";
+import {
+  diaArgentina,
+  formatearCantidad,
+  formatearDia,
+  formatearEstado,
+  formatearFecha,
+  formatearMoneda
+} from "../../../lib/formato";
+import { calcularMargenPedido } from "../../../lib/costos";
+import { useUsuarioAutenticado } from "../../auth/contexto-sesion";
 import {
   actualizarDetallePedido,
   actualizarEstadoPedido,
@@ -44,6 +53,7 @@ function itemsDistintos(detalles: PedidoDetalle[]) {
 
 // Detalle de un pedido: lineas, confirmacion con su impacto en el stock y cambios de estado.
 export function PanelPedido({ idPedido, onCambio }: PanelPedidoProps) {
+  const { esAdministrador } = useUsuarioAutenticado();
   const modalLinea = useModal<PedidoDetalle>();
   const modalConfirmacion = useModal();
   const [pedido, setPedido] = useState<Pedido | null>(null);
@@ -53,6 +63,7 @@ export function PanelPedido({ idPedido, onCambio }: PanelPedidoProps) {
   const [confirmando, setConfirmando] = useState(false);
   const [estadoPedido, setEstadoPedido] = useState<EstadoPedido>("PENDIENTE");
   const [estadoCobro, setEstadoCobro] = useState<EstadoCobro>("PENDIENTE");
+  const [fechaEntrega, setFechaEntrega] = useState("");
 
   const cargar = useCallback(async () => {
     const actual = await obtenerPedido(idPedido);
@@ -60,6 +71,7 @@ export function PanelPedido({ idPedido, onCambio }: PanelPedidoProps) {
     setPedido(actual);
     setEstadoPedido(actual.estadoPedido);
     setEstadoCobro(actual.estadoCobro);
+    setFechaEntrega(diaArgentina(actual.fechaEntrega));
 
     if (actual.estadoPedido === "PENDIENTE") {
       // Antes de confirmar: cuanto stock hay y cuanto quedaria.
@@ -149,8 +161,12 @@ export function PanelPedido({ idPedido, onCambio }: PanelPedidoProps) {
   }
 
   const detalles = pedido.detalles ?? [];
+  const margen = calcularMargenPedido(pedido.total, detalles);
   const pendiente = pedido.estadoPedido === "PENDIENTE";
   const insuficiente = hayStockInsuficiente(impacto);
+  // La fecha prometida se puede cambiar mientras el pedido no se entrego ni se cancelo.
+  const abierto = pedido.estadoPedido !== "ENTREGADO" && pedido.estadoPedido !== "CANCELADO";
+  const atrasado = abierto && pedido.fechaEntrega !== null && diaArgentina(pedido.fechaEntrega) < diaArgentina(new Date());
   const opcionesEstado: EstadoPedido[] = [pedido.estadoPedido, ...TRANSICIONES_ESTADO_PEDIDO[pedido.estadoPedido]];
 
   return (
@@ -165,10 +181,27 @@ export function PanelPedido({ idPedido, onCambio }: PanelPedidoProps) {
             {pedido.fechaConfirmacion ? ` · Confirmado: ${formatearFecha(pedido.fechaConfirmacion)}` : ""}
           </p>
           <p className="texto-secundario texto-secundario--compacto">
+            Entrega prometida:{" "}
+            <strong data-testid="entrega-prometida">
+              {pedido.fechaEntrega ? formatearDia(pedido.fechaEntrega) : "sin fecha"}
+            </strong>
+            {atrasado ? <strong className="texto-alerta" data-testid="pedido-atrasado"> · Atrasado</strong> : null}
+          </p>
+          <p className="texto-secundario texto-secundario--compacto">
             Estado: <strong data-testid="estado-pedido">{formatearEstado(pedido.estadoPedido)}</strong> · Cobro:{" "}
             <strong>{formatearEstado(pedido.estadoCobro)}</strong> · Total:{" "}
             <strong data-testid="total-pedido">{formatearMoneda(pedido.total)}</strong>
           </p>
+          {esAdministrador && detalles.length > 0 && detalles.every((detalle) => detalle.costoUnitario !== undefined) ? (
+            <p className="texto-secundario texto-secundario--compacto">
+              Costo: <strong data-testid="costo-pedido">{formatearMoneda(margen.costo)}</strong> · Ganancia:{" "}
+              <strong data-testid="ganancia-pedido">{formatearMoneda(margen.ganancia)}</strong>
+              {margen.porcentaje === null ? null : ` (${margen.porcentaje}%)`}
+              {margen.lineasSinCosto > 0
+                ? ` · ${margen.lineasSinCosto} ${margen.lineasSinCosto === 1 ? "item sin costo cargado" : "items sin costo cargado"}`
+                : null}
+            </p>
+          ) : null}
         </div>
 
         {pendiente ? (
@@ -308,6 +341,27 @@ export function PanelPedido({ idPedido, onCambio }: PanelPedidoProps) {
           Guardar estado
         </button>
       </div>
+      {abierto ? (
+        <div className="filtros-inline">
+          <label className="campo-formulario" htmlFor="pedido-fecha-entrega-edicion">
+            <span>Entrega prometida</span>
+            <input
+              id="pedido-fecha-entrega-edicion"
+              onChange={(event) => setFechaEntrega(event.target.value)}
+              type="date"
+              value={fechaEntrega}
+            />
+          </label>
+          <button
+            className="boton-secundario"
+            disabled={fechaEntrega === diaArgentina(pedido.fechaEntrega)}
+            onClick={() => void ejecutar(() => actualizarEstadoPedido(idPedido, { fechaEntrega: fechaEntrega || null }))}
+            type="button"
+          >
+            Guardar fecha
+          </button>
+        </div>
+      ) : null}
       {estadoPedido === "CANCELADO" && pedido.estadoPedido !== "PENDIENTE" && pedido.estadoPedido !== "CANCELADO" ? (
         <p className="texto-secundario">
           Cancelar un pedido confirmado no devuelve el stock descontado: si corresponde, ajustalo desde Stock.

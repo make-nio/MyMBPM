@@ -17,6 +17,8 @@ import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
+import { calcularCostoReceta } from "../../../src/lib/costos";
+import { formatearMoneda } from "../../../src/lib/formato";
 import { listarCategorias } from "../../../src/lib/modulos/categorias";
 import {
   actualizarComponenteItem,
@@ -37,6 +39,37 @@ import {
 } from "../../../src/types/items-catalogo";
 
 type FiltroTriestado = "todos" | "si" | "no";
+
+// Cuanto cuesta fabricar una unidad segun la receta, frente al costo cargado en el item.
+function CostoReceta({
+  componentes,
+  costoCargado,
+  onUsarComoCosto
+}: {
+  componentes: ItemCatalogoComponente[];
+  costoCargado: string | null;
+  onUsarComoCosto: (costo: number) => void;
+}) {
+  const { costo, sinCosto } = calcularCostoReceta(componentes);
+  const distinto = costo > 0 && Number(costoCargado ?? 0) !== costo;
+
+  return (
+    <div aria-label="Costo por receta" className="costo-receta" role="region">
+      <p>
+        Costo por receta: <strong data-testid="costo-receta">{formatearMoneda(costo)}</strong> · Costo cargado:{" "}
+        <strong>{costoCargado === null ? "sin cargar" : formatearMoneda(costoCargado)}</strong>
+      </p>
+      {sinCosto.length > 0 ? (
+        <p className="texto-secundario texto-secundario--compacto">Sin costo cargado: {sinCosto.join(", ")}.</p>
+      ) : null}
+      {distinto ? (
+        <button className="boton-secundario" onClick={() => onUsarComoCosto(costo)} type="button">
+          Usar como costo
+        </button>
+      ) : null}
+    </div>
+  );
+}
 
 export default function ItemsCatalogoPage() {
   const { esAdministrador } = useUsuarioAutenticado();
@@ -99,6 +132,12 @@ export default function ItemsCatalogoPage() {
 
   async function recargarItems() {
     await listado.recargar();
+  }
+
+  // Copia el costo calculado por receta al costo del item (queda en el historial de cambios).
+  async function usarComoCosto(item: ItemCatalogo, costo: number) {
+    await actualizarItemCatalogo(item.idItemCatalogo, { costo });
+    await recargarItems();
   }
 
   async function recargarComponentes() {
@@ -350,11 +389,20 @@ export default function ItemsCatalogoPage() {
                 titulo="Receta vacia"
               />
             ) : (
-              <TablaComponentesItem
-                componentes={componentes}
-                onEditar={(componente) => modalComponente.abrir(componente)}
-                onEliminar={(componente) => void borrarComponente(componente)}
-              />
+              <>
+                <TablaComponentesItem
+                  componentes={componentes}
+                  onEditar={(componente) => modalComponente.abrir(componente)}
+                  onEliminar={(componente) => void borrarComponente(componente)}
+                />
+                {itemSeleccionado && esAdministrador ? (
+                  <CostoReceta
+                    componentes={componentes}
+                    costoCargado={itemSeleccionado.costo ?? null}
+                    onUsarComoCosto={(costo) => void usarComoCosto(itemSeleccionado, costo)}
+                  />
+                ) : null}
+              </>
             )}
           </div>
         </div>

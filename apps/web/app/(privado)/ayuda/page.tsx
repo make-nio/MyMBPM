@@ -12,7 +12,9 @@ const guias: Paso[] = [
       "En Pedidos, toca \"Nuevo pedido\".",
       "Busca el cliente escribiendo su nombre, elegi de donde vino el pedido (Instagram, WhatsApp...) y toca \"Crear pedido\".",
       "En el detalle que se abre, toca \"Agregar item\" por cada producto: buscalo por nombre y pone la cantidad.",
-      "El precio se copia del catalogo en ese momento: si despues cambias el precio del producto, el pedido no cambia."
+      "El precio se copia del catalogo en ese momento: si despues cambias el precio del producto, el pedido no cambia.",
+      "Si le prometiste una fecha al cliente, cargala en \"Entrega prometida\". La podes cambiar desde el detalle con \"Guardar fecha\" hasta que el pedido se entregue.",
+      "Si empezo como solicitud especial, en Solicitudes toca \"Convertir en pedido\": se crea el pedido con el cliente y la descripcion, y despues le cargas los items."
     ]
   },
   {
@@ -43,6 +45,24 @@ const guias: Paso[] = [
       "El motivo es obligatorio y queda en los movimientos, con tu usuario y la fecha.",
       "\"Solo bajo minimo\" te muestra lo que hay que reponer. El minimo de cada item se define al editarlo, en \"Stock minimo\"."
     ]
+  },
+  {
+    titulo: "Llevarte los datos a una planilla",
+    pasos: [
+      "En Pedidos o en Stock, aplica los filtros que quieras (en Pedidos podes elegir las fechas de alta con \"Alta desde\" y \"hasta\").",
+      "Toca \"Exportar CSV\": se descarga un archivo con todo lo filtrado, no solo lo que ves en pantalla.",
+      "Abrilo con Excel o Google Sheets: las columnas se separan solas y los numeros quedan como numeros."
+    ]
+  },
+  {
+    titulo: "Costos y ganancia (administradores)",
+    pasos: [
+      "Carga el costo de cada insumo (por ejemplo, lo que pagaste el kilo de filamento) al editarlo, en \"Costo\".",
+      "En la receta de un producto vas a ver cuanto cuesta fabricarlo. Si no coincide con su costo, toca \"Usar como costo\".",
+      "Cada pedido muestra su costo y su ganancia, y el Dashboard lo vendido y ganado en el mes.",
+      "En Reportes elegis un mes y ves lo vendido por item y por cliente, con \"Exportar CSV\" para cada tabla."
+    ],
+    ojo: "El costo de un pedido se toma cuando agregas cada item: si despues cambias el costo del producto, los pedidos ya cargados no cambian."
   }
 ];
 
@@ -82,7 +102,7 @@ const estados: Array<{ grupo: string; items: Array<[string, string]> }> = [
       ["En revision", "La estas mirando o cotizando."],
       ["Aprobada", "Se va a hacer."],
       ["Rechazada", "No se hace."],
-      ["Convertida a pedido", "Ya se cargo como pedido."]
+      ["Convertida a pedido", "Ya tiene su pedido: se crea con el boton \"Convertir en pedido\" y no cambia mas de estado."]
     ]
   }
 ];
@@ -132,7 +152,8 @@ export default function AyudaPage() {
       </section>
 
       <p className="texto-secundario">
-        Para lo que falta reponer y lo que hay para entregar, mira el <Link href="/panel">Dashboard</Link>.
+        Para lo que falta reponer, lo que hay para entregar y las entregas atrasadas o de esta semana, mira el{" "}
+        <Link href="/panel">Dashboard</Link>.
       </p>
     </section>
   );

@@ -40,7 +40,7 @@ jobs:
       NETLIFY_DATABASE_URL_UNPOOLED: postgresql://postgres:postgres@localhost:5432/mymbpm_e2e
       E2E_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mymbpm_e2e
       E2E_COVERAGE: "1"
-      COBERTURA_UMBRAL: "50"
+      COBERTURA_UMBRAL: "70"
       COBERTURA_ESTRICTA: "1"
 
     steps:
@@ -72,6 +72,10 @@ jobs:
 
       - name: E2E con Playwright
         run: npm run test:e2e
+
+      # Con la base que dejaron los E2E: respaldar, restaurar en una base vacia y comparar.
+      - name: Ciclo de respaldo y restauracion
+        run: npm run respaldo:probar-ciclo --workspace @myfirstproject/api -- --base "$E2E_DATABASE_URL"
 
       - name: Reporte de cobertura
         if: ${{ !cancelled() }}

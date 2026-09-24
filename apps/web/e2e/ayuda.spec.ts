@@ -6,7 +6,7 @@ test("la ayuda se abre desde el menu y explica los pasos y los estados", async (
   await expect(page).toHaveURL(/\/ayuda$/);
   await expect(page.getByRole("heading", { name: "Como se usa" })).toBeVisible();
 
-  for (const guia of ["Cargar un pedido", "Confirmar un pedido", "Producir", "Ajustar el stock"]) {
+  for (const guia of ["Cargar un pedido", "Confirmar un pedido", "Producir", "Ajustar el stock", "Costos y ganancia (administradores)"]) {
     await expect(page.getByRole("region", { name: guia }).getByRole("listitem").first()).toBeVisible();
   }
 

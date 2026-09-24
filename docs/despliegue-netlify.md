@@ -18,6 +18,7 @@ Web y API comparten dominio, por eso no hay CORS ni `CORS_ORIGIN`.
 | --- | --- | --- |
 | Configuracion del sitio | `netlify.toml` | build, publish, functions y rewrite `/api/*` |
 | Function | `apps/api/netlify/functions/api.ts` | re-exporta el handler |
+| Scheduled Function | `apps/api/netlify/functions/respaldo-diario.ts` | respaldo diario a Netlify Blobs (ver `docs/respaldos.md`) |
 | Handler | `apps/api/src/netlify.ts` | `serverless-http` sobre `createApp()`; normaliza `/.netlify/functions/api/*` a `/api/*` |
 | App Express | `apps/api/src/app.ts` | la misma que usa el servidor local (`server.ts`) |
 | Web | `apps/web/next.config.ts` | `output: "export"` en build; en `next dev` reescribe `/api/*` a la API local |
@@ -197,3 +198,19 @@ variable `NETLIFY_DATABASE_URL` y Prisma Migrate. Adoptarlo implica cambiar como
 la conexion y como se versionan las migraciones, y conviene evaluarlo en un PR aparte. Otra
 alternativa es una rama de Neon por preview creada desde el build con la API de Neon. Con
 cualquiera de las dos, `scripts/migrar-netlify.mjs` podria volver a migrar en previews.
+
+## Errores en produccion: la referencia
+
+Cada solicitud a la API lleva una **referencia** corta (`3F9A-12BC`), en el header `X-Referencia`
+(`compartido/middlewares/referencia.middleware.ts`). Se llama referencia, y no "id de pedido",
+para no confundirla con los pedidos de clientes.
+
+- Ante un error inesperado (500), `manejo-errores.middleware.ts` deja **una linea JSON** en el
+  log de la function con `nivel: "error"`, la `referencia`, el `idNetlify` (`x-nf-request-id`),
+  el metodo, la ruta **sin la query** (puede llevar busquedas con datos de clientes), el
+  `idUsuario` y el error con su pila.
+- La respuesta lleva la misma `referencia`, y la web la agrega al mensaje de error de cualquier
+  pantalla: "Ocurrio un error interno. Referencia del error: 3F9A-12BC ...".
+- Para encontrarlo: Netlify → Logs → Functions → `api`, y buscar la referencia que paso Maxi.
+- Los errores de negocio o validacion (4xx) tambien traen la referencia en la respuesta, pero no
+  se registran como error ni se muestra la referencia en pantalla.

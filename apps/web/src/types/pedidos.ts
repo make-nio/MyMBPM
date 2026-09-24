@@ -35,7 +35,8 @@ export type PedidoDetalle = {
   nombreItemSnapshot: string;
   cantidad: string;
   precioUnitario: string;
-  costoUnitario: string;
+  // Solo llega para administradores (ver puedeVerCostos en la API).
+  costoUnitario?: string;
   subtotal: string;
   itemCatalogo?: ItemCatalogo;
 };
@@ -65,10 +66,14 @@ export type PedidoAltaPayload = {
   estadoCobro?: EstadoCobro;
   observacionesCliente?: string;
   observacionesInternas?: string;
+  // Dia prometido al cliente, AAAA-MM-DD.
+  fechaEntrega?: string;
 };
 
 export type PedidoEstadoPayload = Partial<{
   estadoPedido: EstadoPedido;
   estadoCobro: EstadoCobro;
   observacionesInternas: string;
+  // AAAA-MM-DD; null la borra.
+  fechaEntrega: string | null;
 }>;

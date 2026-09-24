@@ -38,6 +38,7 @@ export function crearItem(input: {
   nombre: string;
   tipoItem: "PRODUCTO" | "INSUMO";
   precio?: number;
+  costo?: number;
   stockMinimo?: number;
 }) {
   return api<{ idItemCatalogo: string; nombre: string }>("POST", "/api/items-catalogo", {

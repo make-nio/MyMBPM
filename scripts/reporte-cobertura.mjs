@@ -9,7 +9,7 @@
 // linea cuenta como cubierta si alguna de las dos fuentes la ejecuto. La metrica es % de lineas.
 //
 // Uso: node scripts/reporte-cobertura.mjs
-//   COBERTURA_UMBRAL (default 50) y COBERTURA_ESTRICTA=1 para fallar si no se alcanza.
+//   COBERTURA_UMBRAL (default 70) y COBERTURA_ESTRICTA=1 para fallar si no se alcanza.
 //   Si existe GITHUB_STEP_SUMMARY, agrega la tabla al resumen del job.
 import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { isAbsolute, join, relative, resolve } from "node:path";
@@ -17,7 +17,7 @@ import { isAbsolute, join, relative, resolve } from "node:path";
 import libCoverage from "istanbul-lib-coverage";
 
 const raiz = resolve(new URL("..", import.meta.url).pathname);
-const umbral = Number(process.env.COBERTURA_UMBRAL ?? 50);
+const umbral = Number(process.env.COBERTURA_UMBRAL ?? 70);
 const estricta = process.env.COBERTURA_ESTRICTA === "1";
 
 function leerLineas(archivo, baseRutas) {

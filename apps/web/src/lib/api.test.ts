@@ -76,6 +76,33 @@ describe("apiFetch", () => {
     await expect(llamada).rejects.toMatchObject({ message: "Stock insuficiente", status: 409 });
   });
 
+  it("en un error del servidor muestra la referencia en el mensaje", async () => {
+    fetchMock.mockResolvedValue(
+      respuesta(500, { ok: false, error: { codigo: "ERROR_INTERNO", message: "Ocurrio un error interno", referencia: "3F9A-12BC" } })
+    );
+
+    await expect(apiFetch("/api/pedidos")).rejects.toMatchObject({
+      message: expect.stringContaining("Referencia del error: 3F9A-12BC"),
+      status: 500,
+      referencia: "3F9A-12BC"
+    });
+  });
+
+  it("toma la referencia del header si el cuerpo no es JSON (por ejemplo, un 502 del proxy)", async () => {
+    fetchMock.mockResolvedValue({ ...respuesta(502, undefined), headers: new Headers({ "X-Referencia": "AAAA-0001" }) });
+
+    await expect(apiFetch("/api/pedidos")).rejects.toMatchObject({
+      message: expect.stringContaining("AAAA-0001"),
+      referencia: "AAAA-0001"
+    });
+  });
+
+  it("en errores de validacion o negocio no agrega la referencia al mensaje", async () => {
+    fetchMock.mockResolvedValue(respuesta(409, { ok: false, error: { message: "Stock insuficiente", referencia: "3F9A-12BC" } }));
+
+    await expect(apiFetch("/api/pedidos")).rejects.toMatchObject({ message: "Stock insuficiente", referencia: "3F9A-12BC" });
+  });
+
   it("usa un mensaje generico si la respuesta de error no es JSON", async () => {
     fetchMock.mockResolvedValue(respuesta(502, undefined));
 

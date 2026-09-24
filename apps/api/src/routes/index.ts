@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import { asyncHandler } from "../compartido/http/async-handler";
+import { ocultarCostosSinPermiso } from "../compartido/middlewares/costos-solo-con-permiso.middleware";
 import {
   cargarAutenticacionOpcional,
   requerirAutenticacion
@@ -14,6 +15,7 @@ import { itemsCatalogoRouter } from "../modulos/items-catalogo/items-catalogo.ro
 import { panelRouter } from "../modulos/panel/panel.routes";
 import { pedidosRouter } from "../modulos/pedidos/pedidos.routes";
 import { produccionRouter } from "../modulos/produccion/produccion.routes";
+import { reportesRouter } from "../modulos/reportes/reportes.routes";
 import { solicitudesEspecialesRouter } from "../modulos/solicitudes-especiales/solicitudes-especiales.routes";
 import { stockRouter } from "../modulos/stock/stock.routes";
 import { usuariosController } from "../modulos/usuarios/usuarios.controller";
@@ -27,6 +29,7 @@ apiRouter.use("/autenticacion", autenticacionRouter);
 apiRouter.post("/usuarios", cargarAutenticacionOpcional, asyncHandler(usuariosController.crear));
 
 rutasPrivadasRouter.use(requerirAutenticacion);
+rutasPrivadasRouter.use(ocultarCostosSinPermiso);
 rutasPrivadasRouter.use("/usuarios", usuariosRouter);
 rutasPrivadasRouter.use("/categorias", categoriasRouter);
 rutasPrivadasRouter.use("/items-catalogo", itemsCatalogoRouter);
@@ -37,5 +40,6 @@ rutasPrivadasRouter.use("/pedidos", pedidosRouter);
 rutasPrivadasRouter.use("/produccion", produccionRouter);
 rutasPrivadasRouter.use("/solicitudes-especiales", solicitudesEspecialesRouter);
 rutasPrivadasRouter.use("/auditoria", auditoriaRouter);
+rutasPrivadasRouter.use("/reportes", reportesRouter);
 
 apiRouter.use(rutasPrivadasRouter);

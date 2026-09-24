@@ -20,7 +20,9 @@ vi.mock("./panel.repository", () => ({
     contarPedidosPorEstado: vi.fn(),
     listarPedidosPorEstados: vi.fn(),
     contarOrdenesPorEstado: vi.fn(),
-    listarOrdenesEnProceso: vi.fn()
+    listarOrdenesEnProceso: vi.fn(),
+    listarPedidosConfirmadosEntre: vi.fn(),
+    listarPedidosConEntregaAntesDe: vi.fn()
   }
 }));
 
@@ -49,13 +51,15 @@ beforeEach(() => {
     { estadoProduccion: "FINALIZADA", _count: { _all: 9 } }
   ] as never);
   repo.listarOrdenesEnProceso.mockResolvedValue([]);
+  repo.listarPedidosConfirmadosEntre.mockResolvedValue([]);
+  repo.listarPedidosConEntregaAntesDe.mockResolvedValue([]);
   stock.obtenerExistencias.mockResolvedValue([]);
   stock.obtenerUltimosMovimientos.mockResolvedValue([]);
 });
 
 describe("panelService.obtenerResumen", () => {
   it("cuenta pendientes aparte de confirmados sin entregar (confirmado, en preparacion y listo)", async () => {
-    const resumen = await panelService.obtenerResumen({ limite: 5 });
+    const resumen = await panelService.obtenerResumen({ limite: 5 }, { verCostos: true });
 
     expect(resumen.pedidos.pendientes.total).toBe(3);
     expect(resumen.pedidos.confirmados.total).toBe(7);
@@ -68,7 +72,7 @@ describe("panelService.obtenerResumen", () => {
   });
 
   it("informa las ordenes en proceso y cuantas esperan para iniciar", async () => {
-    const resumen = await panelService.obtenerResumen({ limite: 5 });
+    const resumen = await panelService.obtenerResumen({ limite: 5 }, { verCostos: true });
 
     expect(resumen.produccion.enProceso.total).toBe(2);
     expect(resumen.produccion.pendientes).toBe(5);
@@ -82,7 +86,7 @@ describe("panelService.obtenerResumen", () => {
       existencia("Justo", 3, 3, true)
     ]);
 
-    const resumen = await panelService.obtenerResumen({ limite: 2 });
+    const resumen = await panelService.obtenerResumen({ limite: 2 }, { verCostos: true });
 
     expect(stock.obtenerExistencias).toHaveBeenCalledWith({ cliente: "prisma" }, { activo: true });
     expect(resumen.stockBajo.total).toBe(3);
@@ -92,7 +96,7 @@ describe("panelService.obtenerResumen", () => {
   it("devuelve los ultimos movimientos que pide al servicio de stock", async () => {
     stock.obtenerUltimosMovimientos.mockResolvedValue([{ idEstadoStock: 9n }] as never);
 
-    const resumen = await panelService.obtenerResumen({ limite: 4 });
+    const resumen = await panelService.obtenerResumen({ limite: 4 }, { verCostos: true });
 
     expect(stock.obtenerUltimosMovimientos).toHaveBeenCalledWith({ cliente: "prisma" }, 4);
     expect(resumen.ultimosMovimientos).toEqual([{ idEstadoStock: 9n }]);
@@ -102,7 +106,7 @@ describe("panelService.obtenerResumen", () => {
     repo.contarPedidosPorEstado.mockResolvedValue([]);
     repo.contarOrdenesPorEstado.mockResolvedValue([]);
 
-    const resumen = await panelService.obtenerResumen({ limite: 5 });
+    const resumen = await panelService.obtenerResumen({ limite: 5 }, { verCostos: true });
 
     expect([
       resumen.pedidos.pendientes.total,
@@ -110,5 +114,65 @@ describe("panelService.obtenerResumen", () => {
       resumen.produccion.enProceso.total,
       resumen.stockBajo.total
     ]).toEqual([0, 0, 0, 0]);
+  });
+});
+
+describe("panelService.obtenerResumen: ventas del mes", () => {
+  it("suma lo confirmado en el mes de Argentina", async () => {
+    repo.listarPedidosConfirmadosEntre.mockResolvedValue([
+      { total: dec(1000), detalles: [{ cantidad: dec(2), costoUnitario: dec(300) }] }
+    ] as never);
+
+    const resumen = await panelService.obtenerResumen({ limite: 5 }, { verCostos: true }, new Date("2026-09-24T12:00:00Z"));
+
+    expect(repo.listarPedidosConfirmadosEntre).toHaveBeenCalledWith(
+      expect.anything(),
+      new Date("2026-09-01T03:00:00Z"),
+      new Date("2026-10-01T03:00:00Z")
+    );
+    expect(resumen.ventasDelMes?.vendido.toString()).toBe("1000");
+    expect(resumen.ventasDelMes?.costo.toString()).toBe("600");
+    expect(resumen.ventasDelMes?.ganancia.toString()).toBe("400");
+  });
+});
+
+describe("panelService.obtenerResumen: sin permiso para ver costos", () => {
+  it("no calcula ni devuelve las ventas del mes", async () => {
+    const resumen = await panelService.obtenerResumen({ limite: 5 }, { verCostos: false });
+
+    expect(resumen).not.toHaveProperty("ventasDelMes");
+    expect(repo.listarPedidosConfirmadosEntre).not.toHaveBeenCalled();
+  });
+});
+
+
+describe("panelService.obtenerResumen: entregas prometidas", () => {
+  const ahora = new Date("2026-09-24T12:00:00Z");
+  const conFecha = (idPedido: bigint, fechaEntrega: string) => ({ idPedido, fechaEntrega: new Date(fechaEntrega) });
+
+  it("pide los pedidos abiertos con fecha antes de 7 dias desde hoy (hora de Argentina)", async () => {
+    await panelService.obtenerResumen({ limite: 5 }, { verCostos: false }, ahora);
+
+    expect(repo.listarPedidosConEntregaAntesDe).toHaveBeenCalledWith(
+      expect.anything(),
+      ["PENDIENTE", "CONFIRMADO", "EN_PREPARACION", "LISTO"],
+      new Date("2026-10-01T03:00:00Z")
+    );
+  });
+
+  it("separa los atrasados (antes de hoy) de los que vencen esta semana (hoy incluido)", async () => {
+    repo.listarPedidosConEntregaAntesDe.mockResolvedValue([
+      conFecha(1n, "2026-09-20T03:00:00Z"),
+      conFecha(2n, "2026-09-23T03:00:00Z"),
+      conFecha(3n, "2026-09-24T03:00:00Z"),
+      conFecha(4n, "2026-09-30T03:00:00Z")
+    ] as never);
+
+    const resumen = await panelService.obtenerResumen({ limite: 1 }, { verCostos: false }, ahora);
+
+    expect(resumen.entregas.atrasados.total).toBe(2);
+    expect(resumen.entregas.atrasados.pedidos.map((pedido) => pedido.idPedido)).toEqual([1n]);
+    expect(resumen.entregas.estaSemana.total).toBe(2);
+    expect(resumen.entregas.estaSemana.pedidos.map((pedido) => pedido.idPedido)).toEqual([3n]);
   });
 });

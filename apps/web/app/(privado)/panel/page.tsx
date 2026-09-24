@@ -6,9 +6,11 @@ import { ReactNode, useEffect, useState } from "react";
 import { useUsuarioAutenticado } from "../../../src/components/auth/contexto-sesion";
 import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
 import { MensajeError } from "../../../src/components/ui/mensaje-error";
-import { formatearCantidad, formatearEstado, formatearFecha, formatearMoneda } from "../../../src/lib/formato";
+import { formatearCantidad, formatearDia, formatearEstado, formatearFecha, formatearMoneda } from "../../../src/lib/formato";
 import { obtenerResumenPanel } from "../../../src/lib/modulos/panel";
 import { ResumenPanel } from "../../../src/types/panel";
+
+type PedidoResumen = ResumenPanel["entregas"]["atrasados"]["pedidos"][number];
 
 function nombreCliente(cliente?: { nombre: string; apellido: string | null } | null) {
   return `${cliente?.nombre ?? ""} ${cliente?.apellido ?? ""}`.trim() || "Sin cliente";
@@ -24,15 +26,45 @@ function Indicador({ titulo, valor, detalle, href }: { titulo: string; valor: nu
   );
 }
 
-function Seccion({ titulo, vacio, href, children }: { titulo: string; vacio: string; href: string; children: ReactNode[] }) {
+function Seccion({
+  titulo,
+  vacio,
+  href,
+  total,
+  children
+}: {
+  titulo: string;
+  vacio: string;
+  href: string;
+  total?: number;
+  children: ReactNode[];
+}) {
   return (
     <section aria-label={titulo} className="tarjeta-seccion panel-seccion">
       <div className="panel-seccion__encabezado">
-        <h2>{titulo}</h2>
+        <h2>
+          {titulo}
+          {total !== undefined && total > children.length ? ` (${children.length} de ${total})` : null}
+        </h2>
         <Link href={href}>Ver todo</Link>
       </div>
       {children.length === 0 ? <p className="texto-secundario">{vacio}</p> : <ul className="panel-lista">{children}</ul>}
     </section>
+  );
+}
+
+// Un pedido con fecha prometida; el numero lleva al pedido abierto en su pantalla.
+function PedidoConEntrega({ pedido }: { pedido: PedidoResumen }) {
+  return (
+    <li>
+      <Link href={`/pedidos?pedido=${pedido.idPedido}`}>
+        <strong>{pedido.numeroPedido ?? `Pedido ${pedido.idPedido}`}</strong>
+      </Link>
+      <span>{nombreCliente(pedido.cliente)}</span>
+      <span className="texto-secundario">
+        Entrega {formatearDia(pedido.fechaEntrega)} · {formatearEstado(pedido.estadoPedido)}
+      </span>
+    </li>
   );
 }
 
@@ -91,7 +123,58 @@ export default function PanelPage() {
             />
           </div>
 
+          {resumen.ventasDelMes ? (
+          <section aria-label="Este mes" className="tarjeta-seccion panel-mes">
+            <p className="marca-pequena">Este mes</p>
+            <dl className="panel-mes__cifras">
+              <div>
+                <dt>Vendido</dt>
+                <dd data-testid="mes-vendido">{formatearMoneda(resumen.ventasDelMes.vendido)}</dd>
+              </div>
+              <div>
+                <dt>Costo</dt>
+                <dd data-testid="mes-costo">{formatearMoneda(resumen.ventasDelMes.costo)}</dd>
+              </div>
+              <div>
+                <dt>Ganancia</dt>
+                <dd data-testid="mes-ganancia">{formatearMoneda(resumen.ventasDelMes.ganancia)}</dd>
+              </div>
+            </dl>
+            <p className="texto-secundario texto-secundario--compacto">
+              {resumen.ventasDelMes.pedidos} {resumen.ventasDelMes.pedidos === 1 ? "pedido confirmado" : "pedidos confirmados"}{" "}
+              este mes, sin contar los cancelados.
+              {resumen.ventasDelMes.lineasSinCosto > 0
+                ? ` Hay ${resumen.ventasDelMes.lineasSinCosto} ${
+                    resumen.ventasDelMes.lineasSinCosto === 1 ? "item vendido" : "items vendidos"
+                  } sin costo cargado: la ganancia real es menor.`
+                : null}
+            </p>
+          </section>
+          ) : null}
+
           <div className="panel-secciones">
+            <Seccion
+              href="/pedidos"
+              titulo="Entregas atrasadas"
+              total={resumen.entregas.atrasados.total}
+              vacio="No hay entregas atrasadas."
+            >
+              {resumen.entregas.atrasados.pedidos.map((pedido) => (
+                <PedidoConEntrega key={pedido.idPedido} pedido={pedido} />
+              ))}
+            </Seccion>
+
+            <Seccion
+              href="/pedidos"
+              titulo="Entregas de esta semana"
+              total={resumen.entregas.estaSemana.total}
+              vacio="No hay entregas prometidas para los proximos 7 dias."
+            >
+              {resumen.entregas.estaSemana.pedidos.map((pedido) => (
+                <PedidoConEntrega key={pedido.idPedido} pedido={pedido} />
+              ))}
+            </Seccion>
+
             <Seccion href="/pedidos" titulo="Para confirmar" vacio="No hay pedidos pendientes.">
               {resumen.pedidos.pendientes.ultimos.map((pedido) => (
                 <li key={pedido.idPedido}>
