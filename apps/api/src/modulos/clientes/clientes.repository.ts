@@ -33,11 +33,11 @@ export const clientesRepository = {
 
     if (filtros.busqueda) {
       where.OR = [
-        { nombre: { contains: filtros.busqueda } },
-        { apellido: { contains: filtros.busqueda } },
-        { telefono: { contains: filtros.busqueda } },
-        { email: { contains: filtros.busqueda } },
-        { documento: { contains: filtros.busqueda } }
+        { nombre: { contains: filtros.busqueda, mode: "insensitive" } },
+        { apellido: { contains: filtros.busqueda, mode: "insensitive" } },
+        { telefono: { contains: filtros.busqueda, mode: "insensitive" } },
+        { email: { contains: filtros.busqueda, mode: "insensitive" } },
+        { documento: { contains: filtros.busqueda, mode: "insensitive" } }
       ];
     }
 

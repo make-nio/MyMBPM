@@ -6,7 +6,10 @@ export const autenticacionRepository = {
   obtenerUsuarioParaLogin(identificador: string) {
     return prisma.usuario.findFirst({
       where: {
-        OR: [{ usuario: identificador }, { email: identificador }]
+        OR: [
+          { usuario: { equals: identificador, mode: "insensitive" } },
+          { email: { equals: identificador, mode: "insensitive" } }
+        ]
       }
     });
   },

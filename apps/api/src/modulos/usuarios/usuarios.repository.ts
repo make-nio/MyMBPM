@@ -53,11 +53,11 @@ export const usuariosRepository = {
     const condiciones: Prisma.UsuarioWhereInput[] = [];
 
     if (input.email) {
-      condiciones.push({ email: input.email });
+      condiciones.push({ email: { equals: input.email, mode: "insensitive" } });
     }
 
     if (input.usuario) {
-      condiciones.push({ usuario: input.usuario });
+      condiciones.push({ usuario: { equals: input.usuario, mode: "insensitive" } });
     }
 
     if (condiciones.length === 0) {
