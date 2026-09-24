@@ -1,14 +1,9 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
 import { useUsuarioAutenticado } from "../../../src/components/auth/contexto-sesion";
-import { HistorialCambios } from "../../../src/components/modulos/auditoria/historial-cambios";
-import { HistorialPrecios } from "../../../src/components/modulos/auditoria/historial-precios";
-import { FormularioComponenteItem } from "../../../src/components/modulos/items-catalogo/formulario-componente-item";
-import { FormularioItemCatalogo } from "../../../src/components/modulos/items-catalogo/formulario-item-catalogo";
-import { ImportarCatalogo } from "../../../src/components/modulos/items-catalogo/importar-catalogo";
-import { TablaComponentesItem } from "../../../src/components/modulos/items-catalogo/tabla-componentes-item";
 import { EncabezadoModulo } from "../../../src/components/ui/encabezado-modulo";
 import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
 import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
@@ -21,6 +16,7 @@ import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detal
 import { useAbrirDesdeUrl } from "../../../src/hooks/use-abrir-desde-url";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
+import { usePrecargar } from "../../../src/hooks/use-precargar";
 import { calcularCostoReceta } from "../../../src/lib/costos";
 import { formatearMoneda } from "../../../src/lib/formato";
 import { listarCategorias } from "../../../src/lib/modulos/categorias";
@@ -42,6 +38,38 @@ import {
   TIPOS_ITEM,
   TipoItem
 } from "../../../src/types/items-catalogo";
+
+// Paneles, historiales e importacion se ven solo al elegir un registro o abrir su modal: su
+// codigo no entra en el JS inicial de la pantalla, que primero tiene que mostrar la lista.
+const HistorialPrecios = dynamic(() => import("../../../src/components/modulos/auditoria/historial-precios").then((modulo) => modulo.HistorialPrecios), {
+  ssr: false,
+  loading: () => <EstadoCargando descripcion="Un momento." titulo="Cargando historial de precios" />
+});
+const HistorialCambios = dynamic(() => import("../../../src/components/modulos/auditoria/historial-cambios").then((modulo) => modulo.HistorialCambios), {
+  ssr: false,
+  loading: () => <EstadoCargando descripcion="Un momento." titulo="Cargando historial" />
+});
+const TablaComponentesItem = dynamic(() => import("../../../src/components/modulos/items-catalogo/tabla-componentes-item").then((modulo) => modulo.TablaComponentesItem), {
+  ssr: false,
+  loading: () => <EstadoCargando descripcion="Un momento." titulo="Cargando receta" />
+});
+const ImportarCatalogo = dynamic(() => import("../../../src/components/modulos/items-catalogo/importar-catalogo").then((modulo) => modulo.ImportarCatalogo), {
+  ssr: false,
+  loading: () => <EstadoCargando descripcion="Un momento." titulo="Cargando importacion" />
+});
+
+// Los formularios se ven solo al abrir su modal: no entran en el JS inicial de la pantalla y se
+// precargan cuando el navegador queda libre (usePrecargar), asi el modal abre sin esperar.
+const cargarFormularioItemCatalogo = () => import("../../../src/components/modulos/items-catalogo/formulario-item-catalogo").then((modulo) => modulo.FormularioItemCatalogo);
+const cargarFormularioComponenteItem = () => import("../../../src/components/modulos/items-catalogo/formulario-componente-item").then((modulo) => modulo.FormularioComponenteItem);
+const FormularioItemCatalogo = dynamic(cargarFormularioItemCatalogo, {
+  ssr: false,
+  loading: () => <EstadoCargando descripcion="Un momento." titulo="Cargando formulario" />
+});
+const FormularioComponenteItem = dynamic(cargarFormularioComponenteItem, {
+  ssr: false,
+  loading: () => <EstadoCargando descripcion="Un momento." titulo="Cargando formulario" />
+});
 
 type FiltroTriestado = "todos" | "si" | "no";
 
@@ -77,6 +105,7 @@ function CostoReceta({
 }
 
 export default function ItemsCatalogoPage() {
+  usePrecargar(cargarFormularioItemCatalogo, cargarFormularioComponenteItem);
   const { esAdministrador } = useUsuarioAutenticado();
   const modalItem = useModal<ItemCatalogo>();
   const modalComponente = useModal<ItemCatalogoComponente>();

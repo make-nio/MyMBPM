@@ -1,12 +1,9 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
 
 import { useUsuarioAutenticado } from "../../../src/components/auth/contexto-sesion";
-import { HistorialCambios } from "../../../src/components/modulos/auditoria/historial-cambios";
-import { FichaCliente } from "../../../src/components/modulos/clientes/ficha-cliente";
-import { FormularioCliente } from "../../../src/components/modulos/clientes/formulario-cliente";
-import { ImportarClientes } from "../../../src/components/modulos/clientes/importar-clientes";
 import { EncabezadoModulo } from "../../../src/components/ui/encabezado-modulo";
 import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
 import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
@@ -19,6 +16,7 @@ import { useAbrirDesdeUrl } from "../../../src/hooks/use-abrir-desde-url";
 import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
+import { usePrecargar } from "../../../src/hooks/use-precargar";
 import {
   actualizarCliente,
   cambiarEstadoCliente,
@@ -28,9 +26,33 @@ import {
 } from "../../../src/lib/modulos/clientes";
 import { Cliente } from "../../../src/types/clientes";
 
+// Paneles, historiales e importacion se ven solo al elegir un registro o abrir su modal: su
+// codigo no entra en el JS inicial de la pantalla, que primero tiene que mostrar la lista.
+const FichaCliente = dynamic(() => import("../../../src/components/modulos/clientes/ficha-cliente").then((modulo) => modulo.FichaCliente), {
+  ssr: false,
+  loading: () => <EstadoCargando descripcion="Un momento." titulo="Cargando ficha" />
+});
+const ImportarClientes = dynamic(() => import("../../../src/components/modulos/clientes/importar-clientes").then((modulo) => modulo.ImportarClientes), {
+  ssr: false,
+  loading: () => <EstadoCargando descripcion="Un momento." titulo="Cargando importacion" />
+});
+const HistorialCambios = dynamic(() => import("../../../src/components/modulos/auditoria/historial-cambios").then((modulo) => modulo.HistorialCambios), {
+  ssr: false,
+  loading: () => <EstadoCargando descripcion="Un momento." titulo="Cargando historial" />
+});
+
+// Los formularios se ven solo al abrir su modal: no entran en el JS inicial de la pantalla y se
+// precargan cuando el navegador queda libre (usePrecargar), asi el modal abre sin esperar.
+const cargarFormularioCliente = () => import("../../../src/components/modulos/clientes/formulario-cliente").then((modulo) => modulo.FormularioCliente);
+const FormularioCliente = dynamic(cargarFormularioCliente, {
+  ssr: false,
+  loading: () => <EstadoCargando descripcion="Un momento." titulo="Cargando formulario" />
+});
+
 type FiltroActivo = "todos" | "activos" | "inactivos";
 
 export default function ClientesPage() {
+  usePrecargar(cargarFormularioCliente);
   const { esAdministrador } = useUsuarioAutenticado();
   const modalCliente = useModal<Cliente>();
   const modalHistorial = useModal<Cliente>();

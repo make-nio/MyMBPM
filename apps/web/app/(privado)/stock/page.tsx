@@ -1,10 +1,9 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { FormularioAjusteStock } from "../../../src/components/modulos/stock/formulario-ajuste-stock";
-import { PanelItemStock } from "../../../src/components/modulos/stock/panel-item-stock";
 import { BotonExportarCsv } from "../../../src/components/ui/boton-exportar-csv";
 import { EncabezadoModulo } from "../../../src/components/ui/encabezado-modulo";
 import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
@@ -17,15 +16,32 @@ import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
+import { usePrecargar } from "../../../src/hooks/use-precargar";
 import { formatearCantidad, formatearEstado, formatearFecha } from "../../../src/lib/formato";
 import { generarCsv, numeroCsv } from "../../../src/lib/csv";
 import { crearAjusteStock, listarExistencias } from "../../../src/lib/modulos/stock";
 import { cantidadParaReponer, rutaOrdenParaReponer } from "../../../src/lib/stock/reponer";
 import { Existencia, TipoAjuste, TipoStock } from "../../../src/types/stock";
 
+// Paneles, historiales e importacion se ven solo al elegir un registro o abrir su modal: su
+// codigo no entra en el JS inicial de la pantalla, que primero tiene que mostrar la lista.
+const PanelItemStock = dynamic(() => import("../../../src/components/modulos/stock/panel-item-stock").then((modulo) => modulo.PanelItemStock), {
+  ssr: false,
+  loading: () => <EstadoCargando descripcion="Un momento." titulo="Cargando detalle" />
+});
+
+// Los formularios se ven solo al abrir su modal: no entran en el JS inicial de la pantalla y se
+// precargan cuando el navegador queda libre (usePrecargar), asi el modal abre sin esperar.
+const cargarFormularioAjusteStock = () => import("../../../src/components/modulos/stock/formulario-ajuste-stock").then((modulo) => modulo.FormularioAjusteStock);
+const FormularioAjusteStock = dynamic(cargarFormularioAjusteStock, {
+  ssr: false,
+  loading: () => <EstadoCargando descripcion="Un momento." titulo="Cargando formulario" />
+});
+
 const ESPERA_BUSQUEDA_MS = 300;
 
 export default function StockPage() {
+  usePrecargar(cargarFormularioAjusteStock);
   const modalAjuste = useModal<Existencia>();
   const [aviso, setAviso] = useState<string | null>(null);
   const [filtroTipo, setFiltroTipo] = useState<TipoStock | "">("");
