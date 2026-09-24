@@ -20,6 +20,15 @@ const pantallas: Array<{ ruta: string; titulo: string; alta?: string }> = [
   { ruta: "/ayuda", titulo: "Ayuda" }
 ];
 
+test("busqueda global con resultados", async ({ page }) => {
+  await crearCliente(unico("PRUEBA-ClienteBuscarA11y"));
+  await page.goto("/panel");
+  await page.getByRole("button", { name: /^Buscar Ctrl K$/ }).click();
+  await page.getByLabel("Buscar pedidos, clientes e items").fill("PRUEBA-ClienteBuscarA11y");
+  await expect(page.getByRole("region", { name: "Clientes" })).toBeVisible();
+  await revisarAccesibilidad(page, "busqueda global");
+});
+
 test.describe("sin sesion", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 

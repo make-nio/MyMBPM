@@ -19,6 +19,10 @@ export function listarClientes(filtros: FiltrosClientes = {}) {
   ).then((response) => response.data);
 }
 
+export function obtenerCliente(idCliente: string) {
+  return apiFetch<{ ok: true; data: Cliente }>(`/api/clientes/${idCliente}`).then((response) => response.data);
+}
+
 export function crearCliente(payload: ClientePayload) {
   return apiFetch<{ ok: true; data: Cliente }>("/api/clientes", {
     method: "POST",
