@@ -3,6 +3,7 @@ import { prisma } from "../../lib/prisma";
 import { stockService } from "../stock/stock.service";
 
 import { panelRepository } from "./panel.repository";
+import { calcularVentas, rangoMesArgentina } from "./ventas-mes";
 
 // Pedidos que esperan confirmacion (todavia no descontaron stock) y los ya confirmados que
 // falta entregar.
@@ -16,7 +17,8 @@ function sumarConteos(conteos: Array<{ estado: string; total: number }>, estados
 export const panelService = {
   // Lo que Maxi necesita ver al entrar: que confirmar, que entregar, que se esta fabricando,
   // que falta reponer y que se movio ultimo en el stock.
-  async obtenerResumen({ limite }: { limite: number }) {
+  async obtenerResumen({ limite }: { limite: number }, ahora = new Date()) {
+    const mes = rangoMesArgentina(ahora);
     const [
       conteosPedidos,
       pendientes,
@@ -24,7 +26,8 @@ export const panelService = {
       conteosOrdenes,
       ordenesEnProceso,
       existencias,
-      ultimosMovimientos
+      ultimosMovimientos,
+      vendidosDelMes
     ] = await Promise.all([
       panelRepository.contarPedidosPorEstado(prisma),
       panelRepository.listarPedidosPorEstados(prisma, ESTADOS_PENDIENTES, limite),
@@ -32,7 +35,8 @@ export const panelService = {
       panelRepository.contarOrdenesPorEstado(prisma),
       panelRepository.listarOrdenesEnProceso(prisma, limite),
       stockService.obtenerExistencias(prisma, { activo: true }),
-      stockService.obtenerUltimosMovimientos(prisma, limite)
+      stockService.obtenerUltimosMovimientos(prisma, limite),
+      panelRepository.listarPedidosConfirmadosEntre(prisma, mes.desde, mes.hasta)
     ]);
 
     const pedidosPorEstado = conteosPedidos.map((conteo) => ({ estado: conteo.estadoPedido, total: conteo._count._all }));
@@ -55,7 +59,9 @@ export const panelService = {
         pendientes: sumarConteos(ordenesPorEstado, ["PENDIENTE"])
       },
       stockBajo: { total: bajoMinimo.length, items: bajoMinimo.slice(0, limite) },
-      ultimosMovimientos
+      ultimosMovimientos,
+      // Lo confirmado este mes (hora de Argentina), sin cancelados.
+      ventasDelMes: { desde: mes.desde, ...calcularVentas(vendidosDelMes) }
     };
   }
 };

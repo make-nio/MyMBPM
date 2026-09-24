@@ -20,7 +20,8 @@ vi.mock("./panel.repository", () => ({
     contarPedidosPorEstado: vi.fn(),
     listarPedidosPorEstados: vi.fn(),
     contarOrdenesPorEstado: vi.fn(),
-    listarOrdenesEnProceso: vi.fn()
+    listarOrdenesEnProceso: vi.fn(),
+    listarPedidosConfirmadosEntre: vi.fn()
   }
 }));
 
@@ -49,6 +50,7 @@ beforeEach(() => {
     { estadoProduccion: "FINALIZADA", _count: { _all: 9 } }
   ] as never);
   repo.listarOrdenesEnProceso.mockResolvedValue([]);
+  repo.listarPedidosConfirmadosEntre.mockResolvedValue([]);
   stock.obtenerExistencias.mockResolvedValue([]);
   stock.obtenerUltimosMovimientos.mockResolvedValue([]);
 });
@@ -112,3 +114,23 @@ describe("panelService.obtenerResumen", () => {
     ]).toEqual([0, 0, 0, 0]);
   });
 });
+
+describe("panelService.obtenerResumen: ventas del mes", () => {
+  it("suma lo confirmado en el mes de Argentina", async () => {
+    repo.listarPedidosConfirmadosEntre.mockResolvedValue([
+      { total: dec(1000), detalles: [{ cantidad: dec(2), costoUnitario: dec(300) }] }
+    ] as never);
+
+    const resumen = await panelService.obtenerResumen({ limite: 5 }, new Date("2026-09-24T12:00:00Z"));
+
+    expect(repo.listarPedidosConfirmadosEntre).toHaveBeenCalledWith(
+      expect.anything(),
+      new Date("2026-09-01T03:00:00Z"),
+      new Date("2026-10-01T03:00:00Z")
+    );
+    expect(resumen.ventasDelMes.vendido.toString()).toBe("1000");
+    expect(resumen.ventasDelMes.costo.toString()).toBe("600");
+    expect(resumen.ventasDelMes.ganancia.toString()).toBe("400");
+  });
+});
+

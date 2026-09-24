@@ -192,6 +192,19 @@ textarea {
   }
 }
 
+.costo-receta {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: start;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.costo-receta p {
+  margin: 0;
+}
+
 .pie-listado {
   display: flex;
   flex-wrap: wrap;
@@ -436,6 +449,24 @@ textarea {
 .panel-indicador:hover,
 .panel-indicador:focus-visible {
   border-color: var(--accent);
+}
+
+.panel-mes__cifras {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  gap: 1rem;
+  margin: 0.75rem 0;
+}
+
+.panel-mes__cifras dt {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.panel-mes__cifras dd {
+  margin: 0.2rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 700;
 }
 
 .panel-secciones {

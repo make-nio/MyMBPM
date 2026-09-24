@@ -29,6 +29,21 @@ export const panelRepository = {
     });
   },
 
+  // Pedidos confirmados en el rango (no cancelados): lo vendido. Solo los campos para sumar.
+  listarPedidosConfirmadosEntre(prismaOrTx: PrismaOrTx, desde: Date, hasta: Date) {
+    return prismaOrTx.pedido.findMany({
+      where: {
+        activo: true,
+        estadoPedido: { not: "CANCELADO" },
+        fechaConfirmacion: { gte: desde, lt: hasta }
+      },
+      select: {
+        total: true,
+        detalles: { select: { cantidad: true, costoUnitario: true } }
+      }
+    });
+  },
+
   listarOrdenesEnProceso(prismaOrTx: PrismaOrTx, limit: number) {
     return prismaOrTx.ordenProduccion.findMany({
       where: { activo: true, estadoProduccion: "EN_PROCESO" },

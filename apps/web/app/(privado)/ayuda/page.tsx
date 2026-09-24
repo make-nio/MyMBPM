@@ -43,6 +43,15 @@ const guias: Paso[] = [
       "El motivo es obligatorio y queda en los movimientos, con tu usuario y la fecha.",
       "\"Solo bajo minimo\" te muestra lo que hay que reponer. El minimo de cada item se define al editarlo, en \"Stock minimo\"."
     ]
+  },
+  {
+    titulo: "Costos y ganancia",
+    pasos: [
+      "Carga el costo de cada insumo (por ejemplo, lo que pagaste el kilo de filamento) al editarlo, en \"Costo\".",
+      "En la receta de un producto vas a ver cuanto cuesta fabricarlo. Si no coincide con su costo, toca \"Usar como costo\".",
+      "Cada pedido muestra su costo y su ganancia, y el Dashboard lo vendido y ganado en el mes."
+    ],
+    ojo: "El costo de un pedido se toma cuando agregas cada item: si despues cambias el costo del producto, los pedidos ya cargados no cambian."
   }
 ];
 
