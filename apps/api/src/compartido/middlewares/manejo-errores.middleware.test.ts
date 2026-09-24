@@ -110,6 +110,16 @@ describe("manejoErroresMiddleware", () => {
     expect(log).not.toHaveBeenCalled();
   });
 
+  it("un cuerpo demasiado grande es un 413, no un 500", () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const res = respuesta();
+
+    manejoErroresMiddleware(Object.assign(new Error("request entity too large"), { type: "entity.too.large" }), solicitud(), res as unknown as Response, vi.fn());
+
+    expect(res.status).toHaveBeenCalledWith(413);
+    expect(log).not.toHaveBeenCalled();
+  });
+
   it("traduce los errores conocidos de Prisma", () => {
     const res = respuesta();
     const duplicado = new Prisma.PrismaClientKnownRequestError("duplicado", { code: "P2002", clientVersion: "6.19.3" });

@@ -55,3 +55,17 @@ Filtros soportados en listado:
 ## Auditoria
 
 - `GET /api/auditoria?entidad=ITEM_CATALOGO&idEntidad=1&limit=50&offset=0` (solo administradores)
+
+## Importacion de catalogo (solo administradores)
+
+- `POST /api/items-catalogo/importacion/previsualizar` `{ filas: [...] }`: valida cada fila contra el
+  catalogo actual sin escribir. Devuelve `filas` (`numero` de fila del archivo, `errores`, `item`) y
+  `resumen` (`total`, `validas`, `conErrores`, `categoriasNuevas`).
+- `POST /api/items-catalogo/importacion` `{ filas: [...] }`: vuelve a validar dentro de una
+  transaccion (con un advisory lock) y, si no hay errores, crea las categorias nuevas, los items y su
+  auditoria de alta, todo junto. Con errores responde 409 y no crea nada.
+- Cada fila son textos como vienen del CSV: `nombre`, `tipo` (Producto/Insumo), `categoria`,
+  `codigo`, `precio`, `costo` (acepta `1.234,50`), `stockMinimo`, `material`, `color`,
+  `descripcionCorta`, `activo` (Si/No). Hasta 1000 filas; el cuerpo de estas rutas admite 2 MB.
+- Un nombre (su slug) o un codigo que ya existe, o que se repite en el archivo, es un error de fila.
+  El stock inicial no se importa: se carga con ajustes desde Stock.

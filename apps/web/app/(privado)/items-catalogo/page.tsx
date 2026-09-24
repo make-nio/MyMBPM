@@ -6,11 +6,13 @@ import { useUsuarioAutenticado } from "../../../src/components/auth/contexto-ses
 import { HistorialCambios } from "../../../src/components/modulos/auditoria/historial-cambios";
 import { FormularioComponenteItem } from "../../../src/components/modulos/items-catalogo/formulario-componente-item";
 import { FormularioItemCatalogo } from "../../../src/components/modulos/items-catalogo/formulario-item-catalogo";
+import { ImportarCatalogo } from "../../../src/components/modulos/items-catalogo/importar-catalogo";
 import { TablaComponentesItem } from "../../../src/components/modulos/items-catalogo/tabla-componentes-item";
 import { EncabezadoModulo } from "../../../src/components/ui/encabezado-modulo";
 import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
 import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
 import { MensajeError } from "../../../src/components/ui/mensaje-error";
+import { MensajeExito } from "../../../src/components/ui/mensaje-exito";
 import { Modal } from "../../../src/components/ui/modal";
 import { PieListado } from "../../../src/components/ui/pie-listado";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
@@ -75,6 +77,8 @@ export default function ItemsCatalogoPage() {
   const { esAdministrador } = useUsuarioAutenticado();
   const modalItem = useModal<ItemCatalogo>();
   const modalComponente = useModal<ItemCatalogoComponente>();
+  const modalImportacion = useModal();
+  const [avisoImportacion, setAvisoImportacion] = useState<string | null>(null);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [componentes, setComponentes] = useState<ItemCatalogoComponente[]>([]);
   const [itemSeleccionado, setItemSeleccionado] = useState<ItemCatalogo | null>(null);
@@ -278,6 +282,22 @@ export default function ItemsCatalogoPage() {
         titulo="Items catalogo"
       />
 
+      {esAdministrador ? (
+        <div className="acciones-tabla">
+          <button
+            className="boton-secundario"
+            onClick={() => {
+              setAvisoImportacion(null);
+              modalImportacion.abrir(null);
+            }}
+            type="button"
+          >
+            Importar CSV
+          </button>
+        </div>
+      ) : null}
+      {avisoImportacion ? <MensajeExito mensaje={avisoImportacion} /> : null}
+
       {error ? <MensajeError mensaje={error} /> : null}
       {cargando ? <EstadoCargando titulo="Cargando items del catalogo" /> : null}
       {!cargando && !error && items.length === 0 ? (
@@ -419,6 +439,26 @@ export default function ItemsCatalogoPage() {
           item={modalItem.contexto}
           onCancel={modalItem.cerrar}
           onSubmit={guardarItem}
+        />
+      </Modal>
+
+      <Modal
+        abierto={modalImportacion.abierto}
+        descripcion="Carga muchos items de una vez desde un archivo CSV (Excel o Google Sheets)."
+        onClose={modalImportacion.cerrar}
+        titulo="Importar catalogo"
+      >
+        <ImportarCatalogo
+          onCancel={modalImportacion.cerrar}
+          onImportado={async (resultado) => {
+            modalImportacion.cerrar();
+            setAvisoImportacion(
+              `Se importaron ${resultado.creados} items` +
+                (resultado.categoriasCreadas.length > 0 ? ` y se crearon las categorias ${resultado.categoriasCreadas.join(", ")}.` : ".")
+            );
+            void listarCategorias({ limit: 100 }).then(setCategorias).catch(() => undefined);
+            await recargarItems();
+          }}
         />
       </Modal>
 
