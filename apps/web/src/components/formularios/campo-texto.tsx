@@ -8,6 +8,7 @@ type CampoTextoProps = {
   required?: boolean;
   autoComplete?: string;
   minLength?: number;
+  step?: string;
 };
 
 export function CampoTexto({
@@ -19,7 +20,8 @@ export function CampoTexto({
   placeholder,
   required,
   autoComplete,
-  minLength
+  minLength,
+  step
 }: CampoTextoProps) {
   return (
     <div className="campo-formulario">
@@ -32,6 +34,7 @@ export function CampoTexto({
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         required={required}
+        step={step}
         type={type}
         value={value}
       />
