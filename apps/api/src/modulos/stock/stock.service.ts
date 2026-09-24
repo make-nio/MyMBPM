@@ -74,8 +74,22 @@ export const stockService = {
 
   // Stock vigente de cada item del catalogo: los PRODUCTO contra su stock de PRODUCTO y los
   // INSUMO contra su stock de INSUMO.
-  async obtenerExistencias(prismaOrTx: PrismaOrTx, filtros: { tipoItem?: TipoItem; activo?: boolean }) {
-    const items = await stockRepository.listarItemsParaExistencias(prismaOrTx, filtros);
+  async obtenerExistencias(
+    prismaOrTx: PrismaOrTx,
+    filtros: {
+      tipoItem?: TipoItem;
+      activo?: boolean;
+      busqueda?: string;
+      soloBajoMinimo?: boolean;
+      limit?: number;
+      offset?: number;
+    }
+  ) {
+    const items = await stockRepository.listarItemsParaExistencias(prismaOrTx, {
+      tipoItem: filtros.tipoItem,
+      activo: filtros.activo,
+      busqueda: filtros.busqueda || undefined
+    });
     const ultimos = await stockRepository.listarUltimosEstados(
       prismaOrTx,
       items.map((item) => item.idItemCatalogo)
@@ -84,7 +98,7 @@ export const stockService = {
       ultimos.map((estado) => [`${estado.idItemCatalogo}:${estado.tipoStock}`, estado])
     );
 
-    return items.map((item) => {
+    const existencias = items.map((item) => {
       const ultimo = porItemYTipo.get(`${item.idItemCatalogo}:${item.tipoItem}`) ?? null;
       const stockActual = ultimo ? new Prisma.Decimal(ultimo.stockActual) : new Prisma.Decimal(0);
 
@@ -101,6 +115,13 @@ export const stockService = {
         fechaUltimoMovimiento: ultimo?.fechaAlta ?? null
       };
     });
+
+    // "Bajo minimo" depende del stock vigente, que sale de ESTADO_STOCK: se filtra y se pagina
+    // despues de calcularlo. Lo caro para la pantalla era transferir y dibujar todas las filas.
+    const filtradas = filtros.soloBajoMinimo ? existencias.filter((existencia) => existencia.bajoMinimo) : existencias;
+    const desde = filtros.offset ?? 0;
+
+    return filtros.limit === undefined ? filtradas.slice(desde) : filtradas.slice(desde, desde + filtros.limit);
   },
 
   obtenerUltimosMovimientos(prismaOrTx: PrismaOrTx, limit: number) {

@@ -28,9 +28,26 @@ export function listarMovimientosStock(filtros: {
   ).then((response) => response.data);
 }
 
-export function listarExistencias(filtros: { tipoItem?: TipoStock; activo?: boolean } = {}) {
+// Sin limit la API devuelve todas; con limit, la pagina pedida (despues de aplicar los filtros).
+export function listarExistencias(
+  filtros: {
+    tipoItem?: TipoStock;
+    activo?: boolean;
+    busqueda?: string;
+    soloBajoMinimo?: boolean;
+    limit?: number;
+    offset?: number;
+  } = {}
+) {
   return apiFetch<{ ok: true; data: Existencia[] }>(
-    `/api/stock/existencias${buildQuery({ tipoItem: filtros.tipoItem, activo: filtros.activo })}`
+    `/api/stock/existencias${buildQuery({
+      tipoItem: filtros.tipoItem,
+      activo: filtros.activo,
+      busqueda: filtros.busqueda,
+      soloBajoMinimo: filtros.soloBajoMinimo,
+      limit: filtros.limit,
+      offset: filtros.offset
+    })}`
   ).then((response) => response.data);
 }
 

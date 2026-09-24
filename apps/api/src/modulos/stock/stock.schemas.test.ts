@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { ErrorValidacion } from "../../compartido/errores/error-validacion";
 import { validar } from "../../compartido/validaciones/validar";
 
-import { crearAjusteStockSchema, historialStockQuerySchema } from "./stock.schemas";
+import { crearAjusteStockSchema, existenciasQuerySchema, historialStockQuerySchema } from "./stock.schemas";
 
 const ajuste = {
   idItemCatalogo: "1",
@@ -55,5 +55,21 @@ describe("historialStockQuerySchema", () => {
 
   it("rechaza un origen que no existe", () => {
     expect(historialStockQuerySchema.safeParse({ idItemCatalogo: "3", origenMovimiento: "OTRO" }).success).toBe(false);
+  });
+});
+
+describe("existenciasQuerySchema", () => {
+  it("sin limit no pagina (el contrato anterior sigue igual)", () => {
+    expect(existenciasQuerySchema.parse({ activo: "true" })).toEqual({ activo: true, offset: 0 });
+  });
+
+  it("acepta busqueda, bajo minimo y pagina, con el tope de 100 de la API", () => {
+    expect(existenciasQuerySchema.parse({ busqueda: " vela ", soloBajoMinimo: "true", limit: "51", offset: "50" })).toEqual({
+      busqueda: "vela",
+      soloBajoMinimo: true,
+      limit: 51,
+      offset: 50
+    });
+    expect(existenciasQuerySchema.safeParse({ limit: "101" }).success).toBe(false);
   });
 });
