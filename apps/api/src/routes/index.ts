@@ -9,7 +9,6 @@ import {
 import { auditoriaRouter } from "../modulos/auditoria/auditoria.routes";
 import { autenticacionRouter } from "../modulos/autenticacion/autenticacion.routes";
 import { busquedaRouter } from "../modulos/busqueda/busqueda.routes";
-import { healthRouter } from "./health.routes";
 import { categoriasRouter } from "../modulos/categorias/categorias.routes";
 import { clientesRouter } from "../modulos/clientes/clientes.routes";
 import { importacionCatalogoRouter } from "../modulos/importacion-catalogo/importacion-catalogo.routes";
@@ -18,6 +17,7 @@ import { panelRouter } from "../modulos/panel/panel.routes";
 import { pedidosRouter } from "../modulos/pedidos/pedidos.routes";
 import { produccionRouter } from "../modulos/produccion/produccion.routes";
 import { reportesRouter } from "../modulos/reportes/reportes.routes";
+import { saludRouter } from "../modulos/salud/salud.routes";
 import { solicitudesEspecialesRouter } from "../modulos/solicitudes-especiales/solicitudes-especiales.routes";
 import { stockRouter } from "../modulos/stock/stock.routes";
 import { usuariosController } from "../modulos/usuarios/usuarios.controller";
@@ -26,7 +26,7 @@ import { usuariosRouter } from "../modulos/usuarios/usuarios.routes";
 export const apiRouter = Router();
 const rutasPrivadasRouter = Router();
 
-apiRouter.use("/health", healthRouter);
+apiRouter.use("/health", saludRouter);
 apiRouter.use("/autenticacion", autenticacionRouter);
 apiRouter.post("/usuarios", cargarAutenticacionOpcional, asyncHandler(usuariosController.crear));
 

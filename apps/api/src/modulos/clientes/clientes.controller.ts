@@ -27,6 +27,13 @@ export const clientesController = {
     responderExito(response, cliente);
   },
 
+  async obtenerResumen(request: Request, response: Response) {
+    const params = validar(clienteParamsSchema, request.params);
+    const resumen = await clientesService.obtenerResumen(params.id);
+
+    responderExito(response, resumen);
+  },
+
   async crear(request: Request, response: Response) {
     const body = validar(crearClienteSchema, request.body);
     const cliente = await clientesService.crear(body, request.usuarioAutenticado?.idUsuario);

@@ -84,6 +84,14 @@ const guias: Paso[] = [
     ]
   },
   {
+    titulo: "Ver lo que compro un cliente",
+    pasos: [
+      "En Clientes, busca al cliente y toca \"Ficha\".",
+      "Arriba ves sus datos y el total comprado: suma los pedidos confirmados, sin los cancelados ni los que todavia estan pendientes.",
+      "Abajo esta su historial de pedidos con el estado, el cobro y el total. \"Ver pedido\" te lleva al detalle."
+    ]
+  },
+  {
     titulo: "Costos y ganancia (administradores)",
     pasos: [
       "Carga el costo de cada insumo (por ejemplo, lo que pagaste el kilo de filamento) al editarlo, en \"Costo\".",
