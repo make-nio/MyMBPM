@@ -55,6 +55,8 @@ for (const pantalla of pantallas) {
     if (pantalla.alta) {
       await page.getByRole("button", { name: pantalla.alta }).click();
       await expect(page.getByRole("dialog")).toBeVisible();
+      // El formulario se carga aparte (next/dynamic): axe tiene que revisarlo a el, no al aviso.
+      await expect(page.getByRole("dialog").getByText(/^Cargando/)).toHaveCount(0);
       await revisarAccesibilidad(page, `${pantalla.ruta} (modal ${pantalla.alta})`);
     }
   });
