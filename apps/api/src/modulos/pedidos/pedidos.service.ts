@@ -47,7 +47,29 @@ type DatosAltaPedido = {
   activo?: boolean;
 };
 
+type PedidoConDetalles = NonNullable<Awaited<ReturnType<typeof pedidosRepository.obtenerPorId>>>;
+
+// Sin permiso para ver costos, el pedido sale sin el costo de cada linea ni el del item: el
+// margen se calcula con esos datos. Precio y total son de venta y se ven igual.
+export function ocultarCostos(pedido: PedidoConDetalles) {
+  return {
+    ...pedido,
+    detalles: (pedido.detalles ?? []).map(({ costoUnitario: _costo, itemCatalogo, ...detalle }) => {
+      if (!itemCatalogo) {
+        return detalle;
+      }
+
+      const { costo: _costoItem, ...itemSinCosto } = itemCatalogo;
+      return { ...detalle, itemCatalogo: itemSinCosto };
+    })
+  };
+}
+
 export const pedidosService = {
+  presentar<T extends PedidoConDetalles | null>(pedido: T, verCostos: boolean) {
+    return pedido && !verCostos ? ocultarCostos(pedido) : pedido;
+  },
+
   listar(filtros: {
     idCliente?: bigint;
     estadoPedido?: EstadoPedido;

@@ -395,7 +395,7 @@ export default function ItemsCatalogoPage() {
                   onEditar={(componente) => modalComponente.abrir(componente)}
                   onEliminar={(componente) => void borrarComponente(componente)}
                 />
-                {itemSeleccionado ? (
+                {itemSeleccionado && esAdministrador ? (
                   <CostoReceta
                     componentes={componentes}
                     costoCargado={itemSeleccionado.costo}

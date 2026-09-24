@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 
+import { puedeVerCostos } from "../../compartido/dominio/permisos";
 import { responderExito } from "../../compartido/http/respuesta";
 import { validar } from "../../compartido/validaciones/validar";
 
@@ -26,9 +27,10 @@ export const pedidosController = {
     const params = validar(pedidoParamsSchema, request.params);
     const pedido = await pedidosService.obtenerPorId(params.id);
 
-    responderExito(response, pedido);
+    responderExito(response, pedidosService.presentar(pedido, puedeVerCostos(request.usuarioAutenticado)));
   },
 
+  // crear y actualizarEstado devuelven el pedido sin detalles: no traen costos.
   async crear(request: Request, response: Response) {
     const body = validar(crearPedidoSchema, request.body);
     const pedido = await pedidosService.crear(body);
@@ -41,7 +43,7 @@ export const pedidosController = {
     const body = validar(agregarDetallePedidoSchema, request.body);
     const pedido = await pedidosService.agregarDetalle(params.id, body);
 
-    responderExito(response, pedido, 201);
+    responderExito(response, pedidosService.presentar(pedido, puedeVerCostos(request.usuarioAutenticado)), 201);
   },
 
   async actualizarDetalle(request: Request, response: Response) {
@@ -49,14 +51,14 @@ export const pedidosController = {
     const body = validar(actualizarDetallePedidoSchema, request.body);
     const pedido = await pedidosService.actualizarDetalle(params.id, params.detalleId, body);
 
-    responderExito(response, pedido);
+    responderExito(response, pedidosService.presentar(pedido, puedeVerCostos(request.usuarioAutenticado)));
   },
 
   async eliminarDetalle(request: Request, response: Response) {
     const params = validar(pedidoDetalleParamsSchema, request.params);
     const pedido = await pedidosService.eliminarDetalle(params.id, params.detalleId);
 
-    responderExito(response, pedido);
+    responderExito(response, pedidosService.presentar(pedido, puedeVerCostos(request.usuarioAutenticado)));
   },
 
   async actualizarEstado(request: Request, response: Response) {
@@ -73,6 +75,6 @@ export const pedidosController = {
     // idUsuario del body, que cualquier cliente podia falsear u omitir.
     const pedido = await pedidosService.confirmar(params.id, request.usuarioAutenticado?.idUsuario);
 
-    responderExito(response, pedido);
+    responderExito(response, pedidosService.presentar(pedido, puedeVerCostos(request.usuarioAutenticado)));
   }
 };
