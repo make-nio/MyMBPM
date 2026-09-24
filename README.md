@@ -183,6 +183,8 @@ reportes HTML quedan en `apps/web/rendimiento-report/` y en el artefacto `lighth
 la tabla en el resumen del job. Si un cambio mueve estos numeros a proposito, actualiza el
 presupuesto y explicalo en el PR.
 
+Que se probo para mantener el margen (y que no funciono): [docs/rendimiento.md](docs/rendimiento.md).
+
 ### CI y cobertura
 
 `.github/workflows/ci.yml` corre en cada PR (hacia `main` o apilado sobre otra rama) y en cada push a `main`:
