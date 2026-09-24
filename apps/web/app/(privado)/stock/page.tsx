@@ -64,13 +64,14 @@ export default function StockPage() {
       .catch(() => setCantidadBajoMinimo(null));
   }, [version]);
 
-  // Sin limit la API devuelve todas las existencias con los filtros aplicados.
+  // Sin limit la API devuelve todas las existencias con los filtros aplicados. La busqueda es la
+  // que esta escrita, aunque el listado todavia no la haya aplicado (espera a que dejes de tipear).
   async function exportarStock() {
     const todas = await listarExistencias({
       activo: true,
       tipoItem: filtroTipo || undefined,
       soloBajoMinimo: soloBajoMinimo || undefined,
-      busqueda: busquedaAplicada || undefined
+      busqueda: busqueda.trim() || undefined
     });
 
     return generarCsv(

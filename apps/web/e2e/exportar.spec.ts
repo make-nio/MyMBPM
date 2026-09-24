@@ -52,6 +52,9 @@ test("pedidos: filtra por fecha de alta y exporta lo filtrado, no solo lo que se
   await page.getByLabel("hasta", { exact: true }).fill(hoy);
   await expect(page.getByText("La fecha desde es posterior a la fecha hasta")).toBeVisible();
   await expect(page.getByRole("row").filter({ hasText: pedido.numeroPedido })).toBeVisible();
+
+  // Cancelado deja de contar en las entregas del panel (entregas.spec.ts).
+  await api("PATCH", `/api/pedidos/${pedido.idPedido}/estado`, { estadoPedido: "CANCELADO" });
 });
 
 test("stock: exporta las existencias con los filtros aplicados", async ({ page }) => {
@@ -62,12 +65,12 @@ test("stock: exporta las existencias con los filtros aplicados", async ({ page }
   await ajustarStock(hilo.idItemCatalogo, 2.5, "INSUMO");
 
   await page.goto("/stock");
-  await page.getByLabel("Buscar item").fill(lote);
   await page.getByLabel("Filtrar por tipo").selectOption("INSUMO");
-  await expect(page.getByRole("row").filter({ hasText: `${lote}-Figura` })).toHaveCount(0);
-  await expect(page.getByRole("row").filter({ hasText: `${lote}-Hilo` })).toBeVisible();
-
+  // Se exporta enseguida de escribir: el archivo usa la busqueda escrita aunque el listado
+  // todavia no la haya aplicado.
+  await page.getByLabel("Buscar item").fill(lote);
   const { nombre, contenido } = await descargar(page);
+  await expect(page.getByRole("row")).toHaveCount(2);
   expect(nombre).toMatch(/^stock-\d{4}-\d{2}-\d{2}\.csv$/);
   const lineas = contenido.replace("﻿", "").trimEnd().split("\r\n");
   expect(lineas[0]).toBe("Item;Tipo;Categoria;Stock;Minimo;Estado;Ultimo movimiento");
