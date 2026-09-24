@@ -125,9 +125,9 @@ Se elimino la tabla `Healthcheck` que creaba la migracion `20260310_init` y no e
 - **Unicos sobre columnas nullable.** En SQL Server un `UNIQUE` admite un solo `NULL`; en
   Postgres admite varios. Hoy no hay unicos sobre columnas nullable, pero esto destraba lo
   que `modelado-inicial-mvp.md` dejo pendiente por "friccion operativa".
-- **Idempotencia de stock.** Sigue siendo logica (ver `idempotencia-stock.md`). Postgres en
-  `READ COMMITTED` no bloquea lecturas, asi que el riesgo de duplicado concurrente es el mismo o
-  mayor que en SQL Server; ahora es viable un indice unico parcial como respaldo.
+- **Idempotencia de stock.** La verifica el service bajo lock y, desde
+  `20260924080000_unique_idempotencia_stock`, tambien un indice unico parcial
+  (`UQ_ESTADO_STOCK_IDEMPOTENCIA`, ver `idempotencia-stock.md`).
 
 ## Operacion
 
@@ -198,3 +198,19 @@ variable `NETLIFY_DATABASE_URL` y Prisma Migrate. Adoptarlo implica cambiar como
 la conexion y como se versionan las migraciones, y conviene evaluarlo en un PR aparte. Otra
 alternativa es una rama de Neon por preview creada desde el build con la API de Neon. Con
 cualquiera de las dos, `scripts/migrar-netlify.mjs` podria volver a migrar en previews.
+
+## Errores en produccion: la referencia
+
+Cada solicitud a la API lleva una **referencia** corta (`3F9A-12BC`), en el header `X-Referencia`
+(`compartido/middlewares/referencia.middleware.ts`). Se llama referencia, y no "id de pedido",
+para no confundirla con los pedidos de clientes.
+
+- Ante un error inesperado (500), `manejo-errores.middleware.ts` deja **una linea JSON** en el
+  log de la function con `nivel: "error"`, la `referencia`, el `idNetlify` (`x-nf-request-id`),
+  el metodo, la ruta **sin la query** (puede llevar busquedas con datos de clientes), el
+  `idUsuario` y el error con su pila.
+- La respuesta lleva la misma `referencia`, y la web la agrega al mensaje de error de cualquier
+  pantalla: "Ocurrio un error interno. Referencia del error: 3F9A-12BC ...".
+- Para encontrarlo: Netlify → Logs → Functions → `api`, y buscar la referencia que paso Maxi.
+- Los errores de negocio o validacion (4xx) tambien traen la referencia en la respuesta, pero no
+  se registran como error ni se muestra la referencia en pantalla.
