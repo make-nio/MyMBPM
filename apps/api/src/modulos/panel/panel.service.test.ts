@@ -22,7 +22,8 @@ vi.mock("./panel.repository", () => ({
     contarOrdenesPorEstado: vi.fn(),
     listarOrdenesEnProceso: vi.fn(),
     listarPedidosConfirmadosEntre: vi.fn(),
-    listarPedidosConEntregaAntesDe: vi.fn()
+    listarPedidosConEntregaAntesDe: vi.fn(),
+    contarPedidosConEntregaEntre: vi.fn()
   }
 }));
 
@@ -174,5 +175,24 @@ describe("panelService.obtenerResumen: entregas prometidas", () => {
     expect(resumen.entregas.atrasados.pedidos.map((pedido) => pedido.idPedido)).toEqual([1n]);
     expect(resumen.entregas.estaSemana.total).toBe(2);
     expect(resumen.entregas.estaSemana.pedidos.map((pedido) => pedido.idPedido)).toEqual([3n]);
+  });
+});
+
+describe("panelService.obtenerAvisos", () => {
+  it("cuenta items bajo el minimo y entregas atrasadas y de hoy, con el dia de Argentina", async () => {
+    stock.obtenerExistencias.mockResolvedValue([existencia("PLA", 0, 2, true), existencia("PETG", 1, 3, true)]);
+    repo.contarPedidosConEntregaEntre.mockResolvedValueOnce(4).mockResolvedValueOnce(1);
+
+    // 02:00 UTC del 11 de marzo = 23:00 del 10 de marzo en Argentina.
+    const avisos = await panelService.obtenerAvisos(new Date("2026-03-11T02:00:00Z"));
+
+    expect(avisos).toEqual({ stockBajo: 2, entregasAtrasadas: 4, entregasHoy: 1 });
+    expect(stock.obtenerExistencias).toHaveBeenCalledWith(expect.anything(), { activo: true, soloBajoMinimo: true });
+
+    const hoy = new Date("2026-03-10T03:00:00Z");
+    const manana = new Date("2026-03-11T03:00:00Z");
+    const estados = ["PENDIENTE", "CONFIRMADO", "EN_PREPARACION", "LISTO"];
+    expect(repo.contarPedidosConEntregaEntre).toHaveBeenNthCalledWith(1, expect.anything(), estados, hoy);
+    expect(repo.contarPedidosConEntregaEntre).toHaveBeenNthCalledWith(2, expect.anything(), estados, manana, hoy);
   });
 });
