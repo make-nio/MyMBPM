@@ -1,6 +1,27 @@
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 
+import { prisma } from "../../lib/prisma";
+import { auditoriaService } from "../auditoria/auditoria.service";
+
 import { clientesRepository } from "./clientes.repository";
+
+export const CAMPOS_AUDITADOS_CLIENTE = [
+  "nombre",
+  "apellido",
+  "documento",
+  "telefono",
+  "email",
+  "instagram",
+  "domicilio",
+  "localidad",
+  "provincia",
+  "observaciones",
+  "activo"
+] as const;
+
+function auditoriaCliente(idCliente: bigint, idUsuario?: bigint) {
+  return { entidad: "CLIENTE" as const, idEntidad: idCliente, idUsuario, campos: CAMPOS_AUDITADOS_CLIENTE };
+}
 
 export const clientesService = {
   listar(filtros: { busqueda?: string; activo?: boolean; limit: number; offset: number }) {
@@ -29,8 +50,12 @@ export const clientesService = {
     provincia?: string;
     observaciones?: string;
     activo?: boolean;
-  }) {
-    return clientesRepository.crear(data);
+  }, idUsuario?: bigint) {
+    return prisma.$transaction(async (tx) => {
+      const cliente = await clientesRepository.crear(data, tx);
+      await auditoriaService.registrarAlta(tx, auditoriaCliente(cliente.idCliente, idUsuario), cliente);
+      return cliente;
+    });
   },
 
   async actualizar(
@@ -47,14 +72,32 @@ export const clientesService = {
       provincia?: string;
       observaciones?: string;
       activo: boolean;
-    }>
+    }>,
+    idUsuario?: bigint
   ) {
-    await this.obtenerPorId(idCliente);
-    return clientesRepository.actualizar(idCliente, data);
+    return this.actualizarAuditado(idCliente, data, idUsuario);
   },
 
-  async cambiarEstado(idCliente: bigint, activo: boolean) {
-    await this.obtenerPorId(idCliente);
-    return clientesRepository.actualizar(idCliente, { activo });
+  async cambiarEstado(idCliente: bigint, activo: boolean, idUsuario?: bigint) {
+    return this.actualizarAuditado(idCliente, { activo }, idUsuario);
+  },
+
+  // El cambio y su registro en el historial van en la misma transaccion.
+  async actualizarAuditado(
+    idCliente: bigint,
+    data: Parameters<typeof clientesRepository.actualizar>[1],
+    idUsuario?: bigint
+  ) {
+    return prisma.$transaction(async (tx) => {
+      const antes = await clientesRepository.obtenerPorId(idCliente, tx);
+
+      if (!antes) {
+        throw new ErrorNoEncontrado("Cliente no encontrado");
+      }
+
+      const cliente = await clientesRepository.actualizar(idCliente, data, tx);
+      await auditoriaService.registrarModificacion(tx, auditoriaCliente(idCliente, idUsuario), antes, cliente);
+      return cliente;
+    });
   }
 };

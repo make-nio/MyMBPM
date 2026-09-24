@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+import { useUsuarioAutenticado } from "../../../src/components/auth/contexto-sesion";
+import { HistorialCambios } from "../../../src/components/modulos/auditoria/historial-cambios";
 import { FormularioCliente } from "../../../src/components/modulos/clientes/formulario-cliente";
 import { EncabezadoModulo } from "../../../src/components/ui/encabezado-modulo";
 import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
@@ -23,7 +25,9 @@ import { Cliente } from "../../../src/types/clientes";
 type FiltroActivo = "todos" | "activos" | "inactivos";
 
 export default function ClientesPage() {
+  const { esAdministrador } = useUsuarioAutenticado();
   const modalCliente = useModal<Cliente>();
+  const modalHistorial = useModal<Cliente>();
   const [busqueda, setBusqueda] = useState("");
   const [busquedaAplicada, setBusquedaAplicada] = useState("");
   const [filtroActivo, setFiltroActivo] = useState<FiltroActivo>("todos");
@@ -134,6 +138,11 @@ export default function ClientesPage() {
                   >
                     {cliente.activo ? "Desactivar" : "Activar"}
                   </button>
+                  {esAdministrador ? (
+                    <button className="boton-secundario" onClick={() => modalHistorial.abrir(cliente)} type="button">
+                      Historial
+                    </button>
+                  ) : null}
                 </div>
               )
             }
@@ -163,6 +172,17 @@ export default function ClientesPage() {
           onCancel={modalCliente.cerrar}
           onSubmit={guardarCliente}
         />
+      </Modal>
+
+      <Modal
+        abierto={modalHistorial.abierto}
+        descripcion="Quien cambio que y cuando."
+        onClose={modalHistorial.cerrar}
+        titulo={modalHistorial.contexto ? `Historial de ${modalHistorial.contexto.nombre}` : "Historial"}
+      >
+        {modalHistorial.contexto ? (
+          <HistorialCambios entidad="CLIENTE" idEntidad={modalHistorial.contexto.idCliente} />
+        ) : null}
       </Modal>
     </section>
   );

@@ -1,6 +1,8 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 
 import { prisma } from "../../lib/prisma";
+
+type PrismaOrTx = PrismaClient | Prisma.TransactionClient;
 
 type ListarClientesFiltros = {
   busqueda?: string;
@@ -51,14 +53,14 @@ export const clientesRepository = {
     });
   },
 
-  obtenerPorId(idCliente: bigint) {
-    return prisma.cliente.findUnique({
+  obtenerPorId(idCliente: bigint, db: PrismaOrTx = prisma) {
+    return db.cliente.findUnique({
       where: { idCliente }
     });
   },
 
-  crear(data: CrearClienteInput) {
-    return prisma.cliente.create({
+  crear(data: CrearClienteInput, db: PrismaOrTx = prisma) {
+    return db.cliente.create({
       data: {
         ...data,
         activo: data.activo ?? true
@@ -66,8 +68,8 @@ export const clientesRepository = {
     });
   },
 
-  actualizar(idCliente: bigint, data: ActualizarClienteInput) {
-    return prisma.cliente.update({
+  actualizar(idCliente: bigint, data: ActualizarClienteInput, db: PrismaOrTx = prisma) {
+    return db.cliente.update({
       where: { idCliente },
       data
     });

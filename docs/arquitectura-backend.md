@@ -25,3 +25,20 @@ suman fallidos. Un ingreso correcto limpia los fallidos de la cuenta y de la IP.
 - La IP sale de `x-nf-client-connection-ip`, que pone el CDN de Netlify. `x-forwarded-for` no se
   usa porque el cliente puede agregarle valores.
 
+## Historial de cambios (auditoria)
+
+Las altas, ediciones y activaciones de **items del catalogo** y **clientes** quedan en
+`AUDITORIA_CAMBIO`, con entidad, id, accion (`ALTA`, `MODIFICACION`, `ACTIVACION`,
+`DESACTIVACION`), usuario, fecha y `CAMBIOS` = `[{ campo, antes, despues }]` como texto.
+
+- Lo registra el service del modulo con `auditoriaService.registrarAlta` o
+  `registrarModificacion`, **en la misma transaccion** que el cambio. Los campos auditados son
+  `CAMPOS_AUDITADOS_ITEM` y `CAMPOS_AUDITADOS_CLIENTE`, entre ellos precio, costo y stock minimo.
+- Solo se guardan los campos que cambiaron. Guardar sin cambios no deja registro, y vacio y
+  `null` cuentan como lo mismo.
+- `GET /api/auditoria?entidad=ITEM_CATALOGO|CLIENTE&idEntidad=N` es solo para administradores.
+  Devuelve del usuario solo id, nombre y apellido.
+- Si la tabla no existe (deploy preview antes de migrar), el cambio se guarda igual, sin
+  registro, y queda un aviso en el log. Se pregunta con `to_regclass` antes del INSERT porque
+  en Postgres un INSERT fallido aborta toda la transaccion.
+

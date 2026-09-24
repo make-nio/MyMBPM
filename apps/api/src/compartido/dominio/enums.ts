@@ -50,3 +50,10 @@ export type TipoMovimiento = (typeof TIPOS_MOVIMIENTO)[number];
 
 export const ORIGENES_MOVIMIENTO = ["MANUAL", "PEDIDO", "PRODUCCION"] as const;
 export type OrigenMovimiento = (typeof ORIGENES_MOVIMIENTO)[number];
+
+// Registro de cambios (AUDITORIA_CAMBIO): que entidades se auditan y que tipo de cambio fue.
+export const ENTIDADES_AUDITADAS = ["ITEM_CATALOGO", "CLIENTE"] as const;
+export type EntidadAuditada = (typeof ENTIDADES_AUDITADAS)[number];
+
+export const ACCIONES_AUDITORIA = ["ALTA", "MODIFICACION", "ACTIVACION", "DESACTIVACION"] as const;
+export type AccionAuditoria = (typeof ACCIONES_AUDITORIA)[number];

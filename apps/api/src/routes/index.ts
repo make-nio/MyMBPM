@@ -5,6 +5,7 @@ import {
   cargarAutenticacionOpcional,
   requerirAutenticacion
 } from "../compartido/middlewares/requerir-autenticacion.middleware";
+import { auditoriaRouter } from "../modulos/auditoria/auditoria.routes";
 import { autenticacionRouter } from "../modulos/autenticacion/autenticacion.routes";
 import { healthRouter } from "./health.routes";
 import { categoriasRouter } from "../modulos/categorias/categorias.routes";
@@ -35,5 +36,6 @@ rutasPrivadasRouter.use("/panel", panelRouter);
 rutasPrivadasRouter.use("/pedidos", pedidosRouter);
 rutasPrivadasRouter.use("/produccion", produccionRouter);
 rutasPrivadasRouter.use("/solicitudes-especiales", solicitudesEspecialesRouter);
+rutasPrivadasRouter.use("/auditoria", auditoriaRouter);
 
 apiRouter.use(rutasPrivadasRouter);

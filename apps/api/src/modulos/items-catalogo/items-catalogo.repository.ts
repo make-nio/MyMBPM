@@ -1,6 +1,8 @@
 import { TipoItem } from "../../compartido/dominio/enums";
 import { prisma } from "../../lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
+
+type PrismaOrTx = PrismaClient | Prisma.TransactionClient;
 
 type FiltrosItemsCatalogo = {
   busqueda?: string;
@@ -69,8 +71,8 @@ export const itemsCatalogoRepository = {
     });
   },
 
-  obtenerPorId(idItemCatalogo: bigint) {
-    return prisma.itemCatalogo.findUnique({
+  obtenerPorId(idItemCatalogo: bigint, db: PrismaOrTx = prisma) {
+    return db.itemCatalogo.findUnique({
       where: { idItemCatalogo },
       include: {
         categoria: true,
@@ -91,8 +93,8 @@ export const itemsCatalogoRepository = {
     });
   },
 
-  crear(data: CrearItemCatalogoInput) {
-    return prisma.itemCatalogo.create({
+  crear(data: CrearItemCatalogoInput, db: PrismaOrTx = prisma) {
+    return db.itemCatalogo.create({
       data: {
         ...data
       },
@@ -102,8 +104,8 @@ export const itemsCatalogoRepository = {
     });
   },
 
-  actualizar(idItemCatalogo: bigint, data: ActualizarItemCatalogoInput) {
-    return prisma.itemCatalogo.update({
+  actualizar(idItemCatalogo: bigint, data: ActualizarItemCatalogoInput, db: PrismaOrTx = prisma) {
+    return db.itemCatalogo.update({
       where: { idItemCatalogo },
       data,
       include: {
