@@ -48,8 +48,31 @@ Requisitos para que funcione:
   procesan en orden de id (`ordenarPorItem`), para que dos transacciones no tomen los locks en
   orden cruzado y PostgreSQL aborte una por deadlock.
 
-## Pendiente
+## Respaldo en base: indice unico parcial
 
-Sigue sin haber una restriccion `UNIQUE` en base. Si se quiere un respaldo independiente del
-codigo, el paso natural es un indice unico parcial
-(`CREATE UNIQUE INDEX ... WHERE "ORIGEN_MOVIMIENTO" <> 'MANUAL'`) en una migracion aditiva.
+Desde la migracion `20260924080000_unique_idempotencia_stock`, la base tambien lo garantiza:
+
+```sql
+CREATE UNIQUE INDEX "UQ_ESTADO_STOCK_IDEMPOTENCIA"
+  ON "ESTADO_STOCK" ("ORIGEN_MOVIMIENTO", "ID_REFERENCIA_ORIGEN", "ID_REFERENCIA_DETALLE",
+                     "ID_ITEM_CATALOGO", "TIPO_MOVIMIENTO")
+  WHERE "ORIGEN_MOVIMIENTO" <> 'MANUAL';
+```
+
+- Son las mismas columnas que la verificacion del service. Los ajustes `MANUAL` quedan afuera
+  porque pueden repetirse legitimamente.
+- El service sigue verificando antes de insertar, bajo el lock. El indice solo actua si un cambio
+  futuro se saltea esa verificacion: el INSERT falla con `P2002` y la API responde 409.
+- Prisma no modela indices parciales, pero tampoco los detecta como drift (igual que los
+  `UQ_USUARIO_*_LOWER`). No hay que declararlo en `schema.prisma`.
+- La migracion primero busca duplicados y, si hay, corta con un mensaje claro. Consulta de solo
+  lectura para revisar una base antes de migrar:
+
+```sql
+SELECT "ORIGEN_MOVIMIENTO", "ID_REFERENCIA_ORIGEN", "ID_REFERENCIA_DETALLE", "ID_ITEM_CATALOGO",
+       "TIPO_MOVIMIENTO", COUNT(*) AS repeticiones
+FROM "ESTADO_STOCK"
+WHERE "ORIGEN_MOVIMIENTO" <> 'MANUAL'
+GROUP BY 1, 2, 3, 4, 5
+HAVING COUNT(*) > 1;
+```

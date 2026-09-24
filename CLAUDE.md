@@ -103,7 +103,9 @@ los **services** (`src/modulos/<modulo>/<modulo>.service.test.ts`), con el repos
 Cada pantalla tiene su E2E en `apps/web/e2e/<modulo>.spec.ts` (Playwright). Importá `test` y
 `expect` de `e2e/fixtures.ts`, usá `unico("PRUEBA-...")` para los nombres y `e2e/api.ts` para
 preparar datos. Los E2E **nunca** corren contra la base de producción: la config lo impide.
-La cobertura (umbral 70 % de líneas, backend y front) se publica en el resumen del CI.
+La cobertura (umbral 70 % de líneas, backend y front, combinando vitest y E2E) se publica en el
+resumen del CI. Además, vitest solo tiene un piso propio (`coverage.thresholds` en cada
+`vitest.config.ts`: 47 % api, 45 % web) para que la cobertura unitaria no retroceda.
 
 `e2e/accesibilidad.spec.ts` pasa axe (WCAG 2.1 A y AA) por cada pantalla, su modal de alta y los
 detalles. Falla ante violaciones serias o críticas. Si sumás una pantalla, agregala ahí, y dale
