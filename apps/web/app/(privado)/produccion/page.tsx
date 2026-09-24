@@ -1,9 +1,9 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
-import { AccionOrden, PanelOrden } from "../../../src/components/modulos/produccion/panel-orden";
-import { TableroProduccion } from "../../../src/components/modulos/produccion/tablero-produccion";
+import type { AccionOrden } from "../../../src/components/modulos/produccion/panel-orden";
 import { CampoTexto } from "../../../src/components/formularios/campo-texto";
 import { EncabezadoModulo } from "../../../src/components/ui/encabezado-modulo";
 import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
@@ -20,6 +20,17 @@ import { obtenerItemCatalogo } from "../../../src/lib/modulos/items-catalogo";
 import { agregarDetalleOrden, crearOrdenProduccion, listarOrdenesProduccion } from "../../../src/lib/modulos/produccion";
 import { leerOrdenParaReponer } from "../../../src/lib/stock/reponer";
 import { ESTADOS_PRODUCCION, EstadoProduccion, OrdenProduccion } from "../../../src/types/produccion";
+
+// Paneles, historiales e importacion se ven solo al elegir un registro o abrir su modal: su
+// codigo no entra en el JS inicial de la pantalla, que primero tiene que mostrar la lista.
+const PanelOrden = dynamic(() => import("../../../src/components/modulos/produccion/panel-orden").then((modulo) => modulo.PanelOrden), {
+  ssr: false,
+  loading: () => <EstadoCargando descripcion="Un momento." titulo="Cargando orden" />
+});
+const TableroProduccion = dynamic(() => import("../../../src/components/modulos/produccion/tablero-produccion").then((modulo) => modulo.TableroProduccion), {
+  ssr: false,
+  loading: () => <EstadoCargando descripcion="Un momento." titulo="Cargando tablero" />
+});
 
 export default function ProduccionPage() {
   const modalOrden = useModal();

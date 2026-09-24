@@ -42,6 +42,23 @@ export function Modal({ abierto, titulo, descripcion, onClose, children }: Modal
     const primerCampo = cuerpo ? enfocables(cuerpo)[0] : undefined;
     (primerCampo ?? dialogo).focus();
 
+    // Si el contenido todavia se esta cargando (un formulario con next/dynamic), el foco pasa al
+    // primer campo apenas aparece, salvo que la persona ya lo haya movido a otro lado.
+    let observador: MutationObserver | null = null;
+    if (!primerCampo && cuerpo) {
+      observador = new MutationObserver(() => {
+        const campo = enfocables(cuerpo)[0];
+        if (!campo) {
+          return;
+        }
+        if (document.activeElement === dialogo) {
+          campo.focus();
+        }
+        observador?.disconnect();
+      });
+      observador.observe(cuerpo, { childList: true, subtree: true });
+    }
+
     function alPresionar(evento: KeyboardEvent) {
       if (!dialogo) {
         return;
@@ -76,6 +93,7 @@ export function Modal({ abierto, titulo, descripcion, onClose, children }: Modal
     document.addEventListener("keydown", alPresionar);
 
     return () => {
+      observador?.disconnect();
       document.removeEventListener("keydown", alPresionar);
 
       if (previo?.isConnected) {

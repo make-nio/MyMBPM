@@ -1,10 +1,9 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
 
 import { useUsuarioAutenticado } from "../../../src/components/auth/contexto-sesion";
-import { FormularioRestablecerClave } from "../../../src/components/modulos/usuarios/formulario-restablecer-clave";
-import { FormularioUsuario } from "../../../src/components/modulos/usuarios/formulario-usuario";
 import { EncabezadoModulo } from "../../../src/components/ui/encabezado-modulo";
 import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
 import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
@@ -15,6 +14,7 @@ import { PieListado } from "../../../src/components/ui/pie-listado";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
+import { usePrecargar } from "../../../src/hooks/use-precargar";
 import {
   actualizarUsuario,
   cambiarEstadoUsuario,
@@ -24,6 +24,19 @@ import {
 } from "../../../src/lib/modulos/usuarios";
 import { Usuario, UsuarioAltaPayload, UsuarioEdicionPayload } from "../../../src/types/usuarios";
 
+// Los formularios se ven solo al abrir su modal: no entran en el JS inicial de la pantalla y se
+// precargan cuando el navegador queda libre (usePrecargar), asi el modal abre sin esperar.
+const cargarFormularioUsuario = () => import("../../../src/components/modulos/usuarios/formulario-usuario").then((modulo) => modulo.FormularioUsuario);
+const cargarFormularioRestablecerClave = () => import("../../../src/components/modulos/usuarios/formulario-restablecer-clave").then((modulo) => modulo.FormularioRestablecerClave);
+const FormularioUsuario = dynamic(cargarFormularioUsuario, {
+  ssr: false,
+  loading: () => <EstadoCargando descripcion="Un momento." titulo="Cargando formulario" />
+});
+const FormularioRestablecerClave = dynamic(cargarFormularioRestablecerClave, {
+  ssr: false,
+  loading: () => <EstadoCargando descripcion="Un momento." titulo="Cargando formulario" />
+});
+
 type FiltroActivo = "todos" | "activos" | "inactivos";
 
 function filtroAParametro(filtro: FiltroActivo) {
@@ -31,6 +44,7 @@ function filtroAParametro(filtro: FiltroActivo) {
 }
 
 export default function UsuariosPage() {
+  usePrecargar(cargarFormularioUsuario, cargarFormularioRestablecerClave);
   const usuarioActual = useUsuarioAutenticado();
 
   if (!usuarioActual.esAdministrador) {
