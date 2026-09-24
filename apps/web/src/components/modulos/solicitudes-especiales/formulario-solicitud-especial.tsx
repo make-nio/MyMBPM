@@ -13,6 +13,8 @@ import { CampoSelectBuscable } from "../../formularios/campo-select-buscable";
 import { CampoTextarea } from "../../formularios/campo-textarea";
 import { CampoTexto } from "../../formularios/campo-texto";
 import { MensajeError } from "../../ui/mensaje-error";
+import { useValidacionFormulario } from "../../../hooks/use-validacion-formulario";
+import { formatoEmail, largoMaximo, requerido } from "../../../lib/validacion";
 
 type FormularioSolicitudEspecialProps = {
   solicitud?: SolicitudEspecial | null;
@@ -44,9 +46,23 @@ export function FormularioSolicitudEspecial({
   const [observaciones, setObservaciones] = useState(solicitud?.observaciones ?? "");
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { formularioRef, validar, errorDe } = useValidacionFormulario();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    const resumen = validar({
+      "solicitud-nombre": { valor: nombreSolicitante, reglas: [requerido("el nombre de quien lo pide"), largoMaximo(150)] },
+      "solicitud-telefono": { valor: telefono, reglas: [largoMaximo(50)] },
+      "solicitud-email": { valor: email, reglas: [formatoEmail(), largoMaximo(150)] },
+      "solicitud-descripcion": { valor: descripcion, reglas: [requerido("la descripcion de lo que pide"), largoMaximo(4000)] },
+      "solicitud-observaciones": { valor: observaciones, reglas: [largoMaximo(2000)] }
+    });
+    if (resumen) {
+      setError(resumen);
+      return;
+    }
+
     setEnviando(true);
     setError(null);
 
@@ -71,7 +87,7 @@ export function FormularioSolicitudEspecial({
   }
 
   return (
-    <form className="formulario-modulo formulario-modulo--dos-columnas" onSubmit={handleSubmit}>
+    <form className="formulario-modulo formulario-modulo--dos-columnas" noValidate onSubmit={handleSubmit} ref={formularioRef}>
       {error ? <MensajeError mensaje={error} /> : null}
 
       <CampoSelectBuscable
@@ -88,14 +104,15 @@ export function FormularioSolicitudEspecial({
         value={idCliente}
       />
       <CampoTexto
+        error={errorDe("solicitud-nombre", nombreSolicitante)}
         id="solicitud-nombre"
         label="Nombre solicitante"
         onChange={setNombreSolicitante}
         required
         value={nombreSolicitante}
       />
-      <CampoTexto id="solicitud-telefono" label="Telefono" onChange={setTelefono} value={telefono} />
-      <CampoTexto id="solicitud-email" label="Email" onChange={setEmail} type="email" value={email} />
+      <CampoTexto error={errorDe("solicitud-telefono", telefono)} id="solicitud-telefono" label="Telefono" onChange={setTelefono} value={telefono} />
+      <CampoTexto error={errorDe("solicitud-email", email)} id="solicitud-email" label="Email" onChange={setEmail} type="email" value={email} />
       <CampoSelect
         id="solicitud-estado"
         label="Estado"
@@ -108,6 +125,7 @@ export function FormularioSolicitudEspecial({
       />
       <div className="formulario-modulo__col-span">
         <CampoTextarea
+          error={errorDe("solicitud-descripcion", descripcion)}
           id="solicitud-descripcion"
           label="Descripcion"
           onChange={setDescripcion}
@@ -117,6 +135,7 @@ export function FormularioSolicitudEspecial({
       </div>
       <div className="formulario-modulo__col-span">
         <CampoTextarea
+          error={errorDe("solicitud-observaciones", observaciones)}
           id="solicitud-observaciones"
           label="Observaciones"
           onChange={setObservaciones}

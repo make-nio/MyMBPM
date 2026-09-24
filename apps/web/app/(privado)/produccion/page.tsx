@@ -15,10 +15,12 @@ import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
 import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
+import { useValidacionFormulario } from "../../../src/hooks/use-validacion-formulario";
 import { formatearCantidad, formatearEstado, formatearFecha } from "../../../src/lib/formato";
 import { obtenerItemCatalogo } from "../../../src/lib/modulos/items-catalogo";
 import { agregarDetalleOrden, crearOrdenProduccion, listarOrdenesProduccion } from "../../../src/lib/modulos/produccion";
 import { leerOrdenParaReponer } from "../../../src/lib/stock/reponer";
+import { largoMaximo, numeroEntero, numeroMayorACero, requerido } from "../../../src/lib/validacion";
 import { ESTADOS_PRODUCCION, EstadoProduccion, OrdenProduccion } from "../../../src/types/produccion";
 
 // Paneles, historiales e importacion se ven solo al elegir un registro o abrir su modal: su
@@ -35,6 +37,7 @@ const TableroProduccion = dynamic(() => import("../../../src/components/modulos/
 export default function ProduccionPage() {
   const modalOrden = useModal();
   const [errorAlta, setErrorAlta] = useState<string | null>(null);
+  const { formularioRef: formularioAltaRef, validar: validarAlta, errorDe: errorAltaDe } = useValidacionFormulario();
   const [filtroEstado, setFiltroEstado] = useState<EstadoProduccion | "">("");
   const [idOrdenSeleccionada, setIdOrdenSeleccionada] = useState<string | null>(null);
   // Desde el tablero, la accion con la que se abre el detalle; la clave lo vuelve a montar (y a
@@ -104,16 +107,22 @@ export default function ProduccionPage() {
   const error = listado.error ?? (modalOrden.abierto ? null : errorAlta);
 
   async function crearOrden() {
+    const resumen = validarAlta({
+      "orden-nueva-cantidad": {
+        valor: cantidadPropuesta,
+        reglas: productoPropuesto ? [requerido("la cantidad a producir"), numeroMayorACero(), numeroEntero()] : []
+      },
+      "orden-nueva-observaciones": { valor: observaciones, reglas: [largoMaximo(2000)] }
+    });
+    if (resumen) {
+      setErrorAlta(resumen);
+      return;
+    }
+
     setCreando(true);
     setErrorAlta(null);
 
     let idOrden: string | null = null;
-
-    if (productoPropuesto && !(Number(cantidadPropuesta) > 0)) {
-      setErrorAlta("La cantidad a producir tiene que ser mayor que cero");
-      setCreando(false);
-      return;
-    }
 
     try {
       const orden = await crearOrdenProduccion({ observaciones: observaciones || undefined });
@@ -267,10 +276,12 @@ export default function ProduccionPage() {
       >
         <form
           className="formulario-modulo"
+          noValidate
           onSubmit={(event) => {
             event.preventDefault();
             void crearOrden();
           }}
+          ref={formularioAltaRef}
         >
           {errorAlta ? <MensajeError mensaje={errorAlta} /> : null}
           {productoPropuesto ? (
@@ -279,6 +290,7 @@ export default function ProduccionPage() {
                 Producto: <strong>{productoPropuesto.nombre}</strong>
               </p>
               <CampoTexto
+                error={errorAltaDe("orden-nueva-cantidad", cantidadPropuesta)}
                 id="orden-nueva-cantidad"
                 label="Cantidad a producir"
                 onChange={setCantidadPropuesta}
@@ -289,7 +301,13 @@ export default function ProduccionPage() {
               />
             </>
           ) : null}
-          <CampoTexto id="orden-nueva-observaciones" label="Observaciones" onChange={setObservaciones} value={observaciones} />
+          <CampoTexto
+            error={errorAltaDe("orden-nueva-observaciones", observaciones)}
+            id="orden-nueva-observaciones"
+            label="Observaciones"
+            onChange={setObservaciones}
+            value={observaciones}
+          />
           <div className="acciones-formulario">
             <button className="boton-secundario" onClick={cerrarAlta} type="button">
               Cancelar
