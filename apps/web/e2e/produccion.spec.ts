@@ -165,3 +165,67 @@ test("desde Stock, un producto bajo minimo propone la orden y se crea solo al co
   await expect(modal.getByTestId("producto-propuesto")).toHaveCount(0);
   await expect(modal.getByLabel("Observaciones")).toHaveValue("");
 });
+
+async function ordenConProducto(idItemCatalogoProducto: string, cantidad: number) {
+  const orden = await api<{ idOrdenProduccion: string }>("POST", "/api/produccion", { observaciones: "PRUEBA tablero" });
+  await api("POST", `/api/produccion/${orden.idOrdenProduccion}/detalles`, { idItemCatalogoProducto, cantidad });
+  return orden.idOrdenProduccion;
+}
+
+test("tablero: las ordenes avanzan por columnas con los mismos botones y confirmaciones", async ({ page }) => {
+  const { producto } = await crearProductoConReceta({
+    producto: unico("PRUEBA-ProdTablero"),
+    insumo: unico("PRUEBA-InsTablero"),
+    cantidadRequerida: 1,
+    stockInsumo: 10
+  });
+  const { idCategoria } = await crearCategoria(unico("PRUEBA-CatTablero"));
+  const sinReceta = await crearItem({ idCategoria, nombre: unico("PRUEBA-SinReceta"), tipoItem: "PRODUCTO", precio: 100 });
+  const idOrden = await ordenConProducto(producto.idItemCatalogo, 2);
+  const idACancelar = await ordenConProducto(producto.idItemCatalogo, 1);
+  const idBloqueada = await ordenConProducto(sinReceta.idItemCatalogo, 1);
+
+  await page.goto("/produccion?vista=tablero");
+  await expect(page.getByRole("button", { name: "Tablero" })).toHaveAttribute("aria-pressed", "true");
+  const columna = (nombre: string) => page.getByRole("region", { name: nombre, exact: true });
+  const tarjeta = (nombre: string, id: string) => columna(nombre).getByRole("article", { name: `Orden ${id}` });
+
+  await expect(tarjeta("Pendientes", idOrden)).toContainText(`${producto.nombre} × 2`);
+  await revisarAccesibilidad(page, "tablero de produccion");
+
+  // Iniciar: la misma confirmacion con el consumo de insumos; la orden pasa a "En proceso".
+  await tarjeta("Pendientes", idOrden).getByRole("button", { name: `Iniciar orden ${idOrden}` }).click();
+  const iniciar = page.getByRole("dialog", { name: "Iniciar produccion" });
+  await expect(iniciar.getByRole("table")).toBeVisible();
+  await iniciar.getByRole("button", { name: "Iniciar y descontar insumos" }).click();
+  await expect(iniciar).toBeHidden();
+  await expect(tarjeta("En proceso", idOrden)).toBeVisible();
+  await expect(tarjeta("Pendientes", idOrden)).toHaveCount(0);
+
+  // Finalizar: pasa a "Finalizadas".
+  await tarjeta("En proceso", idOrden).getByRole("button", { name: `Finalizar orden ${idOrden}` }).click();
+  const finalizar = page.getByRole("dialog", { name: "Finalizar produccion" });
+  await finalizar.getByRole("button", { name: "Finalizar e ingresar productos" }).click();
+  await expect(finalizar).toBeHidden();
+  await expect(tarjeta("Finalizadas", idOrden)).toBeVisible();
+  await expect(tarjeta("Finalizadas", idOrden).getByRole("button")).toHaveText(["Ver"]);
+
+  // Cancelar desde el tablero.
+  await tarjeta("Pendientes", idACancelar).getByRole("button", { name: `Cancelar orden ${idACancelar}` }).click();
+  const cancelar = page.getByRole("dialog", { name: "Cancelar orden" });
+  await cancelar.getByRole("button", { name: "Cancelar orden" }).click();
+  await expect(cancelar).toBeHidden();
+  await expect(tarjeta("Canceladas", idACancelar)).toBeVisible();
+
+  // Un producto sin receta: la confirmacion avisa y no deja iniciar.
+  await tarjeta("Pendientes", idBloqueada).getByRole("button", { name: `Iniciar orden ${idBloqueada}` }).click();
+  const bloqueada = page.getByRole("dialog", { name: "Iniciar produccion" });
+  await expect(bloqueada).toContainText(`No se puede iniciar: ${sinReceta.nombre} no tiene receta.`);
+  await expect(bloqueada.getByRole("button", { name: "Iniciar y descontar insumos" })).toBeDisabled();
+  await bloqueada.getByRole("button", { name: "Volver" }).click();
+  await expect(tarjeta("Pendientes", idBloqueada)).toBeVisible();
+
+  // La lista sigue igual que antes.
+  await page.getByRole("button", { name: "Lista" }).click();
+  await expect(page.getByLabel("Filtrar por estado")).toBeVisible();
+});

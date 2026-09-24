@@ -47,6 +47,7 @@ const guias: Paso[] = [
       "En Produccion, toca \"Nueva orden\" y despues \"Agregar producto\" con lo que vas a fabricar.",
       "Toca \"Iniciar produccion\": te muestra que insumos se van a usar y, al confirmar, los descuenta.",
       "Cuando termines, toca \"Finalizar produccion\": los productos fabricados se suman al stock.",
+      "Con \"Tablero\" (arriba, al lado de \"Lista\") ves las ordenes en columnas por estado. Los botones de cada tarjeta abren el detalle con la misma confirmacion, que muestra el impacto en stock.",
       "Atajo: en Stock, un producto bajo minimo tiene \"Crear orden de produccion\". Abre la orden nueva con ese producto y lo que falta para llegar al minimo; revisa la cantidad y toca \"Crear orden\" (hasta ahi no se crea nada)."
     ],
     ojo: "Si cancelas una orden que ya estaba en proceso, los insumos que se usaron no vuelven al stock."
