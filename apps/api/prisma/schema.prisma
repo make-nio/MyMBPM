@@ -21,12 +21,23 @@ model Usuario {
   fechaModificacion DateTime          @updatedAt @map("FECHA_MODIFICACION") @db.Timestamptz(3)
   estadosStock      EstadoStock[]
   auditoriasCambio  AuditoriaCambio[]
+  sesion            SesionUsuario?
 
   // Ademas de estos unicos, la migracion inicial crea UQ_USUARIO_EMAIL_LOWER y
   // UQ_USUARIO_USUARIO_LOWER sobre lower(...) (SQL crudo: Prisma no modela indices por expresion).
   @@unique([email], map: "UQ_USUARIO_EMAIL")
   @@unique([usuario], map: "UQ_USUARIO_USUARIO")
   @@map("USUARIO")
+}
+
+// Corte de sesiones por usuario: los tokens emitidos antes de VALIDAS_DESDE se rechazan. Lo
+// escribe "cerrar sesiones" (administrador) y restablecer la clave. Sin fila, valen todos.
+model SesionUsuario {
+  idUsuario    BigInt   @id @map("ID_USUARIO") @db.BigInt
+  validasDesde DateTime @map("VALIDAS_DESDE") @db.Timestamptz(3)
+  usuario      Usuario  @relation(fields: [idUsuario], references: [idUsuario], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("USUARIO_SESION")
 }
 
 // Ingresos fallidos, para limitar intentos por cuenta y por IP (ver autenticacion.service).

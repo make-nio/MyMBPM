@@ -3702,7 +3702,7 @@
     },
     "/api/usuarios/{id}/restablecer-clave": {
       "patch": {
-        "summary": "Asigna una clave nueva a otro usuario (solo administradores)",
+        "summary": "Asigna una clave nueva a otro usuario y le cierra las sesiones abiertas (solo administradores)",
         "description": "Acceso: administrador.",
         "tags": [
           "usuarios"
@@ -3758,6 +3758,81 @@
                     },
                     "data": {
                       "$ref": "#/components/schemas/Usuario"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/usuarios/{id}/cerrar-sesiones": {
+      "post": {
+        "summary": "Cierra la sesion de un usuario en todos los dispositivos (solo administradores)",
+        "description": "Acceso: administrador.",
+        "tags": [
+          "usuarios"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sesionesCerradas": {
+                          "type": "boolean",
+                          "enum": [
+                            true
+                          ]
+                        }
+                      },
+                      "required": [
+                        "sesionesCerradas"
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [

@@ -139,6 +139,28 @@ describe("apiFetch", () => {
     await expect(apiFetch("/api/pedidos")).rejects.toMatchObject({ message: "Stock insuficiente", referencia: "3F9A-12BC" });
   });
 
+  it("con sesion, un 401 borra el token y vuelve al ingreso con aviso", async () => {
+    const assign = vi.fn();
+    vi.stubGlobal("window", { ...window, location: { assign } });
+    guardarToken("token-vencido");
+    fetchMock.mockResolvedValue(respuesta(401, { ok: false, error: { message: "La sesion se cerro: ingresa de nuevo" } }));
+
+    await expect(apiFetch("/api/pedidos")).rejects.toMatchObject({ status: 401 });
+    expect(leerToken()).toBeNull();
+    expect(assign).toHaveBeenCalledWith("/ingresar?sesion=cerrada");
+  });
+
+  it("un 401 de las rutas de autenticacion (clave incorrecta) no redirige", async () => {
+    const assign = vi.fn();
+    vi.stubGlobal("window", { ...window, location: { assign } });
+    guardarToken("token");
+    fetchMock.mockResolvedValue(respuesta(401, { ok: false, error: { message: "Credenciales invalidas" } }));
+
+    await expect(apiFetch("/api/autenticacion/login", { method: "POST" })).rejects.toMatchObject({ status: 401 });
+    expect(assign).not.toHaveBeenCalled();
+    expect(leerToken()).toBe("token");
+  });
+
   it("usa un mensaje generico si la respuesta de error no es JSON", async () => {
     fetchMock.mockResolvedValue(respuesta(502, undefined));
 

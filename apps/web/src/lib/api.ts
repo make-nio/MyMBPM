@@ -4,12 +4,15 @@ type ApiRequestInit = RequestInit & {
   token?: string;
 };
 
+const CLAVE_TOKEN = "mlm_bpm_token";
+export const RUTA_SESION_CERRADA = "/ingresar?sesion=cerrada";
+
 function leerTokenActual() {
   if (typeof window === "undefined") {
     return null;
   }
 
-  return window.localStorage.getItem("mlm_bpm_token");
+  return window.localStorage.getItem(CLAVE_TOKEN);
 }
 
 export class ErrorApi extends Error {
@@ -56,6 +59,13 @@ export async function apiFetch<T>(path: string, init: ApiRequestInit = {}) {
   });
 
   const body = await response.json().catch(() => null);
+
+  // La sesion vencio o la cerro un administrador mientras se usaba la web: se vuelve al ingreso
+  // con un aviso. Las rutas de autenticacion manejan su propio 401 (clave incorrecta, /me).
+  if (response.status === 401 && token && !path.startsWith("/api/autenticacion/") && typeof window !== "undefined") {
+    window.localStorage.removeItem(CLAVE_TOKEN);
+    window.location.assign(RUTA_SESION_CERRADA);
+  }
 
   if (!response.ok) {
     const message =

@@ -62,6 +62,14 @@ const guias: Paso[] = [
     ]
   },
   {
+    titulo: "Sesiones y claves (administradores)",
+    pasos: [
+      "La sesion dura hasta 8 horas: despues el sistema pide ingresar de nuevo.",
+      "Si alguien perdio el celular o su clave la conoce otra persona, en Usuarios toca \"Cerrar sesiones\" en su fila: va a tener que ingresar de nuevo en todos sus dispositivos.",
+      "\"Restablecer clave\" tambien cierra todas sus sesiones: vuelve a entrar ya con la clave nueva."
+    ]
+  },
+  {
     titulo: "Cargar el catalogo desde una planilla (administradores)",
     pasos: [
       "En Items catalogo, toca \"Importar CSV\" y despues \"Descargar plantilla\".",

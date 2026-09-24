@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
+import { inicioDelSegundo } from "../../compartido/dominio/sesion";
 import { ErrorAutenticacion } from "../../compartido/errores/error-autenticacion";
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
@@ -180,12 +181,24 @@ export const usuariosService = {
 
   // Un administrador le asigna una clave nueva a otro usuario (por ejemplo, si la olvido).
   // No pide la clave actual: la ruta exige rol de administrador.
-  async restablecerClave(idUsuario: bigint, passwordNueva: string) {
+  // La clave nueva corta las sesiones abiertas: quien la tenia (o la robo) tiene que volver a
+  // ingresar, ya con la nueva.
+  async restablecerClave(idUsuario: bigint, passwordNueva: string, ahora = new Date()) {
     await this.obtenerPorId(idUsuario);
 
     const claveHash = await bcrypt.hash(passwordNueva, 10);
 
-    return usuariosRepository.actualizar(prisma, idUsuario, { claveHash });
+    return prisma.$transaction(async (tx) => {
+      const usuario = await usuariosRepository.actualizar(tx, idUsuario, { claveHash });
+      await usuariosRepository.cerrarSesiones(tx, idUsuario, inicioDelSegundo(ahora));
+      return usuario;
+    });
+  },
+
+  // "Cerrar sesion en todos los dispositivos" de un usuario (lo hace un administrador).
+  async cerrarSesiones(idUsuario: bigint, ahora = new Date()) {
+    await this.obtenerPorId(idUsuario);
+    await usuariosRepository.cerrarSesiones(prisma, idUsuario, inicioDelSegundo(ahora));
   },
 
   async cambiarClave(

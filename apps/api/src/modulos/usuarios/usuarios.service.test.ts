@@ -28,6 +28,7 @@ vi.mock("./usuarios.repository", () => ({
     buscarPorEmailOUsuario: vi.fn(),
     crear: vi.fn(),
     actualizar: vi.fn(),
+    cerrarSesiones: vi.fn(),
     obtenerPorIdConClave: vi.fn()
   }
 }));
@@ -233,16 +234,20 @@ describe("usuariosService.actualizar", () => {
 });
 
 describe("usuariosService.restablecerClave", () => {
-  it("guarda el hash de la clave nueva, nunca la clave en claro", async () => {
+  it("guarda el hash de la clave nueva, nunca la clave en claro, y corta las sesiones en la misma transaccion", async () => {
+    const tx = { esTransaccion: true };
+    vi.mocked(prisma.$transaction).mockImplementation((async (fn: (cliente: typeof tx) => unknown) => fn(tx)) as never);
     repo.obtenerPorId.mockResolvedValue({ idUsuario: 2n } as never);
 
-    await usuariosService.restablecerClave(2n, "clave-nueva-123");
+    await usuariosService.restablecerClave(2n, "clave-nueva-123", new Date("2026-09-24T10:00:00.750Z"));
 
-    const [, idUsuario, cambios] = repo.actualizar.mock.calls[0];
+    const [db, idUsuario, cambios] = repo.actualizar.mock.calls[0];
+    expect(db).toBe(tx);
     expect(idUsuario).toBe(2n);
     expect(Object.keys(cambios)).toEqual(["claveHash"]);
     expect(cambios.claveHash).not.toBe("clave-nueva-123");
     expect(cambios.claveHash).toMatch(/^\$2[aby]\$/);
+    expect(repo.cerrarSesiones).toHaveBeenCalledWith(tx, 2n, new Date("2026-09-24T10:00:00.000Z"));
   });
 
   it("falla si el usuario no existe", async () => {
@@ -252,6 +257,24 @@ describe("usuariosService.restablecerClave", () => {
       ErrorNoEncontrado
     );
     expect(repo.actualizar).not.toHaveBeenCalled();
+    expect(repo.cerrarSesiones).not.toHaveBeenCalled();
+  });
+});
+
+describe("usuariosService.cerrarSesiones", () => {
+  it("corta las sesiones desde el inicio del segundo actual", async () => {
+    repo.obtenerPorId.mockResolvedValue({ idUsuario: 3n } as never);
+
+    await usuariosService.cerrarSesiones(3n, new Date("2026-09-24T10:00:00.750Z"));
+
+    expect(repo.cerrarSesiones).toHaveBeenCalledWith(prisma, 3n, new Date("2026-09-24T10:00:00.000Z"));
+  });
+
+  it("falla si el usuario no existe", async () => {
+    repo.obtenerPorId.mockResolvedValue(null);
+
+    await expect(usuariosService.cerrarSesiones(99n)).rejects.toBeInstanceOf(ErrorNoEncontrado);
+    expect(repo.cerrarSesiones).not.toHaveBeenCalled();
   });
 });
 

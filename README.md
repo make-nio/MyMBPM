@@ -264,7 +264,7 @@ node ../../scripts/resumen-e2e-nocturno.mjs e2e-nocturno.json
 | `NETLIFY_DATABASE_URL` | si | conexion PostgreSQL (pooled) de la API. En Netlify la inyecta Netlify DB |
 | `NETLIFY_DATABASE_URL_UNPOOLED` | si, para migrar | conexion directa para Prisma Migrate. En Netlify la inyecta Netlify DB; en local puede ser igual a la anterior |
 | `JWT_SECRET` | si | secreto de firma de los JWT |
-| `JWT_EXPIRES_IN` | no (`8h`) | expiracion de los JWT |
+| `JWT_EXPIRES_IN` | no (`8h`) | duracion de la sesion (tope 12 h en codigo) |
 | `PORT` | no (`3002`) | solo servidor local de la API |
 | `API_DEV_URL` | no (`http://localhost:3002`) | solo `next dev`: destino del rewrite `/api/*` |
 

@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt, { SignOptions } from "jsonwebtoken";
 
+import { duracionSesionSegundos } from "../../compartido/dominio/sesion";
 import { ErrorAutenticacion } from "../../compartido/errores/error-autenticacion";
 import { ErrorDemasiadosIntentos } from "../../compartido/errores/error-demasiados-intentos";
 import { getEnv } from "../../config/env";
@@ -79,8 +80,9 @@ export const autenticacionService = {
     const payload: PayloadToken = {
       sub: usuario.idUsuario.toString()
     };
+    // En segundos, con tope (compartido/dominio/sesion.ts): JWT_EXPIRES_IN no puede alargarla.
     const signOptions: SignOptions = {
-      expiresIn: env.jwtExpiresIn as SignOptions["expiresIn"]
+      expiresIn: duracionSesionSegundos(env.jwtExpiresIn)
     };
 
     const token = jwt.sign(payload, env.jwtSecret, signOptions);

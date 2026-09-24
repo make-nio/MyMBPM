@@ -18,9 +18,10 @@ export const TABLAS_RESPALDO = [
   "AUDITORIA_CAMBIO"
 ] as const;
 
-// Fuera del respaldo: los intentos de ingreso son de vida corta y la tabla de Prisma se recrea
+// Fuera del respaldo: los intentos de ingreso y los cortes de sesion son de vida corta (una
+// base restaurada arranca sin sesiones: las claves tampoco viajan) y la tabla de Prisma se recrea
 // al migrar la base de destino.
-export const TABLAS_EXCLUIDAS = ["INTENTO_LOGIN", "_prisma_migrations"] as const;
+export const TABLAS_EXCLUIDAS = ["INTENTO_LOGIN", "USUARIO_SESION", "_prisma_migrations"] as const;
 
 // Columnas que no se guardan. Las claves no salen de la base de produccion: al restaurar, los
 // usuarios quedan sin poder ingresar hasta que se les asigne una clave nueva.

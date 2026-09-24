@@ -27,6 +27,20 @@ export const autenticacionRepository = {
     });
   },
 
+  // Desde cuando valen las sesiones del usuario (null: sin corte). Si la tabla todavia no existe
+  // (deploy preview antes de migrar produccion), no hay cortes y el ingreso sigue funcionando.
+  async obtenerSesionesValidasDesde(idUsuario: bigint) {
+    try {
+      const sesion = await prisma.sesionUsuario.findUnique({ where: { idUsuario }, select: { validasDesde: true } });
+      return sesion?.validasDesde ?? null;
+    } catch (error) {
+      if (faltaLaTabla(error)) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
   obtenerUsuarioSanitizadoPorId(idUsuario: bigint) {
     return prisma.usuario.findUnique({
       where: { idUsuario },

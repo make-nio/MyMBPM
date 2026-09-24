@@ -18,6 +18,7 @@ import { useModal } from "../../../src/hooks/use-modal";
 import {
   actualizarUsuario,
   cambiarEstadoUsuario,
+  cerrarSesionesUsuario,
   crearUsuario,
   listarUsuarios,
   restablecerClaveUsuario
@@ -50,6 +51,8 @@ export default function UsuariosPage() {
 function GestionUsuarios({ idUsuarioActual }: { idUsuarioActual: string }) {
   const modalUsuario = useModal<Usuario>();
   const modalClave = useModal<Usuario>();
+  const modalSesiones = useModal<Usuario>();
+  const [cerrandoSesiones, setCerrandoSesiones] = useState(false);
   const [errorAccion, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const [filtroActivo, setFiltroActivo] = useState<FiltroActivo>("todos");
@@ -84,6 +87,28 @@ function GestionUsuarios({ idUsuarioActual }: { idUsuarioActual: string }) {
     await restablecerClaveUsuario(usuario.idUsuario, passwordNueva);
     modalClave.cerrar();
     setAviso(`Clave restablecida para ${usuario.usuario}. Pasale la clave nueva por un medio seguro.`);
+  }
+
+  async function cerrarSesiones() {
+    const usuario = modalSesiones.contexto;
+
+    if (!usuario) {
+      return;
+    }
+
+    setCerrandoSesiones(true);
+    setError(null);
+
+    try {
+      await cerrarSesionesUsuario(usuario.idUsuario);
+      modalSesiones.cerrar();
+      setAviso(`Se cerraron las sesiones de ${usuario.usuario} en todos sus dispositivos.`);
+    } catch (currentError) {
+      modalSesiones.cerrar();
+      setError(currentError instanceof Error ? currentError.message : "No fue posible cerrar las sesiones");
+    } finally {
+      setCerrandoSesiones(false);
+    }
   }
 
   async function toggleEstado(usuario: Usuario) {
@@ -161,6 +186,16 @@ function GestionUsuarios({ idUsuarioActual }: { idUsuarioActual: string }) {
                   >
                     Restablecer clave
                   </button>
+                  <button
+                    className="boton-secundario"
+                    onClick={() => {
+                      setAviso(null);
+                      modalSesiones.abrir(usuario);
+                    }}
+                    type="button"
+                  >
+                    Cerrar sesiones
+                  </button>
                   {usuario.idUsuario !== idUsuarioActual ? (
                     <button
                       className="boton-secundario"
@@ -212,6 +247,26 @@ function GestionUsuarios({ idUsuarioActual }: { idUsuarioActual: string }) {
         titulo="Restablecer clave"
       >
         <FormularioRestablecerClave onCancel={modalClave.cerrar} onSubmit={restablecerClave} />
+      </Modal>
+
+      <Modal
+        abierto={modalSesiones.abierto}
+        descripcion={
+          modalSesiones.contexto?.idUsuario === idUsuarioActual
+            ? "Se cierra tu sesion en todos los dispositivos, incluido este: vas a tener que ingresar de nuevo."
+            : `${modalSesiones.contexto?.usuario ?? ""} va a tener que ingresar de nuevo en todos sus dispositivos. Sirve si perdio el celular o alguien mas conoce su clave (en ese caso, restablecela tambien).`
+        }
+        onClose={modalSesiones.cerrar}
+        titulo="Cerrar sesiones"
+      >
+        <div className="acciones-formulario">
+          <button className="boton-secundario" onClick={modalSesiones.cerrar} type="button">
+            Cancelar
+          </button>
+          <button className="boton-primario" disabled={cerrandoSesiones} onClick={() => void cerrarSesiones()} type="button">
+            {cerrandoSesiones ? "Cerrando..." : "Cerrar sesiones"}
+          </button>
+        </div>
       </Modal>
     </section>
   );

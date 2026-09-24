@@ -61,6 +61,13 @@ export const usuariosController = {
     responderExito(response, usuario);
   },
 
+  async cerrarSesiones(request: Request, response: Response) {
+    const params = validar(usuarioParamsSchema, request.params);
+    await usuariosService.cerrarSesiones(params.id);
+
+    responderExito(response, { sesionesCerradas: true });
+  },
+
   async cambiarClave(request: Request, response: Response) {
     const params = validar(usuarioParamsSchema, request.params);
     const body = validar(cambiarClaveUsuarioSchema, request.body);

@@ -8,7 +8,8 @@ import { autenticacionRepository } from "./autenticacion.repository";
 vi.mock("../../lib/prisma", () => ({
   prisma: {
     $transaction: vi.fn(),
-    intentoLogin: { findMany: vi.fn(), createMany: vi.fn(), deleteMany: vi.fn() }
+    intentoLogin: { findMany: vi.fn(), createMany: vi.fn(), deleteMany: vi.fn() },
+    sesionUsuario: { findUnique: vi.fn() }
   }
 }));
 
@@ -76,5 +77,28 @@ describe("autenticacionRepository.registrarFallidos (limpieza)", () => {
     // Sin filtro por clave: cada fallido limpia la tabla entera, asi no crece para siempre.
     expect(prisma.intentoLogin.deleteMany).toHaveBeenCalledWith({ where: { fecha: { lt: corte } } });
     expect(prisma.$transaction).toHaveBeenCalledWith(["alta", "limpieza"]);
+  });
+});
+
+describe("autenticacionRepository.obtenerSesionesValidasDesde", () => {
+  it("devuelve el corte del usuario, o null si no tiene", async () => {
+    const desde = new Date("2026-09-24T10:00:00Z");
+    vi.mocked(prisma.sesionUsuario.findUnique).mockResolvedValueOnce({ validasDesde: desde } as never);
+    vi.mocked(prisma.sesionUsuario.findUnique).mockResolvedValueOnce(null);
+
+    await expect(autenticacionRepository.obtenerSesionesValidasDesde(1n)).resolves.toEqual(desde);
+    await expect(autenticacionRepository.obtenerSesionesValidasDesde(2n)).resolves.toBeNull();
+  });
+
+  it("sin la tabla USUARIO_SESION (deploy preview antes de migrar) no hay cortes", async () => {
+    vi.mocked(prisma.sesionUsuario.findUnique).mockRejectedValue(tablaFaltante);
+
+    await expect(autenticacionRepository.obtenerSesionesValidasDesde(1n)).resolves.toBeNull();
+  });
+
+  it("otros errores de la base se propagan", async () => {
+    vi.mocked(prisma.sesionUsuario.findUnique).mockRejectedValue(new Error("conexion caida"));
+
+    await expect(autenticacionRepository.obtenerSesionesValidasDesde(1n)).rejects.toThrow("conexion caida");
   });
 });

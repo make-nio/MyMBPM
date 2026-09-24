@@ -87,10 +87,19 @@ export const endpoints = [
     metodo: "patch",
     ruta: "/api/usuarios/{id}/restablecer-clave",
     acceso: "administrador",
-    resumen: "Asigna una clave nueva a otro usuario (solo administradores)",
+    resumen: "Asigna una clave nueva a otro usuario y le cierra las sesiones abiertas (solo administradores)",
     etiqueta: "usuarios",
     params,
     body: restablecerClaveUsuarioSchema,
     respuesta: usuario
+  },
+  {
+    metodo: "post",
+    ruta: "/api/usuarios/{id}/cerrar-sesiones",
+    acceso: "administrador",
+    resumen: "Cierra la sesion de un usuario en todos los dispositivos (solo administradores)",
+    etiqueta: "usuarios",
+    params,
+    respuesta: objeto({ sesionesCerradas: z.literal(true) })
   }
 ] as const satisfies readonly Endpoint[];

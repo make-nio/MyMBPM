@@ -35,3 +35,8 @@ export function restablecerClaveUsuario(idUsuario: string, passwordNueva: string
     cuerpo: { passwordNueva }
   });
 }
+
+// Cierra la sesion del usuario en todos los dispositivos (solo administradores).
+export function cerrarSesionesUsuario(idUsuario: string) {
+  return pedirApi("post /api/usuarios/{id}/cerrar-sesiones", { params: { id: idUsuario } });
+}
