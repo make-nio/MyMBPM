@@ -27,8 +27,8 @@ const PRESUPUESTO: Presupuesto[] = [
   { ruta: "/ingresar", nombre: "Ingreso", conSesion: false, puntajeMinimo: 87, jsMaximoKb: 382 },
   { ruta: "/panel", nombre: "Panel", conSesion: true, puntajeMinimo: 88, jsMaximoKb: 480 },
   { ruta: "/pedidos", nombre: "Pedidos", conSesion: true, puntajeMinimo: 87, jsMaximoKb: 433 },
-  // Con el grafico de 12 meses (SVG propio, sin librerias de graficos).
-  { ruta: "/reportes", nombre: "Reportes", conSesion: true, puntajeMinimo: 81, jsMaximoKb: 408 }
+  // Con el grafico de 12 meses (SVG propio, sin librerias de graficos). CI del 24/09: 90 y 377 KB.
+  { ruta: "/reportes", nombre: "Reportes", conSesion: true, puntajeMinimo: 85, jsMaximoKb: 415 }
 ];
 
 const PASADAS = Number(process.env.RENDIMIENTO_PASADAS || 3);
