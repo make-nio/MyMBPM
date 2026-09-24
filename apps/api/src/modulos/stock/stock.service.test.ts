@@ -18,6 +18,7 @@ vi.mock("./stock.repository", () => ({
     obtenerItem: vi.fn(),
     listarItemsParaExistencias: vi.fn(),
     listarUltimosEstados: vi.fn(),
+    listarUltimosMovimientos: vi.fn(),
     bloquearItem: vi.fn()
   }
 }));
@@ -346,5 +347,15 @@ describe("stockService: bloqueo y transaccion", () => {
       transaccion,
       expect.objectContaining({ idUsuario: 3n, origenMovimiento: "MANUAL", tipoMovimiento: "AJUSTE_POSITIVO" })
     );
+  });
+});
+
+describe("stockService.obtenerUltimosMovimientos", () => {
+  it("delega en el repository con el limite", async () => {
+    repo.listarUltimosMovimientos.mockResolvedValue([]);
+
+    await stockService.obtenerUltimosMovimientos(tx, 8);
+
+    expect(repo.listarUltimosMovimientos).toHaveBeenCalledWith(tx, 8);
   });
 });

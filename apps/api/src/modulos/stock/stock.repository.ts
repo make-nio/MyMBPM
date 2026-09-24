@@ -76,6 +76,20 @@ export const stockRepository = {
     });
   },
 
+  // Ultimos movimientos de cualquier item (panel de inicio).
+  listarUltimosMovimientos(prismaOrTx: PrismaOrTx, limit: number) {
+    return prismaOrTx.estadoStock.findMany({
+      include: {
+        itemCatalogo: { select: { idItemCatalogo: true, nombre: true, tipoItem: true } },
+        usuario: { select: usuarioDelMovimiento }
+      },
+      orderBy: {
+        idEstadoStock: "desc"
+      },
+      take: limit
+    });
+  },
+
   buscarMovimientoDuplicado(prismaOrTx: PrismaOrTx, input: BuscarMovimientoDuplicadoInput) {
     return prismaOrTx.estadoStock.findFirst({
       where: {

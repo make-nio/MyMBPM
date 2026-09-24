@@ -113,7 +113,8 @@ La cobertura (umbral 50 % de líneas, backend y front) se publica en el resumen 
 
 - **Backend:** todos los módulos hechos (catálogo, clientes, pedidos, stock, producción,
   usuarios, autenticación, solicitudes especiales).
-- **Web:** ingreso, panel, y administración de categorías, ítems del catálogo, clientes,
+- **Web:** ingreso, panel de inicio con datos reales (pedidos, producción, stock bajo y últimos
+  movimientos), y administración de categorías, ítems del catálogo, clientes,
   solicitudes especiales, usuarios (sólo administradores), pedidos, producción (con el impacto en
   stock antes y después de confirmar, iniciar o finalizar) y stock (existencias, movimientos y
   ajustes).

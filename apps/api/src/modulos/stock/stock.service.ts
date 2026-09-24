@@ -96,6 +96,10 @@ export const stockService = {
     });
   },
 
+  obtenerUltimosMovimientos(prismaOrTx: PrismaOrTx, limit: number) {
+    return stockRepository.listarUltimosMovimientos(prismaOrTx, limit);
+  },
+
   async obtenerBajoStock(
     prismaOrTx: PrismaOrTx,
     filtros: { activo?: boolean; limit: number; offset: number }

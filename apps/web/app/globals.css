@@ -311,6 +311,55 @@ textarea {
   gap: 1rem;
 }
 
+.panel-indicador {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.panel-indicador:hover,
+.panel-indicador:focus-visible {
+  border-color: var(--accent);
+}
+
+.panel-secciones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: 1rem;
+}
+
+.panel-seccion__encabezado {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.panel-seccion__encabezado h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.panel-lista {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-lista li {
+  display: grid;
+  gap: 0.15rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-lista li:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
 .panel-dashboard__card {
   padding: 1.25rem;
   border: 1px solid var(--border);

@@ -14,3 +14,15 @@ describe("stockRepository.listarHistorial", () => {
     expect(usuarioDelMovimiento).not.toHaveProperty("claveHash");
   });
 });
+
+describe("stockRepository.listarUltimosMovimientos", () => {
+  it("tampoco devuelve datos sensibles del usuario", async () => {
+    const findMany = vi.fn().mockResolvedValue([]);
+    const cliente = { estadoStock: { findMany } } as never;
+
+    await stockRepository.listarUltimosMovimientos(cliente, 5);
+
+    expect(findMany.mock.calls[0][0].include.usuario).toEqual({ select: usuarioDelMovimiento });
+    expect(findMany.mock.calls[0][0].take).toBe(5);
+  });
+});
