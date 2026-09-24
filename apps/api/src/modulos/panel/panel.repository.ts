@@ -30,6 +30,14 @@ export const panelRepository = {
     });
   },
 
+  // Cuantos pedidos abiertos tienen la entrega prometida en [desde, hasta). Sin desde: todo lo
+  // anterior a hasta.
+  contarPedidosConEntregaEntre(prismaOrTx: PrismaOrTx, estados: string[], hasta: Date, desde?: Date) {
+    return prismaOrTx.pedido.count({
+      where: { activo: true, estadoPedido: { in: estados }, fechaEntrega: { gte: desde, lt: hasta } }
+    });
+  },
+
   contarOrdenesPorEstado(prismaOrTx: PrismaOrTx) {
     return prismaOrTx.ordenProduccion.groupBy({
       by: ["estadoProduccion"],
