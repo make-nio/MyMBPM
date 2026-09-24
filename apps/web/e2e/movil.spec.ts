@@ -102,6 +102,12 @@ test("pedido completo desde el celular: el detalle queda a la vista", async ({ p
 
   const { contenido, pantalla } = await anchoDePagina(page);
   expect(contenido).toBeLessThanOrEqual(pantalla);
+
+  // El comprobante tambien entra a lo ancho del celular.
+  await panel.getByRole("link", { name: "Comprobante" }).click();
+  await expect(page.getByRole("article", { name: /^Comprobante del pedido/ })).toBeVisible();
+  const comprobante = await anchoDePagina(page);
+  expect(comprobante.contenido).toBeLessThanOrEqual(comprobante.pantalla);
 });
 
 test("en stock, elegir un item lleva a sus movimientos", async ({ page }) => {

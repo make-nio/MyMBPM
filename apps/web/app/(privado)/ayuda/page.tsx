@@ -28,6 +28,16 @@ const guias: Paso[] = [
     ojo: "Cancelar un pedido ya confirmado no devuelve el stock. Si los productos vuelven a estar disponibles, sumalos desde Stock con \"Ajustar\"."
   },
   {
+    titulo: "Darle un comprobante al cliente",
+    pasos: [
+      "En el detalle del pedido, toca \"Comprobante\" (aparece cuando el pedido tiene items).",
+      "Se abre una hoja con los datos del cliente, los items, los precios y el total.",
+      "Toca \"Imprimir\". Para mandarlo por WhatsApp, en la ventana de impresion elegi \"Guardar como PDF\".",
+      "La hoja no muestra costos, ganancia ni las observaciones internas: solo las observaciones del cliente."
+    ],
+    ojo: "Dice \"Documento no válido como factura\": sirve como constancia del pedido, no como factura."
+  },
+  {
     titulo: "Producir",
     pasos: [
       "Cada producto tiene que tener su receta (en Items catalogo, boton \"Receta\"): que insumos usa y cuanto.",
