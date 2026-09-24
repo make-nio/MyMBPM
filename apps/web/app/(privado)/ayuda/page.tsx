@@ -79,6 +79,15 @@ const guias: Paso[] = [
     ]
   },
   {
+    titulo: "Cargar clientes desde una planilla (administradores)",
+    pasos: [
+      "En Clientes, toca \"Importar CSV\" y despues \"Descargar plantilla\".",
+      "Completa una fila por cliente. Solo el nombre es obligatorio; Activo es Si o No.",
+      "Elegi el archivo en \"Archivo CSV\": vas a ver cuantas filas estan bien y, si alguna tiene un error, cual y por que. Cuando esten todas bien, toca \"Importar\"."
+    ],
+    ojo: "Se importa todo o nada. Un cliente que ya existe (mismo email, mismo documento, o mismo nombre, apellido y telefono) da error: asi no se duplica."
+  },
+  {
     titulo: "Llevarte los datos a una planilla",
     pasos: [
       "En Pedidos o en Stock, aplica los filtros que quieras (en Pedidos podes elegir las fechas de alta con \"Alta desde\" y \"hasta\").",
