@@ -1,5 +1,7 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 
+import { TIPOS_STOCK } from "../../compartido/dominio/enums";
+
 type PrismaOrTx = PrismaClient | Prisma.TransactionClient;
 
 type BuscarMovimientoDuplicadoInput = {
@@ -165,15 +167,25 @@ export const stockRepository = {
       return Promise.resolve([] as UltimoEstadoStock[]);
     }
 
+    // Para cada item y tipo de stock, su ultimo movimiento: una lectura de
+    // IX_ESTADO_STOCK_ITEM_TIPO_ULTIMO por par, en vez de ordenar todos los movimientos de los
+    // items (docs/indices.md). Los pares sin movimientos no devuelven fila, como antes.
     return prismaOrTx.$queryRaw<UltimoEstadoStock[]>`
-      SELECT DISTINCT ON ("ID_ITEM_CATALOGO", "TIPO_STOCK")
-        "ID_ITEM_CATALOGO" AS "idItemCatalogo",
-        "TIPO_STOCK" AS "tipoStock",
-        "STOCK_ACTUAL" AS "stockActual",
-        "FECHA_ALTA" AS "fechaAlta"
-      FROM "ESTADO_STOCK"
-      WHERE "ID_ITEM_CATALOGO" IN (${Prisma.join(idsItemCatalogo)})
-      ORDER BY "ID_ITEM_CATALOGO", "TIPO_STOCK", "ID_ESTADO_STOCK" DESC
+      SELECT
+        items."ID_ITEM_CATALOGO" AS "idItemCatalogo",
+        tipos."TIPO_STOCK" AS "tipoStock",
+        ultimo."STOCK_ACTUAL" AS "stockActual",
+        ultimo."FECHA_ALTA" AS "fechaAlta"
+      FROM unnest(ARRAY[${Prisma.join(idsItemCatalogo)}]::bigint[]) AS items("ID_ITEM_CATALOGO")
+      CROSS JOIN unnest(ARRAY[${Prisma.join([...TIPOS_STOCK])}]::text[]) AS tipos("TIPO_STOCK")
+      CROSS JOIN LATERAL (
+        SELECT "STOCK_ACTUAL", "FECHA_ALTA"
+        FROM "ESTADO_STOCK"
+        WHERE "ID_ITEM_CATALOGO" = items."ID_ITEM_CATALOGO" AND "TIPO_STOCK" = tipos."TIPO_STOCK"
+        ORDER BY "ID_ESTADO_STOCK" DESC
+        LIMIT 1
+      ) AS ultimo
+      ORDER BY 1, 2
     `;
   },
 
