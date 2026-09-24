@@ -29,5 +29,8 @@
   "devDependencies": {
     "concurrently": "^9.1.2",
     "istanbul-lib-coverage": "^3.2.2"
+  },
+  "overrides": {
+    "postcss": "^8.5.28"
   }
 }
