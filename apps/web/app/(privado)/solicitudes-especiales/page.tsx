@@ -82,6 +82,7 @@ export default function SolicitudesEspecialesPage() {
         descripcion="Gestiona requerimientos especiales y su seguimiento interno."
         filtros={
           <select
+            aria-label="Filtrar por estado"
             className="control-filtro"
             onChange={(event) => setEstadoFiltro(event.target.value)}
             value={estadoFiltro}

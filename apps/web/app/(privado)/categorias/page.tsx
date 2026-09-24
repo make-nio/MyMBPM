@@ -66,6 +66,7 @@ export default function CategoriasPage() {
         descripcion="Gestiona altas, ediciones y activacion de categorias del catalogo."
         filtros={
           <select
+            aria-label="Filtrar por estado"
             className="control-filtro"
             onChange={(event) => setFiltroActivo(event.target.value as FiltroActivo)}
             value={filtroActivo}
