@@ -24,7 +24,13 @@ export type SolicitudEspecial = {
     nombre: string;
     apellido: string | null;
   } | null;
+  // Pedido creado al convertirla (ver "Convertir en pedido").
+  idPedido?: string | null;
+  pedido?: { idPedido: string; numeroPedido: string | null } | null;
 };
+
+// Desde estos estados se puede convertir en pedido (igual que en la API).
+export const ESTADOS_CONVERTIBLES: readonly EstadoSolicitud[] = ["PENDIENTE", "EN_REVISION", "APROBADA"];
 
 export type SolicitudEspecialPayload = {
   idCliente?: string;

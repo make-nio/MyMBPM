@@ -1,5 +1,7 @@
+import { ReactNode } from "react";
+
 type MensajeExitoProps = {
-  mensaje: string;
+  mensaje: ReactNode;
 };
 
 export function MensajeExito({ mensaje }: MensajeExitoProps) {

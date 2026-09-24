@@ -4,6 +4,15 @@ import { prisma } from "../../lib/prisma";
 
 type PrismaOrTx = PrismaClient | Prisma.TransactionClient;
 
+// El cliente y, si se convirtio, el numero del pedido creado.
+const incluirSolicitud = {
+  cliente: true,
+  pedido: { select: { idPedido: true, numeroPedido: true } }
+} satisfies Prisma.SolicitudEspecialInclude;
+
+// Estados desde los que se puede convertir en pedido.
+export const ESTADOS_CONVERTIBLES = ["PENDIENTE", "EN_REVISION", "APROBADA"];
+
 export const solicitudesEspecialesRepository = {
   listar(filtros: { idCliente?: bigint; estadoSolicitud?: string; limit: number; offset: number }) {
     return prisma.solicitudEspecial.findMany({
@@ -11,9 +20,7 @@ export const solicitudesEspecialesRepository = {
         idCliente: filtros.idCliente,
         estadoSolicitud: filtros.estadoSolicitud
       },
-      include: {
-        cliente: true
-      },
+      include: incluirSolicitud,
       orderBy: {
         idSolicitudEspecial: "desc"
       },
@@ -25,9 +32,7 @@ export const solicitudesEspecialesRepository = {
   obtenerPorId(prismaOrTx: PrismaOrTx, idSolicitudEspecial: bigint) {
     return prismaOrTx.solicitudEspecial.findUnique({
       where: { idSolicitudEspecial },
-      include: {
-        cliente: true
-      }
+      include: incluirSolicitud
     });
   },
 
@@ -48,9 +53,7 @@ export const solicitudesEspecialesRepository = {
         ...data,
         estadoSolicitud: data.estadoSolicitud ?? "PENDIENTE"
       },
-      include: {
-        cliente: true
-      }
+      include: incluirSolicitud
     });
   },
 
@@ -70,10 +73,19 @@ export const solicitudesEspecialesRepository = {
     return prismaOrTx.solicitudEspecial.update({
       where: { idSolicitudEspecial },
       data,
-      include: {
-        cliente: true
-      }
+      include: incluirSolicitud
     });
+  },
+
+  // Marca la solicitud como convertida solo si todavia se puede. La condicion la vuelve a evaluar
+  // Postgres al tomar el lock de la fila: de dos conversiones simultaneas, una sola actualiza.
+  async marcarConvertida(tx: Prisma.TransactionClient, idSolicitudEspecial: bigint, idPedido: bigint) {
+    const resultado = await tx.solicitudEspecial.updateMany({
+      where: { idSolicitudEspecial, idPedido: null, estadoSolicitud: { in: ESTADOS_CONVERTIBLES } },
+      data: { idPedido, estadoSolicitud: "CONVERTIDA_A_PEDIDO" }
+    });
+
+    return resultado.count === 1;
   },
 
   obtenerCliente(prismaOrTx: PrismaOrTx, idCliente: bigint) {

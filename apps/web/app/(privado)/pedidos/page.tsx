@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { FormularioPedido } from "../../../src/components/modulos/pedidos/formulario-pedido";
 import { PanelPedido } from "../../../src/components/modulos/pedidos/panel-pedido";
@@ -31,6 +31,16 @@ export default function PedidosPage() {
   const [filtroCobro, setFiltroCobro] = useState<EstadoCobro | "">("");
   const [idPedidoSeleccionado, setIdPedidoSeleccionado] = useState<string | null>(null);
   const refDetalle = useDesplazarAlDetalle(idPedidoSeleccionado);
+
+  // /pedidos?pedido=ID abre ese pedido (por ejemplo, desde una solicitud convertida). Se lee al
+  // montar: la web es un export estatico y la pagina es de cliente.
+  useEffect(() => {
+    const idPedido = new URLSearchParams(window.location.search).get("pedido");
+
+    if (idPedido && /^\d+$/.test(idPedido)) {
+      setIdPedidoSeleccionado(idPedido);
+    }
+  }, []);
 
   const listado = useListadoPaginado<Pedido>(
     (limit, offset) =>

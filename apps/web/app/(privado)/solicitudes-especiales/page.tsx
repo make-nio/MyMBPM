@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { FormularioSolicitudEspecial } from "../../../src/components/modulos/solicitudes-especiales/formulario-solicitud-especial";
@@ -7,6 +8,7 @@ import { EncabezadoModulo } from "../../../src/components/ui/encabezado-modulo";
 import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
 import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
 import { MensajeError } from "../../../src/components/ui/mensaje-error";
+import { MensajeExito } from "../../../src/components/ui/mensaje-exito";
 import { Modal } from "../../../src/components/ui/modal";
 import { PieListado } from "../../../src/components/ui/pie-listado";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
@@ -15,10 +17,12 @@ import { useModal } from "../../../src/hooks/use-modal";
 import {
   actualizarSolicitudEspecial,
   cambiarEstadoSolicitudEspecial,
+  convertirSolicitudEnPedido,
   crearSolicitudEspecial,
   listarSolicitudesEspeciales
 } from "../../../src/lib/modulos/solicitudes-especiales";
 import {
+  ESTADOS_CONVERTIBLES,
   ESTADOS_SOLICITUD,
   EstadoSolicitud,
   SolicitudEspecial
@@ -27,7 +31,8 @@ import {
 type ContextoSolicitudModal =
   | { modo: "crear"; solicitud: null }
   | { modo: "editar"; solicitud: SolicitudEspecial }
-  | { modo: "estado"; solicitud: SolicitudEspecial };
+  | { modo: "estado"; solicitud: SolicitudEspecial }
+  | { modo: "convertir"; solicitud: SolicitudEspecial };
 
 export default function SolicitudesEspecialesPage() {
   const modalSolicitud = useModal<ContextoSolicitudModal>();
@@ -57,6 +62,31 @@ export default function SolicitudesEspecialesPage() {
 
     modalSolicitud.cerrar();
     await recargar();
+  }
+
+  const [convertido, setConvertido] = useState<{ idPedido: string; numeroPedido: string | null } | null>(null);
+  const [errorConversion, setErrorConversion] = useState<string | null>(null);
+  const [convirtiendo, setConvirtiendo] = useState(false);
+
+  async function convertir() {
+    const contexto = modalSolicitud.contexto;
+
+    if (!contexto || contexto.modo !== "convertir") {
+      return;
+    }
+
+    setConvirtiendo(true);
+    setErrorConversion(null);
+
+    try {
+      setConvertido(await convertirSolicitudEnPedido(contexto.solicitud.idSolicitudEspecial));
+      modalSolicitud.cerrar();
+      await recargar();
+    } catch (currentError) {
+      setErrorConversion(currentError instanceof Error ? currentError.message : "No fue posible convertir la solicitud");
+    } finally {
+      setConvirtiendo(false);
+    }
   }
 
   async function guardarEstado() {
@@ -127,6 +157,17 @@ export default function SolicitudesEspecialesPage() {
               cell: (solicitud) => solicitud.estadoSolicitud
             },
             {
+              header: "Pedido",
+              cell: (solicitud) =>
+                solicitud.pedido ? (
+                  <Link href={`/pedidos?pedido=${solicitud.pedido.idPedido}`}>
+                    {solicitud.pedido.numeroPedido ?? `#${solicitud.pedido.idPedido}`}
+                  </Link>
+                ) : (
+                  "-"
+                )
+            },
+            {
               header: "Contacto",
               cell: (solicitud) => solicitud.telefono || solicitud.email || "-"
             },
@@ -141,22 +182,48 @@ export default function SolicitudesEspecialesPage() {
                   >
                     Editar
                   </button>
-                  <button
-                    className="boton-secundario"
-                    onClick={() => {
-                      setEstadoTemporal(solicitud.estadoSolicitud);
-                      modalSolicitud.abrir({ modo: "estado", solicitud });
-                    }}
-                    type="button"
-                  >
-                    Estado
-                  </button>
+                  {solicitud.idPedido ? null : (
+                    <button
+                      className="boton-secundario"
+                      onClick={() => {
+                        setEstadoTemporal(solicitud.estadoSolicitud);
+                        modalSolicitud.abrir({ modo: "estado", solicitud });
+                      }}
+                      type="button"
+                    >
+                      Estado
+                    </button>
+                  )}
+                  {!solicitud.idPedido && solicitud.idCliente && ESTADOS_CONVERTIBLES.includes(solicitud.estadoSolicitud) ? (
+                    <button
+                      className="boton-secundario"
+                      onClick={() => {
+                        setErrorConversion(null);
+                        setConvertido(null);
+                        modalSolicitud.abrir({ modo: "convertir", solicitud });
+                      }}
+                      type="button"
+                    >
+                      Convertir en pedido
+                    </button>
+                  ) : null}
                 </div>
               )
             }
           ]}
           data={solicitudes}
           keyExtractor={(solicitud) => solicitud.idSolicitudEspecial}
+        />
+      ) : null}
+
+      {convertido ? (
+        <MensajeExito
+          mensaje={
+            <>
+              Se creo el pedido {convertido.numeroPedido ?? `#${convertido.idPedido}`}.{" "}
+              <Link href={`/pedidos?pedido=${convertido.idPedido}`}>Ir al pedido</Link> para cargarle los items y precios.
+            </>
+          }
         />
       ) : null}
 
@@ -195,6 +262,34 @@ export default function SolicitudesEspecialesPage() {
       </Modal>
 
       <Modal
+        abierto={modalSolicitud.abierto && modalSolicitud.contexto?.modo === "convertir"}
+        descripcion="Se crea un pedido pendiente para el cliente de la solicitud. Despues le cargas los items y precios."
+        onClose={modalSolicitud.cerrar}
+        titulo="Convertir en pedido"
+      >
+        {modalSolicitud.contexto?.modo === "convertir" ? (
+          <div className="formulario-modulo">
+            {errorConversion ? <MensajeError mensaje={errorConversion} /> : null}
+            <p className="texto-secundario">
+              Cliente:{" "}
+              <strong>
+                {`${modalSolicitud.contexto.solicitud.cliente?.nombre ?? ""} ${modalSolicitud.contexto.solicitud.cliente?.apellido ?? ""}`.trim()}
+              </strong>
+              . La descripcion pasa a las observaciones del pedido y la solicitud queda como convertida.
+            </p>
+            <div className="acciones-formulario">
+              <button className="boton-secundario" onClick={modalSolicitud.cerrar} type="button">
+                Volver
+              </button>
+              <button className="boton-primario" disabled={convirtiendo} onClick={() => void convertir()} type="button">
+                {convirtiendo ? "Creando..." : "Crear pedido"}
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
+
+      <Modal
         abierto={
           modalSolicitud.abierto &&
           modalSolicitud.contexto !== null &&
@@ -212,7 +307,8 @@ export default function SolicitudesEspecialesPage() {
               onChange={(event) => setEstadoTemporal(event.target.value as EstadoSolicitud)}
               value={estadoTemporal}
             >
-              {ESTADOS_SOLICITUD.map((estado) => (
+              {/* "Convertida a pedido" solo con el boton "Convertir en pedido". */}
+              {ESTADOS_SOLICITUD.filter((estado) => estado !== "CONVERTIDA_A_PEDIDO").map((estado) => (
                 <option key={estado} value={estado}>
                   {estado}
                 </option>
