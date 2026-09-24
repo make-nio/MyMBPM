@@ -39,3 +39,14 @@ export function cambiarEstadoCliente(idCliente: string, activo: boolean) {
     body: JSON.stringify({ activo })
   }).then((response) => response.data);
 }
+
+export function nombreCliente(cliente: { nombre: string; apellido?: string | null }) {
+  return `${cliente.nombre} ${cliente.apellido ?? ""}`.trim();
+}
+
+// Opciones para elegir un cliente activo en un formulario (busqueda en la API).
+export function buscarOpcionesClientes(texto: string, limit: number) {
+  return listarClientes({ busqueda: texto || undefined, activo: true, limit }).then((clientes) =>
+    clientes.map((cliente) => ({ value: cliente.idCliente, label: nombreCliente(cliente) }))
+  );
+}

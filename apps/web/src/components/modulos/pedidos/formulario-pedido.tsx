@@ -4,10 +4,11 @@ import { FormEvent, useState } from "react";
 
 import { AccionesFormulario } from "../../formularios/acciones-formulario";
 import { CampoSelect } from "../../formularios/campo-select";
+import { CampoSelectBuscable } from "../../formularios/campo-select-buscable";
 import { CampoTextarea } from "../../formularios/campo-textarea";
 import { MensajeError } from "../../ui/mensaje-error";
 import { formatearEstado } from "../../../lib/formato";
-import { Cliente } from "../../../types/clientes";
+import { buscarOpcionesClientes } from "../../../lib/modulos/clientes";
 import {
   ESTADOS_COBRO,
   EstadoCobro,
@@ -17,13 +18,12 @@ import {
 } from "../../../types/pedidos";
 
 type FormularioPedidoProps = {
-  clientes: Cliente[];
   onCancel: () => void;
   onSubmit: (payload: PedidoAltaPayload) => Promise<void>;
 };
 
 // Alta de la cabecera del pedido. Los items se agregan despues, desde el detalle.
-export function FormularioPedido({ clientes, onCancel, onSubmit }: FormularioPedidoProps) {
+export function FormularioPedido({ onCancel, onSubmit }: FormularioPedidoProps) {
   const [idCliente, setIdCliente] = useState("");
   const [origenPedido, setOrigenPedido] = useState<OrigenPedido>("MANUAL");
   const [estadoCobro, setEstadoCobro] = useState<EstadoCobro>("PENDIENTE");
@@ -61,17 +61,12 @@ export function FormularioPedido({ clientes, onCancel, onSubmit }: FormularioPed
     <form className="formulario-modulo" onSubmit={handleSubmit}>
       {error ? <MensajeError mensaje={error} /> : null}
 
-      <CampoSelect
+      <CampoSelectBuscable
+        buscar={buscarOpcionesClientes}
         id="pedido-cliente"
         label="Cliente"
         onChange={setIdCliente}
-        options={[
-          { label: "Selecciona un cliente", value: "" },
-          ...clientes.map((cliente) => ({
-            label: `${cliente.nombre} ${cliente.apellido ?? ""}`.trim(),
-            value: cliente.idCliente
-          }))
-        ]}
+        textoVacio="Selecciona un cliente"
         value={idCliente}
       />
       <CampoSelect

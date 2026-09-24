@@ -47,6 +47,7 @@ export const actualizarEstadoItemCatalogoSchema = z.object({
 });
 
 export const listarItemsCatalogoQuerySchema = paginacionSchema.extend({
+  busqueda: z.string().trim().max(150).optional(),
   tipoItem: z.enum(TIPOS_ITEM).optional(),
   idCategoria: idSchema.optional(),
   activo: z

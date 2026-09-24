@@ -8,6 +8,7 @@ import {
 } from "../../types/items-catalogo";
 
 type FiltrosItemsCatalogo = {
+  busqueda?: string;
   tipoItem?: TipoItem;
   idCategoria?: string;
   activo?: boolean;
@@ -19,6 +20,7 @@ type FiltrosItemsCatalogo = {
 export function listarItemsCatalogo(filtros: FiltrosItemsCatalogo = {}) {
   return apiFetch<{ ok: true; data: ItemCatalogo[] }>(
     `/api/items-catalogo${buildQuery({
+      busqueda: filtros.busqueda,
       tipoItem: filtros.tipoItem,
       idCategoria: filtros.idCategoria,
       activo: filtros.activo,
@@ -96,4 +98,9 @@ export function eliminarComponenteItem(idItemCatalogo: string, idComponente: str
       method: "DELETE"
     }
   ).then((response) => response.data);
+}
+
+// Items activos que coinciden con el texto, para elegir uno en un formulario.
+export function buscarItemsActivos(texto: string, limit: number, tipoItem?: TipoItem) {
+  return listarItemsCatalogo({ busqueda: texto || undefined, tipoItem, activo: true, limit });
 }

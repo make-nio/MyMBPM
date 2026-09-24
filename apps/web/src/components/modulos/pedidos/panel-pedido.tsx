@@ -19,7 +19,6 @@ import {
 } from "../../../lib/modulos/pedidos";
 import { listarMovimientosStock, obtenerStockActual } from "../../../lib/modulos/stock";
 import { calcularImpactoStock, hayStockInsuficiente, ImpactoStockItem } from "../../../lib/stock/impacto-stock";
-import { ItemCatalogo } from "../../../types/items-catalogo";
 import {
   ESTADOS_COBRO,
   TRANSICIONES_ESTADO_PEDIDO,
@@ -34,7 +33,6 @@ import { FormularioLineaPedido } from "./formulario-linea-pedido";
 
 type PanelPedidoProps = {
   idPedido: string;
-  productos: ItemCatalogo[];
   onCambio: () => void;
 };
 
@@ -45,7 +43,7 @@ function itemsDistintos(detalles: PedidoDetalle[]) {
 }
 
 // Detalle de un pedido: lineas, confirmacion con su impacto en el stock y cambios de estado.
-export function PanelPedido({ idPedido, productos, onCambio }: PanelPedidoProps) {
+export function PanelPedido({ idPedido, onCambio }: PanelPedidoProps) {
   const modalLinea = useModal<PedidoDetalle>();
   const modalConfirmacion = useModal();
   const [pedido, setPedido] = useState<Pedido | null>(null);
@@ -84,13 +82,20 @@ export function PanelPedido({ idPedido, productos, onCambio }: PanelPedidoProps)
 
     // Despues de confirmar: los egresos que registro la confirmacion de este pedido.
     const historiales = await Promise.all(
-      itemsDistintos(detalles).map((id) => listarMovimientosStock({ idItemCatalogo: id, tipoStock: "PRODUCTO", limit: 100 }))
+      itemsDistintos(detalles).map((id) =>
+        listarMovimientosStock({
+          idItemCatalogo: id,
+          tipoStock: "PRODUCTO",
+          origenMovimiento: "PEDIDO",
+          idReferenciaOrigen: idPedido,
+          limit: 100
+        })
+      )
     );
     const nombres = new Map(detalles.map((detalle) => [detalle.idItemCatalogo, detalle.nombreItemSnapshot]));
     setMovimientos(
       historiales
         .flat()
-        .filter((movimiento) => movimiento.origenMovimiento === "PEDIDO" && movimiento.idReferenciaOrigen === idPedido)
         .map((movimiento) => ({ ...movimiento, nombreItem: nombres.get(movimiento.idItemCatalogo) ?? "-" }))
     );
     setImpacto([]);
@@ -316,7 +321,6 @@ export function PanelPedido({ idPedido, productos, onCambio }: PanelPedidoProps)
         titulo={modalLinea.contexto ? "Editar item" : "Agregar item"}
       >
         <FormularioLineaPedido
-          items={productos}
           linea={modalLinea.contexto}
           onCancel={modalLinea.cerrar}
           onSubmit={guardarLinea}

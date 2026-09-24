@@ -20,7 +20,7 @@ Paginacion:
 
 ## Items Catalogo
 
-- `GET /api/items-catalogo`
+- `GET /api/items-catalogo` (filtros `busqueda` por nombre o codigo, `tipoItem`, `idCategoria`, `activo`, `publico`)
 - `GET /api/items-catalogo/:id`
 - `POST /api/items-catalogo`
 - `PATCH /api/items-catalogo/:id`

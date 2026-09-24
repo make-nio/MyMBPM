@@ -3,15 +3,14 @@
 import { FormEvent, useState } from "react";
 
 import { AccionesFormulario } from "../../formularios/acciones-formulario";
-import { CampoSelect } from "../../formularios/campo-select";
+import { CampoSelectBuscable } from "../../formularios/campo-select-buscable";
 import { CampoTexto } from "../../formularios/campo-texto";
 import { MensajeError } from "../../ui/mensaje-error";
 import { formatearMoneda } from "../../../lib/formato";
-import { ItemCatalogo } from "../../../types/items-catalogo";
+import { buscarItemsActivos } from "../../../lib/modulos/items-catalogo";
 import { PedidoDetalle } from "../../../types/pedidos";
 
 type FormularioLineaPedidoProps = {
-  items: ItemCatalogo[];
   linea?: PedidoDetalle | null;
   onCancel: () => void;
   onSubmit: (payload: { idItemCatalogo: string; cantidad: number }) => Promise<void>;
@@ -19,7 +18,7 @@ type FormularioLineaPedidoProps = {
 
 // Alta de una linea (item + cantidad) o edicion de su cantidad. El precio se toma del
 // catalogo en el momento del alta (snapshot en la API).
-export function FormularioLineaPedido({ items, linea, onCancel, onSubmit }: FormularioLineaPedidoProps) {
+export function FormularioLineaPedido({ linea, onCancel, onSubmit }: FormularioLineaPedidoProps) {
   const [idItemCatalogo, setIdItemCatalogo] = useState(linea?.idItemCatalogo ?? "");
   const [cantidad, setCantidad] = useState(linea ? String(Number(linea.cantidad)) : "1");
   const [enviando, setEnviando] = useState(false);
@@ -56,17 +55,19 @@ export function FormularioLineaPedido({ items, linea, onCancel, onSubmit }: Form
       {linea ? (
         <p className="texto-secundario">{linea.nombreItemSnapshot}</p>
       ) : (
-        <CampoSelect
+        <CampoSelectBuscable
+          buscar={(texto, limit) =>
+            buscarItemsActivos(texto, limit, "PRODUCTO").then((items) =>
+              items.map((item) => ({
+                label: `${item.nombre} (${formatearMoneda(item.precio)})`,
+                value: item.idItemCatalogo
+              }))
+            )
+          }
           id="linea-item"
           label="Item"
           onChange={setIdItemCatalogo}
-          options={[
-            { label: "Selecciona un producto", value: "" },
-            ...items.map((item) => ({
-              label: `${item.nombre} (${formatearMoneda(item.precio)})`,
-              value: item.idItemCatalogo
-            }))
-          ]}
+          textoVacio="Selecciona un producto"
           value={idItemCatalogo}
         />
       )}

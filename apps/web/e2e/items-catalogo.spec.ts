@@ -26,7 +26,7 @@ test("alta de un producto y armado de su receta con un insumo", async ({ page })
 
   await page.getByRole("button", { name: "Nuevo componente" }).click();
   const receta = page.getByRole("dialog", { name: "Nuevo componente" });
-  await receta.getByLabel("Item componente").selectOption({ label: `${insumo.nombre} (INSUMO)` });
+  await receta.getByLabel("Item componente", { exact: true }).selectOption({ label: `${insumo.nombre} (INSUMO)` });
   await receta.getByLabel("Cantidad requerida").fill("1.5");
   await receta.getByLabel("Unidad de medida").fill("KG");
   await receta.getByRole("button", { name: "Guardar componente" }).click();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 
 import { FormularioPedido } from "../../../src/components/modulos/pedidos/formulario-pedido";
 import { PanelPedido } from "../../../src/components/modulos/pedidos/panel-pedido";
@@ -9,15 +9,13 @@ import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
 import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
 import { MensajeError } from "../../../src/components/ui/mensaje-error";
 import { Modal } from "../../../src/components/ui/modal";
+import { PieListado } from "../../../src/components/ui/pie-listado";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { useDesplazarAlDetalle } from "../../../src/hooks/use-desplazar-al-detalle";
+import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
 import { formatearEstado, formatearFecha, formatearMoneda } from "../../../src/lib/formato";
-import { listarClientes } from "../../../src/lib/modulos/clientes";
-import { listarItemsCatalogo } from "../../../src/lib/modulos/items-catalogo";
 import { crearPedido, listarPedidos } from "../../../src/lib/modulos/pedidos";
-import { Cliente } from "../../../src/types/clientes";
-import { ItemCatalogo } from "../../../src/types/items-catalogo";
 import {
   ESTADOS_COBRO,
   ESTADOS_PEDIDO,
@@ -29,51 +27,23 @@ import {
 
 export default function PedidosPage() {
   const modalPedido = useModal();
-  const [pedidos, setPedidos] = useState<Pedido[]>([]);
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [productos, setProductos] = useState<ItemCatalogo[]>([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<EstadoPedido | "">("");
   const [filtroCobro, setFiltroCobro] = useState<EstadoCobro | "">("");
   const [idPedidoSeleccionado, setIdPedidoSeleccionado] = useState<string | null>(null);
   const refDetalle = useDesplazarAlDetalle(idPedidoSeleccionado);
 
-  const recargar = useCallback(async () => {
-    setPedidos(
-      await listarPedidos({
+  const listado = useListadoPaginado<Pedido>(
+    (limit, offset) =>
+      listarPedidos({
         estadoPedido: filtroEstado || undefined,
-        estadoCobro: filtroCobro || undefined
-      })
-    );
-  }, [filtroEstado, filtroCobro]);
-
-  useEffect(() => {
-    async function cargar() {
-      setCargando(true);
-      setError(null);
-
-      try {
-        await recargar();
-      } catch (currentError) {
-        setError(currentError instanceof Error ? currentError.message : "No fue posible cargar los pedidos");
-      } finally {
-        setCargando(false);
-      }
-    }
-
-    void cargar();
-  }, [recargar]);
-
-  useEffect(() => {
-    // Datos para los formularios: clientes activos y productos activos del catalogo.
-    Promise.all([listarClientes({ activo: true }), listarItemsCatalogo({ tipoItem: "PRODUCTO", activo: true })])
-      .then(([clientesActivos, productosActivos]) => {
-        setClientes(clientesActivos);
-        setProductos(productosActivos);
-      })
-      .catch(() => setError("No fue posible cargar clientes y productos"));
-  }, []);
+        estadoCobro: filtroCobro || undefined,
+        limit,
+        offset
+      }),
+    [filtroEstado, filtroCobro],
+    "No fue posible cargar los pedidos"
+  );
+  const { items: pedidos, cargando, error, recargar } = listado;
 
   async function guardarPedido(payload: PedidoAltaPayload) {
     const pedido = await crearPedido(payload);
@@ -157,13 +127,18 @@ export default function PedidosPage() {
         />
       ) : null}
 
+      {!cargando ? (
+        <PieListado
+          cantidad={pedidos.length}
+          cargandoMas={listado.cargandoMas}
+          hayMas={listado.hayMas}
+          onCargarMas={() => void listado.cargarMas()}
+        />
+      ) : null}
+
       {idPedidoSeleccionado ? (
         <div ref={refDetalle}>
-          <PanelPedido
-            idPedido={idPedidoSeleccionado}
-            onCambio={() => void recargar()}
-            productos={productos}
-          />
+          <PanelPedido idPedido={idPedidoSeleccionado} onCambio={() => void recargar()} />
         </div>
       ) : null}
 
@@ -173,7 +148,7 @@ export default function PedidosPage() {
         onClose={modalPedido.cerrar}
         titulo="Nuevo pedido"
       >
-        <FormularioPedido clientes={clientes} onCancel={modalPedido.cerrar} onSubmit={guardarPedido} />
+        <FormularioPedido onCancel={modalPedido.cerrar} onSubmit={guardarPedido} />
       </Modal>
     </section>
   );

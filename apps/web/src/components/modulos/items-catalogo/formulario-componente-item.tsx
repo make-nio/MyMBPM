@@ -1,21 +1,18 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 
-import {
-  ItemCatalogo,
-  ItemCatalogoComponente
-} from "../../../types/items-catalogo";
+import { buscarItemsActivos } from "../../../lib/modulos/items-catalogo";
+import { ItemCatalogo, ItemCatalogoComponente } from "../../../types/items-catalogo";
 import { AccionesFormulario } from "../../formularios/acciones-formulario";
 import { CampoCheckbox } from "../../formularios/campo-checkbox";
-import { CampoSelect } from "../../formularios/campo-select";
+import { CampoSelectBuscable } from "../../formularios/campo-select-buscable";
 import { CampoTexto } from "../../formularios/campo-texto";
 import { MensajeError } from "../../ui/mensaje-error";
 
 type FormularioComponenteItemProps = {
   componente?: ItemCatalogoComponente | null;
   itemPadreId: string;
-  itemsDisponibles: ItemCatalogo[];
   onCancel: () => void;
   onSubmit: (payload: {
     idItemCatalogoHijo: string;
@@ -25,10 +22,13 @@ type FormularioComponenteItemProps = {
   }) => Promise<void>;
 };
 
+function opcionItem(item: ItemCatalogo) {
+  return { label: `${item.nombre} (${item.tipoItem})`, value: item.idItemCatalogo };
+}
+
 export function FormularioComponenteItem({
   componente,
   itemPadreId,
-  itemsDisponibles,
   onCancel,
   onSubmit
 }: FormularioComponenteItemProps) {
@@ -40,23 +40,14 @@ export function FormularioComponenteItem({
   const [activo, setActivo] = useState(componente?.activo ?? true);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const opcionesDisponibles = itemsDisponibles.filter(
-    (item) => item.idItemCatalogo !== itemPadreId
-  );
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
-  useEffect(() => {
-    if (componente?.idItemCatalogoHijo) {
-      setIdItemCatalogoHijo(componente.idItemCatalogoHijo);
+    if (!idItemCatalogoHijo) {
+      setError("Selecciona un item componente");
       return;
     }
 
-    if (!idItemCatalogoHijo && opcionesDisponibles.length > 0) {
-      setIdItemCatalogoHijo(opcionesDisponibles[0].idItemCatalogo);
-    }
-  }, [componente, idItemCatalogoHijo, opcionesDisponibles]);
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
     setEnviando(true);
     setError(null);
 
@@ -79,17 +70,18 @@ export function FormularioComponenteItem({
     <form className="formulario-modulo" onSubmit={handleSubmit}>
       {error ? <MensajeError mensaje={error} /> : null}
 
-      <CampoSelect
+      <CampoSelectBuscable
+        buscar={(texto, limit) =>
+          // Un item no puede ser componente de si mismo.
+          buscarItemsActivos(texto, limit).then((items) =>
+            items.filter((item) => item.idItemCatalogo !== itemPadreId).map(opcionItem)
+          )
+        }
         id="componente-item"
         label="Item componente"
         onChange={setIdItemCatalogoHijo}
-        options={[
-          { label: "Selecciona un item componente", value: "" },
-          ...opcionesDisponibles.map((item) => ({
-            label: `${item.nombre} (${item.tipoItem})`,
-            value: item.idItemCatalogo
-          }))
-        ]}
+        opcionInicial={componente?.itemCatalogoComponente ? opcionItem(componente.itemCatalogoComponente) : null}
+        textoVacio="Selecciona un item componente"
         value={idItemCatalogoHijo}
       />
       <CampoTexto

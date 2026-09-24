@@ -24,7 +24,7 @@ async function agregarLinea(page: Page, producto: string, cantidad: string) {
   const modal = page.getByRole("dialog", { name: "Agregar item" });
   // La opcion muestra "nombre ($ precio)"; se elige por el value de la que empieza con el nombre.
   const opcion = modal.getByRole("option", { name: new RegExp(`^${producto} `) });
-  await modal.getByLabel("Item").selectOption((await opcion.getAttribute("value")) ?? "");
+  await modal.getByLabel("Item", { exact: true }).selectOption((await opcion.getAttribute("value")) ?? "");
   await modal.getByLabel("Cantidad").fill(cantidad);
   await modal.getByRole("button", { name: "Guardar item" }).click();
   await expect(modal).toBeHidden();

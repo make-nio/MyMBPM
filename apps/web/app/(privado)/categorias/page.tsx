@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { FormularioCategoria } from "../../../src/components/modulos/categorias/formulario-categoria";
 import { EncabezadoModulo } from "../../../src/components/ui/encabezado-modulo";
@@ -8,7 +8,9 @@ import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
 import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
 import { MensajeError } from "../../../src/components/ui/mensaje-error";
 import { Modal } from "../../../src/components/ui/modal";
+import { PieListado } from "../../../src/components/ui/pie-listado";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
+import { useListadoPaginado } from "../../../src/hooks/use-listado-paginado";
 import { useModal } from "../../../src/hooks/use-modal";
 import {
   actualizarCategoria,
@@ -22,52 +24,19 @@ type FiltroActivo = "todos" | "activos" | "inactivos";
 
 export default function CategoriasPage() {
   const modalCategoria = useModal<Categoria>();
-  const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [filtroActivo, setFiltroActivo] = useState<FiltroActivo>("todos");
 
-  useEffect(() => {
-    async function cargarCategorias() {
-      setCargando(true);
-      setError(null);
-
-      try {
-        const data = await listarCategorias({
-          activo:
-            filtroActivo === "todos"
-              ? undefined
-              : filtroActivo === "activos"
-                ? true
-                : false
-        });
-
-        setCategorias(data);
-      } catch (currentError) {
-        setError(
-          currentError instanceof Error
-            ? currentError.message
-            : "No fue posible cargar las categorias"
-        );
-      } finally {
-        setCargando(false);
-      }
-    }
-
-    void cargarCategorias();
-  }, [filtroActivo]);
-
-  async function recargar() {
-    const data = await listarCategorias({
-      activo:
-        filtroActivo === "todos"
-          ? undefined
-          : filtroActivo === "activos"
-            ? true
-            : false
-    });
-    setCategorias(data);
-  }
+  const listado = useListadoPaginado<Categoria>(
+    (limit, offset) =>
+      listarCategorias({
+        activo: filtroActivo === "todos" ? undefined : filtroActivo === "activos",
+        limit,
+        offset
+      }),
+    [filtroActivo],
+    "No fue posible cargar las categorias"
+  );
+  const { items: categorias, cargando, error, recargar } = listado;
 
   async function guardarCategoria(payload: {
     nombre: string;
@@ -156,6 +125,15 @@ export default function CategoriasPage() {
           ]}
           data={categorias}
           keyExtractor={(categoria) => categoria.idCategoria}
+        />
+      ) : null}
+
+      {!cargando ? (
+        <PieListado
+          cantidad={categorias.length}
+          cargandoMas={listado.cargandoMas}
+          hayMas={listado.hayMas}
+          onCargarMas={() => void listado.cargarMas()}
         />
       ) : null}
 
