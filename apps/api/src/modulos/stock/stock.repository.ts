@@ -76,13 +76,12 @@ export const stockRepository = {
     });
   },
 
-  // Ultimos movimientos de cualquier item (panel de inicio). Del usuario solo datos de
-  // presentacion: nunca claveHash.
+  // Ultimos movimientos de cualquier item (panel de inicio).
   listarUltimosMovimientos(prismaOrTx: PrismaOrTx, limit: number) {
     return prismaOrTx.estadoStock.findMany({
       include: {
         itemCatalogo: { select: { idItemCatalogo: true, nombre: true, tipoItem: true } },
-        usuario: { select: { idUsuario: true, nombre: true, apellido: true } }
+        usuario: { select: usuarioDelMovimiento }
       },
       orderBy: {
         idEstadoStock: "desc"
