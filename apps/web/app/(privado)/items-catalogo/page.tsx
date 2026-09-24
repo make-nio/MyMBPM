@@ -185,6 +185,7 @@ export default function ItemsCatalogoPage() {
               value={busqueda}
             />
             <select
+              aria-label="Filtrar por tipo"
               className="control-filtro"
               onChange={(event) => setTipoFiltro(event.target.value)}
               value={tipoFiltro}
@@ -197,6 +198,7 @@ export default function ItemsCatalogoPage() {
               ))}
             </select>
             <select
+              aria-label="Filtrar por categoria"
               className="control-filtro"
               onChange={(event) => setCategoriaFiltro(event.target.value)}
               value={categoriaFiltro}
@@ -209,6 +211,7 @@ export default function ItemsCatalogoPage() {
               ))}
             </select>
             <select
+              aria-label="Filtrar por estado"
               className="control-filtro"
               onChange={(event) => setActivoFiltro(event.target.value as FiltroTriestado)}
               value={activoFiltro}
@@ -218,6 +221,7 @@ export default function ItemsCatalogoPage() {
               <option value="no">Inactivos</option>
             </select>
             <select
+              aria-label="Filtrar por visibilidad"
               className="control-filtro"
               onChange={(event) => setPublicoFiltro(event.target.value as FiltroTriestado)}
               value={publicoFiltro}

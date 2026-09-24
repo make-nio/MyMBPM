@@ -69,12 +69,14 @@ export default function ClientesPage() {
         filtros={
           <div className="filtros-inline">
             <input
+              aria-label="Buscar cliente"
               className="control-filtro"
               onChange={(event) => setBusqueda(event.target.value)}
               placeholder="Buscar por nombre, telefono, email o documento"
               value={busqueda}
             />
             <select
+              aria-label="Filtrar por estado"
               className="control-filtro"
               onChange={(event) => setFiltroActivo(event.target.value as FiltroActivo)}
               value={filtroActivo}
