@@ -13,5 +13,9 @@ export const panelController = {
     const resumen = await panelService.obtenerResumen(query, { verCostos: puedeVerCostos(request.usuarioAutenticado) });
 
     responderExito(response, resumen);
+  },
+
+  async obtenerAvisos(_request: Request, response: Response) {
+    responderExito(response, await panelService.obtenerAvisos());
   }
 };
