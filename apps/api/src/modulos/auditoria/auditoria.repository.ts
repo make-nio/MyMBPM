@@ -72,6 +72,33 @@ export const auditoriaRepository = {
     return db.auditoriaCambio.createMany({ data: datos });
   },
 
+  // Los registros que tocaron alguno de `campos` (por ejemplo precio o costo), los mas nuevos
+  // primero. `cambios` es un arreglo JSON: `array_contains` es el @> de Postgres, que compara solo
+  // la clave "campo" de cada elemento.
+  async listarConCampos(filtros: {
+    entidad: EntidadAuditada;
+    idEntidad: bigint;
+    campos: readonly string[];
+    limit: number;
+    offset: number;
+  }) {
+    if (!(await hayTablaAuditoria())) {
+      return [];
+    }
+
+    return prisma.auditoriaCambio.findMany({
+      where: {
+        entidad: filtros.entidad,
+        idEntidad: filtros.idEntidad,
+        OR: filtros.campos.map((campo) => ({ cambios: { array_contains: [{ campo }] } }))
+      },
+      include: { usuario: { select: { idUsuario: true, nombre: true, apellido: true } } },
+      orderBy: { idAuditoriaCambio: "desc" },
+      skip: filtros.offset,
+      take: filtros.limit
+    });
+  },
+
   // Solo id, nombre y apellido del usuario: nunca claveHash.
   async listar(filtros: { entidad: EntidadAuditada; idEntidad: bigint; limit: number; offset: number }) {
     if (!(await hayTablaAuditoria())) {

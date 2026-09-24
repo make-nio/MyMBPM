@@ -1,50 +1,66 @@
-# MLM BPM
+# MyM BPM
 
 [![CI](https://github.com/make-nio/MyMBPM/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/make-nio/MyMBPM/actions/workflows/ci.yml)
 
-Base de trabajo para `MLM_BPM`, un sistema de gestion para catalogo, clientes, pedidos, stock y produccion, montado como monorepo con `npm workspaces`.
+Sistema de gestion de **MyM**, un emprendimiento de impresion 3D: catalogo de items con su receta,
+clientes, pedidos, stock, produccion y pedidos a medida ("solicitudes especiales"). Lo usan una o
+pocas personas desde un panel privado con usuario y clave. Monorepo con `npm workspaces`.
 
 ## Estructura
 
 ```text
-MyFirstProject/
+MyMBPM/
   apps/
-    web/   Next.js + React + TypeScript (export estatico)
-    api/   Node.js + Express + TypeScript + Prisma (Netlify Function en produccion)
+    web/   Next.js 15 + React 19 + TypeScript (export estatico)
+    api/   Node 20 + Express + TypeScript + Prisma sobre PostgreSQL (Netlify Function en produccion)
+  docs/    arquitectura, despliegue, respaldos, modelo de datos, pedidos HTTP de ejemplo
+  scripts/ build de Netlify, reporte de cobertura, resumenes del CI
   netlify.toml
-  package.json
-  README.md
 ```
 
 ## Decisiones
 
-- El backend existente fue reutilizado y movido a `apps/api`.
-- El frontend vive en `apps/web` con Next.js App Router.
-- La raiz del repositorio solo orquesta scripts, workspaces y documentacion.
-- La estructura queda preparada para agregar mas apps o paquetes despues.
-- La base de datos es PostgreSQL (Netlify DB / Neon) con Prisma en `apps/api`.
-- Todo se despliega en un solo sitio de Netlify: la web como sitio estatico y la API Express como Netlify Function bajo `/api/*`. Detalle en [docs/despliegue-netlify.md](docs/despliegue-netlify.md).
-- El backend sigue convenciones del dominio: rutas y modulos en espanol.
+- La base es PostgreSQL (Netlify DB / Neon) con Prisma en `apps/api`.
+- Todo se despliega en un solo sitio de Netlify: la web como sitio estatico y la API Express como
+  Netlify Function bajo `/api/*`, en el mismo dominio (sin CORS). Detalle en
+  [docs/despliegue-netlify.md](docs/despliegue-netlify.md).
+- Rutas, modulos y codigo en espanol, como el dominio.
+- La API devuelve como mucho 100 filas por pedido y no manda totales: las pantallas cargan de a 50
+  ("Cargar mas") y los selectores buscan en el servidor.
 
-## Estado actual
+## Que hace hoy
 
-Hoy el foco esta en `apps/api`.
+Pantallas (`apps/web/app/(privado)/`), todas usables desde el celular (375 px):
 
-Documentacion de arquitectura backend:
+| Pantalla | Que se hace |
+| --- | --- |
+| Dashboard (`/panel`) | Pedidos para confirmar y para entregar, entregas atrasadas y de la semana, ordenes en proceso, stock para reponer, ultimos movimientos y, para administradores, lo vendido y ganado en el mes |
+| Pedidos | Alta, items con precio y costo congelados al agregarlos, impacto en stock antes de confirmar, estados y cobro, fecha de entrega prometida, comprobante imprimible (no fiscal), repetir un pedido, exportar CSV |
+| Produccion | Ordenes con sus productos, impacto en insumos antes de iniciar y en productos al finalizar; vista de lista o **tablero** por estado |
+| Stock | Existencias por tipo, "Solo bajo minimo", ajustes con motivo, movimientos con su origen, crear una orden para reponer, exportar CSV |
+| Items catalogo | Items con su receta, costo de la receta, historial de cambios y de precio y costo (administradores), importacion desde CSV (administradores) |
+| Clientes | Alta y edicion, ficha con historial de compras y total, historial de cambios, importacion desde CSV (administradores) |
+| Categorias, Solicitudes especiales | Alta, edicion y estados; una solicitud se convierte en pedido |
+| Reportes (administradores) | Lo vendido en un mes por item y por cliente, grafico de 12 meses, exportar CSV |
+| Usuarios (administradores) | Alta, roles, activar y desactivar, restablecer la clave |
+| Ayuda (`/ayuda`) | Guia para el dia a dia y, para administradores, la guia de administracion |
 
-- [docs/arquitectura-backend.md](docs/arquitectura-backend.md)
-- [docs/despliegue-netlify.md](docs/despliegue-netlify.md)
+En el encabezado: **busqueda global** (Ctrl+K / Cmd+K) de pedidos, clientes e items, y la
+**campanita de avisos** (items bajo el minimo, entregas atrasadas o para hoy).
 
-Backend implementado hasta ahora:
+## Documentacion
 
-- infraestructura compartida de errores, validacion y rutas
-- modulos base: categorias, items-catalogo y clientes
-- nucleo critico: stock, pedidos y produccion
-- usuarios, autenticacion y solicitudes especiales
+| Documento | De que trata |
+| --- | --- |
+| [docs/arquitectura-backend.md](docs/arquitectura-backend.md) | Reglas del backend, forma de un modulo, mapa de modulos, middlewares, seguridad del ingreso, auditoria, costos, importaciones |
+| [docs/idempotencia-stock.md](docs/idempotencia-stock.md) | Por que reintentar una operacion de stock no descuenta dos veces |
+| [docs/der-actualizado.md](docs/der-actualizado.md) | Modelo de datos |
+| [docs/despliegue-netlify.md](docs/despliegue-netlify.md) | Build, variables, migraciones y deploy previews, encabezados de seguridad (CSP), `/api/health` |
+| [docs/respaldos.md](docs/respaldos.md) | Respaldo logico diario en Netlify Blobs: que contiene, como descargarlo y restaurarlo |
+| [docs/backend-bloque-1-endpoints.md](docs/backend-bloque-1-endpoints.md), [bloque 2](docs/backend-bloque-2-endpoints.md) | Endpoints de los primeros bloques con ejemplos |
+| [docs/http/api.http](docs/http/api.http) | Pedidos de ejemplo para REST Client |
 
-Pendiente para la siguiente etapa:
-
-- frontend funcional sobre `apps/web`
+Para trabajar en el repo (convenciones, comandos, reglas que no se rompen), ver `CLAUDE.md`.
 
 ## Requisitos
 
@@ -87,6 +103,34 @@ npm run dev
 ```
 
 La web en `http://localhost:3000` reenvia `/api/*` a la API local (`API_DEV_URL`, default `http://localhost:3002`), asi que en desarrollo tambien es mismo origen y no hace falta CORS.
+
+### Datos de demostracion
+
+Para ver la web con un negocio cargado, sobre una base **local vacia**:
+
+```bash
+createdb mymbpm_demo
+cd apps/api
+export NETLIFY_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/mymbpm_demo
+NETLIFY_DATABASE_URL_UNPOOLED=$NETLIFY_DATABASE_URL npx prisma migrate deploy
+JWT_SECRET=x npm run demo:cargar
+```
+
+`scripts/datos-demo.ts` carga los datos pasando por los services, asi que se aplican las mismas
+reglas y el stock lo mueve `stock.service`:
+
+- 12 insumos (filamentos, resina, argollas, imanes, cajas) y 18 productos, casi todos con receta,
+  precio y costo;
+- stock inicial, con algunos items bajo el minimo;
+- 10 ordenes de produccion en todos los estados;
+- 36 clientes;
+- unos 70 pedidos de los ultimos 12 meses en todos los estados, con entregas atrasadas, para hoy
+  y para la semana;
+- 5 solicitudes especiales, una ya convertida en pedido.
+
+Si no hay usuarios, crea el administrador `demo` (clave `demo-mym-2026`). **Se niega si la base
+no es local o si ya tiene items.** Los movimientos de stock quedan con la fecha del dia en que se
+cargo; los pedidos, con fechas repartidas en el anio.
 
 ## Build, checks y tests
 
@@ -178,6 +222,28 @@ como un deploy preview; en local:
 URL_HUMO=https://mymbpm.netlify.app npm run test:humo --workspace @myfirstproject/web
 ```
 
+### E2E nocturno
+
+`.github/workflows/e2e-nocturno.yml` corre todas las noches (06:00 UTC, 03:00 en Argentina) la suite
+E2E completa (`chromium` y `movil`) **3 veces seguidas y sin reintentos** (`--repeat-each=3
+--retries=0`), contra su propio Postgres de servicio. En el CI de los PR hay 1 reintento, que tapa
+las pruebas intermitentes; esta corrida las muestra antes de que molesten.
+
+`scripts/resumen-e2e-nocturno.mjs` lee el reporte JSON de Playwright y publica en el resumen del job
+una tabla con cada prueba que fallo alguna vez: cuantas de las corridas, si es **intermitente**
+(falla a veces) o **falla siempre**, y la primera linea del error. Si alguna fallo, el job queda en
+rojo; no abre issues ni avisa por otro medio. El reporte JSON y las trazas quedan como artefacto
+14 dias. Se puede lanzar a mano (Actions → "E2E nocturno" → Run workflow) con otra cantidad de
+repeticiones. La sesion del administrador E2E se crea una vez, asi que la corrida usa
+`E2E_JWT_EXPIRES_IN=4h` (en los PR sigue siendo 1 h). En local:
+
+```bash
+cd apps/web
+PLAYWRIGHT_JSON_OUTPUT_NAME=e2e-nocturno.json npx playwright test --project=chromium --project=movil \
+  --repeat-each=3 --retries=0 --reporter=dot,json
+node ../../scripts/resumen-e2e-nocturno.mjs e2e-nocturno.json
+```
+
 ## Testing HTTP desde VSCode
 
 - instala la extension `REST Client`
@@ -236,16 +302,23 @@ npm run prisma:migrate --workspace @myfirstproject/api -- --name <nombre>
 
 ### Modulos disponibles
 
-- `/api/categorias`
-- `/api/items-catalogo`
-- `/api/clientes`
-- `/api/autenticacion`
-- `/api/usuarios`
-- `/api/stock`
-- `/api/pedidos`
-- `/api/produccion`
+Todas las rutas van bajo `/api` y, salvo `health`, `autenticacion/login` y el alta inicial de
+usuario, piden sesion. El mapa completo, con que hace cada modulo, esta en
+[docs/arquitectura-backend.md](docs/arquitectura-backend.md#mapa-de-modulos).
+
+- `/api/health` (estado de la API y la base, sin sesion)
+- `/api/autenticacion` (login con limite de intentos, `me`)
+- `/api/usuarios` (gestion solo para administradores; cada uno cambia su clave)
+- `/api/categorias`, `/api/items-catalogo` (con receta e imagenes), `/api/items-catalogo/importacion`
+- `/api/clientes` (con `/:id/resumen` de compras), `/api/clientes/importacion`
+- `/api/stock` (existencias, historial, bajo stock, ajustes)
+- `/api/pedidos` (items, estados, confirmar, repetir)
+- `/api/produccion` (ordenes, iniciar, finalizar)
 - `/api/solicitudes-especiales`
-- `/api/panel/resumen` (panel de inicio: pedidos pendientes y por entregar, ordenes en proceso, stock bajo y ultimos movimientos)
+- `/api/panel` (`resumen` del Dashboard y `avisos` del encabezado)
+- `/api/busqueda` (busqueda global)
+- `/api/reportes` (ventas del mes y por mes; administradores)
+- `/api/auditoria` (historial de cambios y de precio y costo; administradores)
 
 ### Reglas importantes ya implementadas
 
@@ -269,11 +342,12 @@ npm run prisma:migrate --workspace @myfirstproject/api -- --name <nombre>
   - `TIPO_MOVIMIENTO`
 - El schema y la migracion agregan un indice para apoyar estas consultas:
   - `IX_ESTADO_STOCK_IDEMPOTENCIA`
-- Ese indice no es `UNIQUE`. La proteccion contra duplicados concurrentes la da el lock por item: la verificacion de idempotencia y el insert quedan serializados para el mismo item y tipo de stock (ver `docs/idempotencia-stock.md`).
+- La proteccion contra duplicados concurrentes la da el lock por item: la verificacion de idempotencia y el insert quedan serializados para el mismo item y tipo de stock. Ademas, desde `20260924080000_unique_idempotencia_stock` la base lo garantiza con el indice unico parcial `UQ_ESTADO_STOCK_IDEMPOTENCIA` (sin los ajustes `MANUAL`, que pueden repetirse). Detalle en [docs/idempotencia-stock.md](docs/idempotencia-stock.md).
 
 ## Notas PostgreSQL
 
-- Las migraciones versionadas viven en `apps/api/prisma/migrations`. Hay una sola inicial para Postgres; las de SQL Server se descartaron (no hay migracion de datos).
+- Las migraciones versionadas viven en `apps/api/prisma/migrations`, desde `20260924000000_inicial_postgres` (las de SQL Server se descartaron; no hubo migracion de datos). Todas las posteriores son aditivas, porque los deploy previews corren contra la base de produccion sin migrar.
+- Hay indices que Prisma no modela y viven solo en SQL crudo de las migraciones: los unicos sobre `lower(usuario)` y `lower(email)` y el unico parcial de idempotencia de stock.
 - Solo el deploy de produccion corre `prisma migrate deploy`; los deploy previews no migran porque usan la misma base (ver [docs/despliegue-netlify.md](docs/despliegue-netlify.md)).
 - Diferencias de comportamiento respecto de SQL Server (mayusculas en login/busquedas, tipos): ver [docs/despliegue-netlify.md](docs/despliegue-netlify.md).
 
