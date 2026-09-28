@@ -30,9 +30,7 @@ import {
 import { listarMovimientosStock, obtenerStockActual } from "../../../lib/modulos/stock";
 import { calcularImpactoStock, hayStockInsuficiente, ImpactoStockItem } from "../../../lib/stock/impacto-stock";
 import {
-  ESTADOS_COBRO,
   TRANSICIONES_ESTADO_PEDIDO,
-  EstadoCobro,
   EstadoPedido,
   PedidoCompleto,
   PedidoDetalle
@@ -40,6 +38,7 @@ import {
 import { MovimientoStock } from "../../../types/stock";
 import { TablaImpactoStock } from "../stock/tabla-impacto-stock";
 import { FormularioLineaPedido } from "./formulario-linea-pedido";
+import { PagosPedido } from "./pagos-pedido";
 import { RepetirPedido } from "./repetir-pedido";
 
 type PanelPedidoProps = {
@@ -67,7 +66,6 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
   const [error, setError] = useState<string | null>(null);
   const [confirmando, setConfirmando] = useState(false);
   const [estadoPedido, setEstadoPedido] = useState<EstadoPedido>("PENDIENTE");
-  const [estadoCobro, setEstadoCobro] = useState<EstadoCobro>("PENDIENTE");
   const [fechaEntrega, setFechaEntrega] = useState("");
 
   const cargar = useCallback(async () => {
@@ -75,7 +73,6 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
     const detalles = actual.detalles ?? [];
     setPedido(actual);
     setEstadoPedido(actual.estadoPedido);
-    setEstadoCobro(actual.estadoCobro);
     setFechaEntrega(diaArgentina(actual.fechaEntrega));
 
     if (actual.estadoPedido === "PENDIENTE") {
@@ -194,7 +191,7 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
           </p>
           <p className="texto-secundario texto-secundario--compacto">
             Estado: <strong data-testid="estado-pedido">{formatearEstado(pedido.estadoPedido)}</strong> · Cobro:{" "}
-            <strong>{formatearEstado(pedido.estadoCobro)}</strong> · Total:{" "}
+            <strong data-testid="estado-cobro">{formatearEstado(pedido.estadoCobro)}</strong> · Total:{" "}
             <strong data-testid="total-pedido">{formatearMoneda(pedido.total)}</strong>
           </p>
           {esAdministrador && detalles.length > 0 && detalles.every((detalle) => detalle.costoUnitario !== undefined) ? (
@@ -286,6 +283,17 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
         </div>
       ) : null}
 
+      <PagosPedido
+        cancelado={pedido.estadoPedido === "CANCELADO"}
+        esAdministrador={esAdministrador}
+        idPedido={idPedido}
+        onCambio={async () => {
+          await cargar();
+          onCambio();
+        }}
+        version={`${pedido.total}-${pedido.fechaModificacion}`}
+      />
+
       {!pendiente ? (
         <div aria-label="Movimientos de stock del pedido" role="region">
           <p className="marca-pequena">Movimientos de stock del pedido</p>
@@ -328,31 +336,10 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
             ))}
           </select>
         </label>
-        <label className="campo-formulario" htmlFor="pedido-estado-cobro">
-          <span>Cobro</span>
-          <select
-            id="pedido-estado-cobro"
-            onChange={(event) => setEstadoCobro(event.target.value as EstadoCobro)}
-            value={estadoCobro}
-          >
-            {ESTADOS_COBRO.map((estado) => (
-              <option key={estado} value={estado}>
-                {formatearEstado(estado)}
-              </option>
-            ))}
-          </select>
-        </label>
         <button
           className="boton-secundario"
-          disabled={estadoPedido === pedido.estadoPedido && estadoCobro === pedido.estadoCobro}
-          onClick={() =>
-            void ejecutar(() =>
-              actualizarEstadoPedido(idPedido, {
-                estadoPedido: estadoPedido === pedido.estadoPedido ? undefined : estadoPedido,
-                estadoCobro
-              })
-            )
-          }
+          disabled={estadoPedido === pedido.estadoPedido}
+          onClick={() => void ejecutar(() => actualizarEstadoPedido(idPedido, { estadoPedido }))}
           type="button"
         >
           Guardar estado

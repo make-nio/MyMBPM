@@ -1,3 +1,4 @@
+import { MEDIOS_PAGO } from "../../compartido/dominio/enums";
 import { Endpoint, decimal, fecha, id, lista, objeto, z } from "../base";
 import { ventasMesQuerySchema } from "../../modulos/reportes/reportes.schemas";
 
@@ -57,6 +58,20 @@ const ventasPorMesSchema = objeto({
   )
 }).openapi("VentasPorMes");
 
+// reportesService.cobrosDelMes: pagos vigentes del mes, por medio.
+const cobrosDelMesSchema = objeto({
+  desde: fecha,
+  hasta: fecha,
+  total: decimal,
+  porMedio: lista(
+    objeto({
+      medioPago: z.enum(MEDIOS_PAGO),
+      cobrado: decimal,
+      pagos: z.number().int()
+    })
+  )
+}).openapi("CobrosDelMes");
+
 export const endpoints = [
   {
     metodo: "get",
@@ -74,5 +89,14 @@ export const endpoints = [
     resumen: "Vendido por mes en los ultimos 12 meses (solo administradores)",
     etiqueta,
     respuesta: ventasPorMesSchema
+  },
+  {
+    metodo: "get",
+    ruta: "/api/reportes/cobros-mes",
+    acceso: "administrador",
+    resumen: "Lo cobrado en un mes por medio de pago, segun la fecha de cada pago (solo administradores)",
+    etiqueta,
+    query: ventasMesQuerySchema,
+    respuesta: cobrosDelMesSchema
   }
 ] as const satisfies readonly Endpoint[];

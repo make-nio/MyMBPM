@@ -35,13 +35,13 @@ Pantallas (`apps/web/app/(privado)/`), todas usables desde el celular (375 px):
 | Pantalla | Que se hace |
 | --- | --- |
 | Dashboard (`/panel`) | Pedidos para confirmar y para entregar, entregas atrasadas y de la semana, ordenes en proceso, stock para reponer, ultimos movimientos y, para administradores, lo vendido y ganado en el mes |
-| Pedidos | Alta, items con precio y costo congelados al agregarlos, impacto en stock antes de confirmar, estados y cobro, fecha de entrega prometida, comprobante imprimible (no fiscal), repetir un pedido, exportar CSV |
+| Pedidos | Alta, items con precio y costo congelados al agregarlos, impacto en stock antes de confirmar, estados, pagos con su medio (el cobro se calcula solo), fecha de entrega prometida, comprobante imprimible (no fiscal), repetir un pedido, exportar CSV |
 | Produccion | Ordenes con sus productos, impacto en insumos antes de iniciar y en productos al finalizar; vista de lista o **tablero** por estado |
 | Stock | Existencias por tipo, "Solo bajo minimo", ajustes con motivo, movimientos con su origen, crear una orden para reponer, exportar CSV |
 | Items catalogo | Items con su receta, costo de la receta, historial de cambios y de precio y costo (administradores), importacion desde CSV (administradores) |
 | Clientes | Alta y edicion, ficha con historial de compras y total, historial de cambios, importacion desde CSV (administradores) |
 | Categorias, Solicitudes especiales | Alta, edicion y estados; una solicitud se convierte en pedido |
-| Reportes (administradores) | Lo vendido en un mes por item y por cliente, grafico de 12 meses, exportar CSV |
+| Reportes (administradores) | Lo vendido en un mes por item y por cliente, grafico de 12 meses, lo cobrado en el mes por medio de pago, exportar CSV |
 | Usuarios (administradores) | Alta, roles, activar y desactivar, restablecer la clave, cerrar las sesiones de un usuario |
 | Ayuda (`/ayuda`) | Guia para el dia a dia y, para administradores, la guia de administracion |
 
@@ -315,7 +315,7 @@ usuario, piden sesion. El mapa completo, con que hace cada modulo, esta en
 - `/api/categorias`, `/api/items-catalogo` (con receta e imagenes), `/api/items-catalogo/importacion`
 - `/api/clientes` (con `/:id/resumen` de compras), `/api/clientes/importacion`
 - `/api/stock` (existencias, historial, bajo stock, ajustes)
-- `/api/pedidos` (items, estados, confirmar, repetir)
+- `/api/pedidos` (items, estados, confirmar, repetir, pagos)
 - `/api/produccion` (ordenes, iniciar, finalizar)
 - `/api/solicitudes-especiales`
 - `/api/panel` (`resumen` del Dashboard y `avisos` del encabezado)
@@ -332,6 +332,7 @@ usuario, piden sesion. El mapa completo, con que hace cada modulo, esta en
 - La validacion de stock se hace dentro de la misma transaccion donde se registra el egreso.
 - Los ajustes manuales solo aceptan `AJUSTE_POSITIVO` y `AJUSTE_NEGATIVO`, exigen motivo (`observaciones`, 400 si falta o esta vacio); el usuario sale de la sesion y el origen es siempre `MANUAL`.
 - Los movimientos de pedidos y produccion quedan a nombre del usuario de la sesion.
+- El estado de cobro de un pedido se calcula con sus pagos (`PAGO`): un pago no supera el saldo, no se borra (se anula con motivo, solo administradores) y queda a nombre de quien lo registro. Ver [docs/arquitectura-backend.md](docs/arquitectura-backend.md#pagos).
 - Quien puede usar cada endpoint (sin sesion, cualquier usuario o administrador) esta declarado en el contrato y se prueba contra la API real (`e2e/autorizacion.spec.ts`); un usuario solo cambia su propia clave y una linea, componente o imagen solo se alcanza desde su propio padre. Ver [docs/contrato-api.md](docs/contrato-api.md#quién-puede-usar-cada-endpoint).
 - Las entradas tienen topes (textos, cantidades, montos, paginacion, ids, 100 lineas por pedido u orden): uno de mas da 400 o 409 con mensaje, nunca 500. Ver [docs/contrato-api.md](docs/contrato-api.md#límites-de-entrada).
 - Las sesiones duran como mucho 12 h y un administrador puede cerrarlas (tambien al restablecer la clave). Ver [docs/despliegue-netlify.md](docs/despliegue-netlify.md#sesiones).

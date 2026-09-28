@@ -39,11 +39,12 @@ Cada modulo vive en `src/modulos/<modulo>/` con cinco archivos: `routes` → `co
 | `importacion-clientes` | `clientes/importacion` | Importacion de clientes desde CSV (abajo) |
 | `stock` | `stock` | Existencias, historial, bajo stock y ajustes manuales. **Unico que escribe stock** |
 | `pedidos` | `pedidos` | Pedidos, items con precio y costo congelados, estados, confirmar (descuenta stock), repetir |
+| `pagos` | `pedidos/:id/pagos` | Pagos de un pedido y su estado de cobro (abajo). Anular: administradores |
 | `produccion` | `produccion` | Ordenes: iniciar (consume insumos) y finalizar (ingresa productos) |
 | `solicitudes-especiales` | `solicitudes-especiales` | Pedidos a medida; se convierten en pedido |
 | `panel` | `panel/resumen`, `panel/avisos` | Dashboard y avisos del encabezado. Solo lectura |
 | `busqueda` | `busqueda?q=` | Busqueda global de pedidos, clientes e items (desde 2 caracteres) |
-| `reportes` | `reportes/ventas-mes`, `reportes/ventas-por-mes` | Ventas del mes y de 12 meses. Administradores |
+| `reportes` | `reportes/ventas-mes`, `reportes/ventas-por-mes`, `reportes/cobros-mes` | Ventas del mes y de 12 meses, cobrado del mes por medio. Administradores |
 | `auditoria` | `auditoria`, `auditoria/precios` | Historial de cambios y de precio y costo. Administradores |
 
 Aparte de los modulos, `src/respaldo/` arma el respaldo logico diario ([respaldos.md](respaldos.md)).
@@ -101,6 +102,23 @@ Los topes de entrada estan en `LIMITES` (`compartido/validaciones/esquemas-comun
 de cada modulo los usan; el contrato toma esos mismos schemas, asi que no pueden separarse. Un valor
 de mas da 400 (o 409 si es la linea 101 de un pedido u orden). El detalle de ambos, en
 [contrato-api.md](contrato-api.md).
+
+## Pagos
+
+Un pedido se cobra con pagos (`PAGO`: fecha, monto, medio, observaciones y quien lo registro). El
+estado de cobro (`ESTADO_COBRO`) ya no se elige: lo calcula `pagosService` con los pagos vigentes
+(`compartido/dominio/cobro.ts`): sin nada cobrado PENDIENTE, una parte SEÑADO, el total o mas PAGADO.
+
+- Registrar y anular corren en una transaccion con lock de la fila del pedido (`FOR UPDATE`): dos
+  pagos a la vez no pueden pasar entre los dos el total. Un pago que supera el saldo da 409, y un
+  pedido cancelado no recibe pagos.
+- Un pago no se borra ni se edita: se **anula** con motivo (solo administradores) y deja de contar.
+  Un pago de otro pedido no se alcanza desde este (404).
+- Si cambian las lineas de un pedido con pagos, `recalcularTotales` recalcula tambien el cobro.
+- Un pedido sin ningun pago conserva el estado que tenia: los de antes de #90 se marcaban a mano y
+  no se les inventan pagos.
+- Reportes suma lo cobrado en el mes por medio segun la **fecha del pago**, que puede ser de otro
+  mes que la confirmacion del pedido (lo vendido).
 
 ## Historial de cambios (auditoria)
 

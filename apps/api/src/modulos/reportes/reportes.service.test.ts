@@ -6,7 +6,7 @@ import { reportesService } from "./reportes.service";
 
 vi.mock("../../lib/prisma", () => ({ prisma: { cliente: "prisma" } }));
 vi.mock("./reportes.repository", () => ({
-  reportesRepository: { listarPedidosVendidosEntre: vi.fn(), listarTotalesVendidosEntre: vi.fn() }
+  reportesRepository: { listarPedidosVendidosEntre: vi.fn(), listarTotalesVendidosEntre: vi.fn(), cobradoPorMedioEntre: vi.fn() }
 }));
 
 const repo = vi.mocked(reportesRepository);
@@ -157,5 +157,27 @@ describe("reportesService.ventasPorMes", () => {
 
     expect(meses[0].mes).toBe("2026-02");
     expect(meses[11].mes).toBe("2027-01");
+  });
+});
+
+describe("reportesService.cobrosDelMes", () => {
+  it("suma lo cobrado del mes por medio de pago (hora de Argentina)", async () => {
+    repo.cobradoPorMedioEntre.mockResolvedValue([
+      { medioPago: "EFECTIVO", _sum: { monto: dec(1500) }, _count: { _all: 2 } },
+      { medioPago: "TRANSFERENCIA", _sum: { monto: dec(700) }, _count: { _all: 1 } }
+    ] as never);
+
+    const reporte = await reportesService.cobrosDelMes({ mes: "2026-09" });
+
+    expect(repo.cobradoPorMedioEntre).toHaveBeenCalledWith(
+      { cliente: "prisma" },
+      new Date("2026-09-01T03:00:00.000Z"),
+      new Date("2026-10-01T03:00:00.000Z")
+    );
+    expect(reporte.total.toString()).toBe("2200");
+    expect(reporte.porMedio).toEqual([
+      { medioPago: "EFECTIVO", cobrado: dec(1500), pagos: 2 },
+      { medioPago: "TRANSFERENCIA", cobrado: dec(700), pagos: 1 }
+    ]);
   });
 });

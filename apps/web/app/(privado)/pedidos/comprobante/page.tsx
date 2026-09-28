@@ -6,7 +6,9 @@ import { useEffect, useState } from "react";
 import { ComprobantePedido } from "../../../../src/components/modulos/pedidos/comprobante-pedido";
 import { EstadoCargando } from "../../../../src/components/ui/estado-cargando";
 import { MensajeError } from "../../../../src/components/ui/mensaje-error";
+import { listarPagos } from "../../../../src/lib/modulos/pagos";
 import { obtenerPedido } from "../../../../src/lib/modulos/pedidos";
+import { PagosDelPedido } from "../../../../src/types/pagos";
 import { PedidoCompleto } from "../../../../src/types/pedidos";
 
 // /pedidos/comprobante?pedido=ID: comprobante no fiscal para imprimir o guardar como PDF desde el
@@ -14,6 +16,7 @@ import { PedidoCompleto } from "../../../../src/types/pedidos";
 export default function ComprobantePedidoPage() {
   const [idPedido, setIdPedido] = useState<string | null>(null);
   const [pedido, setPedido] = useState<PedidoCompleto | null>(null);
+  const [pagos, setPagos] = useState<PagosDelPedido | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,6 +34,10 @@ export default function ComprobantePedidoPage() {
         document.title = `Comprobante ${respuesta.numeroPedido ?? respuesta.idPedido} · MyM`;
       })
       .catch((causa: unknown) => setError(causa instanceof Error ? causa.message : "No fue posible cargar el pedido"));
+    // Lo cobrado y el saldo: si no se pueden cargar, el comprobante sale sin esas lineas.
+    listarPagos(id)
+      .then(setPagos)
+      .catch(() => undefined);
   }, []);
 
   return (
@@ -46,7 +53,7 @@ export default function ComprobantePedidoPage() {
 
       {error ? <MensajeError mensaje={error} /> : null}
       {!error && !pedido ? <EstadoCargando titulo="Cargando comprobante" /> : null}
-      {pedido ? <ComprobantePedido pedido={pedido} /> : null}
+      {pedido ? <ComprobantePedido pagos={pagos} pedido={pedido} /> : null}
     </div>
   );
 }

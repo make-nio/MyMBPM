@@ -10,6 +10,7 @@ import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { LIMITES } from "../../compartido/validaciones/esquemas-comunes";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 import { prisma } from "../../lib/prisma";
+import { pagosService } from "../pagos/pagos.service";
 import { ordenarPorItem, stockService } from "../stock/stock.service";
 
 import { pedidosRepository } from "./pedidos.repository";
@@ -287,6 +288,9 @@ export const pedidosService = {
       subtotal,
       total: subtotal
     });
+
+    // Si el pedido ya tiene pagos, el total nuevo puede cambiar su estado de cobro.
+    await pagosService.recalcularEstadoCobro(tx, idPedido);
   },
 
   async actualizarDetalle(idPedido: bigint, idPedidoDetalle: bigint, data: { cantidad: number }) {

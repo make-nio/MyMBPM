@@ -24,6 +24,12 @@ vi.mock("../stock/stock.service", async (importOriginal) => ({
   }
 }));
 
+vi.mock("../pagos/pagos.service", () => ({
+  pagosService: {
+    recalcularEstadoCobro: vi.fn()
+  }
+}));
+
 vi.mock("./pedidos.repository", () => ({
   pedidosRepository: {
     listar: vi.fn(),

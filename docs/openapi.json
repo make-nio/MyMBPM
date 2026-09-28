@@ -1968,6 +1968,181 @@
         ],
         "additionalProperties": false
       },
+      "Pago": {
+        "type": "object",
+        "properties": {
+          "idPago": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "idPedido": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "monto": {
+            "type": "string",
+            "pattern": "^-?\\d+(\\.\\d+)?$"
+          },
+          "medioPago": {
+            "type": "string",
+            "enum": [
+              "EFECTIVO",
+              "TRANSFERENCIA",
+              "MERCADO_PAGO",
+              "TARJETA",
+              "OTRO"
+            ]
+          },
+          "observaciones": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "idUsuario": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d+$"
+          },
+          "fechaAlta": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "anulado": {
+            "type": "boolean"
+          },
+          "fechaAnulacion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "motivoAnulacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "idUsuarioAnulacion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d+$"
+          },
+          "usuario": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "idUsuario": {
+                "type": "string",
+                "pattern": "^\\d+$"
+              },
+              "nombre": {
+                "type": "string"
+              },
+              "apellido": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "idUsuario",
+              "nombre",
+              "apellido"
+            ],
+            "additionalProperties": false
+          },
+          "usuarioAnulacion": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "idUsuario": {
+                "type": "string",
+                "pattern": "^\\d+$"
+              },
+              "nombre": {
+                "type": "string"
+              },
+              "apellido": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "idUsuario",
+              "nombre",
+              "apellido"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "idPago",
+          "idPedido",
+          "fecha",
+          "monto",
+          "medioPago",
+          "observaciones",
+          "idUsuario",
+          "fechaAlta",
+          "anulado",
+          "fechaAnulacion",
+          "motivoAnulacion",
+          "idUsuarioAnulacion",
+          "usuario",
+          "usuarioAnulacion"
+        ],
+        "additionalProperties": false
+      },
+      "PagosDelPedido": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "string",
+            "pattern": "^-?\\d+(\\.\\d+)?$"
+          },
+          "cobrado": {
+            "type": "string",
+            "pattern": "^-?\\d+(\\.\\d+)?$"
+          },
+          "saldo": {
+            "type": "string",
+            "pattern": "^-?\\d+(\\.\\d+)?$"
+          },
+          "estadoCobro": {
+            "type": "string",
+            "enum": [
+              "PENDIENTE",
+              "SEÑADO",
+              "PAGADO"
+            ]
+          },
+          "pagos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Pago"
+            }
+          }
+        },
+        "required": [
+          "total",
+          "cobrado",
+          "saldo",
+          "estadoCobro",
+          "pagos"
+        ],
+        "additionalProperties": false
+      },
       "OrdenProduccionListado": {
         "type": "object",
         "properties": {
@@ -2905,6 +3080,61 @@
           "desde",
           "hasta",
           "meses"
+        ],
+        "additionalProperties": false
+      },
+      "CobrosDelMes": {
+        "type": "object",
+        "properties": {
+          "desde": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hasta": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "total": {
+            "type": "string",
+            "pattern": "^-?\\d+(\\.\\d+)?$"
+          },
+          "porMedio": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "medioPago": {
+                  "type": "string",
+                  "enum": [
+                    "EFECTIVO",
+                    "TRANSFERENCIA",
+                    "MERCADO_PAGO",
+                    "TARJETA",
+                    "OTRO"
+                  ]
+                },
+                "cobrado": {
+                  "type": "string",
+                  "pattern": "^-?\\d+(\\.\\d+)?$"
+                },
+                "pagos": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "medioPago",
+                "cobrado",
+                "pagos"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "desde",
+          "hasta",
+          "total",
+          "porMedio"
         ],
         "additionalProperties": false
       }
@@ -7753,14 +7983,6 @@
                       "MANUAL"
                     ]
                   },
-                  "estadoCobro": {
-                    "type": "string",
-                    "enum": [
-                      "PENDIENTE",
-                      "SEÑADO",
-                      "PAGADO"
-                    ]
-                  },
                   "observacionesCliente": {
                     "type": "string",
                     "maxLength": 2000
@@ -8286,14 +8508,6 @@
                       "CANCELADO"
                     ]
                   },
-                  "estadoCobro": {
-                    "type": "string",
-                    "enum": [
-                      "PENDIENTE",
-                      "SEÑADO",
-                      "PAGADO"
-                    ]
-                  },
                   "observacionesInternas": {
                     "type": "string",
                     "maxLength": 2000
@@ -8622,6 +8836,260 @@
                     },
                     "data": {
                       "$ref": "#/components/schemas/PedidoConDetalles"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pedidos/{id}/pagos": {
+      "get": {
+        "summary": "Pagos de un pedido, con lo cobrado y el saldo",
+        "description": "Acceso: autenticado.",
+        "tags": [
+          "pagos"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PagosDelPedido"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Registra un pago (no puede superar el saldo) y recalcula el estado de cobro",
+        "description": "Acceso: autenticado.",
+        "tags": [
+          "pagos"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fecha": {
+                    "type": "string",
+                    "maxLength": 10
+                  },
+                  "monto": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 100000000
+                  },
+                  "medioPago": {
+                    "type": "string",
+                    "enum": [
+                      "EFECTIVO",
+                      "TRANSFERENCIA",
+                      "MERCADO_PAGO",
+                      "TARJETA",
+                      "OTRO"
+                    ]
+                  },
+                  "observaciones": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "fecha",
+                  "monto",
+                  "medioPago"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Exito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PagosDelPedido"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pedidos/{id}/pagos/{pagoId}/anular": {
+      "post": {
+        "summary": "Anula un pago con motivo (no se borra) y recalcula el estado de cobro (solo administradores)",
+        "description": "Acceso: administrador.",
+        "tags": [
+          "pagos"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "required": true,
+            "name": "pagoId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "motivo": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "motivo"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Exito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PagosDelPedido"
                     }
                   },
                   "required": [
@@ -10289,6 +10757,70 @@
                     },
                     "data": {
                       "$ref": "#/components/schemas/VentasPorMes"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/reportes/cobros-mes": {
+      "get": {
+        "summary": "Lo cobrado en un mes por medio de pago, segun la fecha de cada pago (solo administradores)",
+        "description": "Acceso: administrador.",
+        "tags": [
+          "reportes"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 7,
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+            },
+            "required": false,
+            "name": "mes",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CobrosDelMes"
                     }
                   },
                   "required": [

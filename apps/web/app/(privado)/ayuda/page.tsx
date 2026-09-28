@@ -26,9 +26,19 @@ const guias: Paso[] = [
       "Antes de confirmar, mira \"Impacto en stock al confirmar\": te dice cuanto hay y cuanto queda de cada producto.",
       "Si falta stock de algo, no te deja confirmar: produci o ajusta el stock primero.",
       "Toca \"Confirmar pedido\" y despues \"Confirmar y descontar stock\". Ahi se descuentan los productos.",
-      "Despues vas cambiando el estado (En preparacion, Listo, Entregado) y el cobro con \"Guardar estado\"."
+      "Despues vas cambiando el estado (En preparacion, Listo, Entregado) con \"Guardar estado\". El cobro se registra en \"Pagos\" (ver \"Cobrar un pedido\")."
     ],
     ojo: "Cancelar un pedido ya confirmado no devuelve el stock. Si los productos vuelven a estar disponibles, sumalos desde Stock con \"Ajustar\"."
+  },
+  {
+    titulo: "Cobrar un pedido",
+    pasos: [
+      "En el detalle del pedido, en \"Pagos\", ves lo cobrado y el saldo.",
+      "Toca \"Registrar pago\": la fecha, el monto (arranca en lo que falta cobrar) y el medio (efectivo, transferencia, Mercado Pago, tarjeta u otro).",
+      "El cobro del pedido se calcula solo: Señado si pagaron una parte, Pagado cuando se completa el total.",
+      "Si un pago se cargo mal, un administrador lo anula con el motivo: no se borra, queda en la lista como anulado y deja de contar."
+    ],
+    ojo: "No se puede cobrar mas que el saldo. Un pedido cancelado no recibe pagos: si ya tenia pagos, el detalle te avisa cuanto se habia cobrado."
   },
   {
     titulo: "Darle un comprobante al cliente",
@@ -150,8 +160,8 @@ const estados: Array<{ grupo: string; items: Array<[string, string]> }> = [
     grupo: "Cobro",
     items: [
       ["Pendiente", "Todavia no pago nada."],
-      ["Señado", "Dejo una seña."],
-      ["Pagado", "Pago todo."]
+      ["Señado", "Pago una parte (se calcula con los pagos)."],
+      ["Pagado", "Pago todo (se calcula con los pagos)."]
     ]
   },
   {

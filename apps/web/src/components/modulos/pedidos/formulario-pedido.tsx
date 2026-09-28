@@ -13,8 +13,6 @@ import { largoMaximo, requerido } from "../../../lib/validacion";
 import { formatearEstado } from "../../../lib/formato";
 import { buscarOpcionesClientes } from "../../../lib/modulos/clientes";
 import {
-  ESTADOS_COBRO,
-  EstadoCobro,
   ORIGENES_PEDIDO,
   OrigenPedido,
   PedidoAltaPayload
@@ -29,7 +27,6 @@ type FormularioPedidoProps = {
 export function FormularioPedido({ onCancel, onSubmit }: FormularioPedidoProps) {
   const [idCliente, setIdCliente] = useState("");
   const [origenPedido, setOrigenPedido] = useState<OrigenPedido>("MANUAL");
-  const [estadoCobro, setEstadoCobro] = useState<EstadoCobro>("PENDIENTE");
   const [observacionesCliente, setObservacionesCliente] = useState("");
   const [observacionesInternas, setObservacionesInternas] = useState("");
   const [fechaEntrega, setFechaEntrega] = useState("");
@@ -57,7 +54,6 @@ export function FormularioPedido({ onCancel, onSubmit }: FormularioPedidoProps) 
       await onSubmit({
         idCliente,
         origenPedido,
-        estadoCobro,
         observacionesCliente: observacionesCliente || undefined,
         observacionesInternas: observacionesInternas || undefined,
         fechaEntrega: fechaEntrega || undefined
@@ -87,13 +83,6 @@ export function FormularioPedido({ onCancel, onSubmit }: FormularioPedidoProps) 
         onChange={(value) => setOrigenPedido(value as OrigenPedido)}
         options={ORIGENES_PEDIDO.map((origen) => ({ label: formatearEstado(origen), value: origen }))}
         value={origenPedido}
-      />
-      <CampoSelect
-        id="pedido-cobro"
-        label="Estado de cobro"
-        onChange={(value) => setEstadoCobro(value as EstadoCobro)}
-        options={ESTADOS_COBRO.map((estado) => ({ label: formatearEstado(estado), value: estado }))}
-        value={estadoCobro}
       />
       <CampoTexto
         error={errorDe("pedido-fecha-entrega", fechaEntrega)}

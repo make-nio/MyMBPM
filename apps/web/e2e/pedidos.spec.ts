@@ -73,15 +73,15 @@ test("pedido completo: items, impacto en stock, confirmacion y seguimiento", asy
   await expect(movimientoVela).toContainText(`${ADMIN_E2E.nombre} ${ADMIN_E2E.apellido}`);
   await expect(movimientos.getByRole("row").filter({ hasText: maceta.nombre })).toContainText(/10\s*-1,5\s*8,5/);
 
+  // El cobro ya no se elige a mano: lo calculan los pagos (e2e/pagos.spec.ts).
+  await expect(panel.getByLabel("Cobro")).toHaveCount(0);
   await panel.getByLabel("Estado del pedido").selectOption("EN_PREPARACION");
-  await panel.getByLabel("Cobro").selectOption("SEÑADO");
   await panel.getByRole("button", { name: "Guardar estado" }).click();
   await expect(panel.getByTestId("estado-pedido")).toHaveText("En preparacion");
 
   const numero = (await panel.getByRole("heading").textContent()) ?? "";
   const fila = page.getByRole("row").filter({ hasText: numero });
   await expect(fila).toContainText("En preparacion");
-  await expect(fila).toContainText("Señado");
 
   await panel.getByLabel("Estado del pedido").selectOption("CANCELADO");
   await expect(panel.getByText("no devuelve el stock descontado")).toBeVisible();
