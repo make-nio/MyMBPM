@@ -137,7 +137,10 @@ actualizá esos dos.
   de administrador), reportes, importaciones CSV, respaldo diario y `/api/health`.
 - **Calidad:** pruebas de los services, E2E de cada pantalla (con axe y celular), presupuesto de
   Lighthouse, prueba de humo después de cada deploy y corrida nocturna de E2E sin reintentos.
-- **Abierto:** Prisma 7 (#49) y el manejo de sesiones (#52) esperan a Mariano.
+- **Seguridad:** sesiones con tope de 12 h y "cerrar sesiones" de un usuario, limite de intentos de
+  ingreso, matriz de autorizacion y limites de entrada, ambos declarados en el contrato de la API
+  (`docs/contrato-api.md`).
+- **Abierto:** nada. Lo que falta para cerrar una primera version esta en el issue #87.
 - **Decisiones de negocio pendientes (no se construyen hasta que Maxi decida):** cancelar un
   pedido confirmado o una orden en proceso **no** devuelve el stock; se corrige a mano con un
   ajuste. Medios de pago y facturación tampoco están.

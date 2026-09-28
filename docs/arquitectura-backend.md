@@ -32,7 +32,7 @@ Cada modulo vive en `src/modulos/<modulo>/` con cinco archivos: `routes` → `co
 | --- | --- | --- |
 | `salud` | `health` | Estado de la API y de la base, sin sesion. Ver [despliegue-netlify.md](despliegue-netlify.md#monitoreo-apihealth) |
 | `autenticacion` | `autenticacion/login`, `autenticacion/me` | JWT y limite de intentos (abajo) |
-| `usuarios` | `usuarios` | Alta inicial sin sesion; gestion solo administradores; cada uno cambia su clave |
+| `usuarios` | `usuarios` | Alta inicial sin sesion; gestion solo administradores (incluido cerrar sesiones); cada uno cambia solo su clave |
 | `categorias`, `items-catalogo` | `categorias`, `items-catalogo` | Catalogo, receta (componentes) e imagenes. Auditado |
 | `importacion-catalogo` | `items-catalogo/importacion` | Importacion de items desde CSV (abajo) |
 | `clientes` | `clientes` | Clientes y `/:id/resumen` (compras confirmadas, sin canceladas). Auditado |
@@ -60,6 +60,8 @@ Aparte de los modulos, `src/respaldo/` arma el respaldo logico diario ([respaldo
    uno demasiado grande, **413**.
 4. Rutas publicas: `health`, `autenticacion` y el alta inicial de usuario.
 5. `requerirAutenticacion` y `ocultarCostosSinPermiso` (abajo), para todas las demas.
+   `requerirAutenticacion` rechaza tambien un token emitido antes del corte de sesiones del
+   usuario (`USUARIO_SESION`, ver [despliegue-netlify.md](despliegue-netlify.md#sesiones)).
 6. `noEncontradoMiddleware` y `manejoErroresMiddleware`: los errores de dominio salen con su codigo
    HTTP y un mensaje en espanol; lo inesperado, con 500 y la referencia, sin detalles internos.
 
@@ -87,6 +89,18 @@ suman fallidos. Un ingreso correcto limpia los fallidos de la cuenta y de la IP.
 - La regla esta en `autenticacion/limite-intentos.ts`.
 - La IP sale de `x-nf-client-connection-ip`, que pone el CDN de Netlify. `x-forwarded-for` no se
   usa porque el cliente puede agregarle valores.
+
+## Autorizacion y limites de entrada
+
+Cada endpoint declara en el contrato (`src/contrato/modulos/*.ts`) quien puede usarlo (`acceso`:
+`publico`, `autenticado` o `administrador`) y, si corresponde, que solo alcanza lo propio
+(`soloPropio`). `contrato.test.ts` compara esa declaracion con los middlewares de cada ruta y
+`e2e/autorizacion.spec.ts` la prueba contra la API real con y sin sesion.
+
+Los topes de entrada estan en `LIMITES` (`compartido/validaciones/esquemas-comunes.ts`) y los schemas
+de cada modulo los usan; el contrato toma esos mismos schemas, asi que no pueden separarse. Un valor
+de mas da 400 (o 409 si es la linea 101 de un pedido u orden). El detalle de ambos, en
+[contrato-api.md](contrato-api.md).
 
 ## Historial de cambios (auditoria)
 
