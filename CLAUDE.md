@@ -137,10 +137,12 @@ actualizá esos dos.
   de administrador), reportes, importaciones CSV, respaldo diario y `/api/health`.
 - **Calidad:** pruebas de los services, E2E de cada pantalla (con axe y celular), presupuesto de
   Lighthouse, prueba de humo después de cada deploy y corrida nocturna de E2E sin reintentos.
-- **Seguridad:** sesiones con tope de 12 h y "cerrar sesiones" de un usuario, limite de intentos de
-  ingreso, matriz de autorizacion y limites de entrada, ambos declarados en el contrato de la API
+- **Seguridad:** sesiones con tope de 12 h y "cerrar sesiones" de un usuario, límite de intentos de
+  ingreso, matriz de autorización y límites de entrada, ambos declarados en el contrato de la API
   (`docs/contrato-api.md`).
-- **Abierto:** nada. Lo que falta para cerrar una primera version esta en el issue #87.
-- **Decisiones de negocio pendientes (no se construyen hasta que Maxi decida):** cancelar un
-  pedido confirmado o una orden en proceso **no** devuelve el stock; se corrige a mano con un
-  ajuste. Medios de pago y facturación tampoco están.
+- **Abierto:** lo que falta para cerrar la primera versión está en el issue #87 (devolver stock al
+  cancelar, #89; pagos, #90; facturación, #91).
+- **Decisiones de negocio (28-sep, Mariano):** devolver el stock al cancelar un pedido confirmado
+  o una orden en proceso será configurable (#89), y pagos y facturación entran en la v1 (#90, #91).
+  Hasta que se integren, cancelar **no** devuelve el stock (se corrige a mano con un ajuste) y no
+  hay pagos ni facturas. La facturación espera los datos fiscales de Maxi (ver #91).
