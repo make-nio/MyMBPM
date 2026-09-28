@@ -43,10 +43,12 @@ export function eliminarDetalleOrden(idOrdenProduccion: string, idOrdenProduccio
   });
 }
 
-export function cancelarOrdenProduccion(idOrdenProduccion: string) {
+// devolverStock: al cancelar una orden en proceso, si se devuelven los insumos (solo en modo
+// PREGUNTAR; en AUTOMATICO decide la configuracion).
+export function cancelarOrdenProduccion(idOrdenProduccion: string, devolverStock?: boolean) {
   return pedirApi("patch /api/produccion/{id}/estado", {
     params: { id: idOrdenProduccion },
-    cuerpo: { estadoProduccion: "CANCELADA" }
+    cuerpo: { estadoProduccion: "CANCELADA", ...(devolverStock !== undefined ? { devolverStock } : {}) }
   });
 }
 

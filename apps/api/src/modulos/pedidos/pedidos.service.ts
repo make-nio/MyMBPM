@@ -10,6 +10,7 @@ import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { LIMITES } from "../../compartido/validaciones/esquemas-comunes";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 import { prisma } from "../../lib/prisma";
+import { configuracionService } from "../configuracion/configuracion.service";
 import { ordenarPorItem, stockService } from "../stock/stock.service";
 
 import { pedidosRepository } from "./pedidos.repository";
@@ -36,6 +37,9 @@ const TRANSICIONES_ESTADO_PEDIDO: Record<EstadoPedido, readonly EstadoPedido[]> 
 };
 
 const ESTADOS_CERRADOS: readonly EstadoPedido[] = ["ENTREGADO", "CANCELADO"];
+
+// Estados en los que el pedido ya desconto su stock (al confirmarse) y todavia se puede cancelar.
+const ESTADOS_CON_STOCK_DESCONTADO: readonly EstadoPedido[] = ["CONFIRMADO", "EN_PREPARACION", "LISTO"];
 
 function construirNumeroPedido(idPedido: bigint) {
   return `PED-${idPedido.toString().padStart(6, "0")}`;
@@ -347,13 +351,16 @@ export const pedidosService = {
 
   async actualizarEstado(
     idPedido: bigint,
-    data: {
+    cambios: {
       estadoPedido?: EstadoPedido;
       estadoCobro?: EstadoCobro;
       observacionesInternas?: string;
       fechaEntrega?: Date | null;
-    }
+      devolverStock?: boolean;
+    },
+    idUsuario?: bigint
   ) {
+    const { devolverStock, ...data } = cambios;
     const pedido = await this.obtenerPorId(idPedido);
 
     // La fecha prometida sirve mientras el pedido esta abierto: entregado o cancelado ya no se
@@ -384,6 +391,27 @@ export const pedidosService = {
         `No se puede pasar un pedido de ${estadoActual} a ${data.estadoPedido}`,
         { estadoActual, permitidos: TRANSICIONES_ESTADO_PEDIDO[estadoActual] ?? [] }
       );
+    }
+
+    // Cancelar un pedido que ya desconto stock: se devuelve o no segun la configuracion (o lo que
+    // elija quien cancela), en la misma transaccion que el cambio de estado. La configuracion se
+    // lee antes: sin la tabla (preview sin migrar) la consulta abortaria la transaccion.
+    if (data.estadoPedido === "CANCELADO" && ESTADOS_CON_STOCK_DESCONTADO.includes(estadoActual)) {
+      const devolver = await configuracionService.decidirDevolucion("cancelarPedido", devolverStock);
+
+      return prisma.$transaction(async (tx) => {
+        if (devolver) {
+          await stockService.revertirMovimientos(tx, {
+            origenMovimiento: "PEDIDO",
+            idReferenciaOrigen: pedido.idPedido,
+            tipoMovimiento: "EGRESO_PEDIDO",
+            idUsuario,
+            observaciones: `Cancelacion del pedido ${pedido.numeroPedido ?? pedido.idPedido.toString()}`
+          });
+        }
+
+        return pedidosRepository.actualizar(tx, pedido.idPedido, data);
+      });
     }
 
     return pedidosRepository.actualizar(prisma, pedido.idPedido, data);

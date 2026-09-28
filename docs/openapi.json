@@ -2907,6 +2907,42 @@
           "meses"
         ],
         "additionalProperties": false
+      },
+      "Configuracion": {
+        "type": "object",
+        "properties": {
+          "cancelarPedidoModo": {
+            "type": "string",
+            "enum": [
+              "AUTOMATICO",
+              "PREGUNTAR"
+            ]
+          },
+          "cancelarPedidoDevolver": {
+            "type": "boolean"
+          },
+          "cancelarOrdenModo": {
+            "type": "string",
+            "enum": [
+              "AUTOMATICO",
+              "PREGUNTAR"
+            ]
+          },
+          "cancelarOrdenDevolver": {
+            "type": "boolean"
+          },
+          "guardada": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "cancelarPedidoModo",
+          "cancelarPedidoDevolver",
+          "cancelarOrdenModo",
+          "cancelarOrdenDevolver",
+          "guardada"
+        ],
+        "additionalProperties": false
       }
     },
     "parameters": {}
@@ -8248,7 +8284,7 @@
     },
     "/api/pedidos/{id}/estado": {
       "patch": {
-        "summary": "Cambia estado, cobro, observaciones internas o fecha de entrega (para confirmar se usa /confirmar)",
+        "summary": "Cambia estado, cobro, observaciones internas o fecha de entrega (para confirmar se usa /confirmar); al cancelar un pedido que desconto stock lo devuelve o no segun la configuracion (devolverStock)",
         "description": "Acceso: autenticado.",
         "tags": [
           "pedidos"
@@ -8304,6 +8340,9 @@
                       "null"
                     ],
                     "maxLength": 10
+                  },
+                  "devolverStock": {
+                    "type": "boolean"
                   }
                 }
               }
@@ -9185,7 +9224,7 @@
     },
     "/api/produccion/{id}/estado": {
       "patch": {
-        "summary": "Cancela una orden pendiente o en proceso (no devuelve el stock consumido)",
+        "summary": "Cancela una orden pendiente o en proceso; al cancelar una en proceso devuelve o no los insumos segun la configuracion (devolverStock)",
         "description": "Acceso: autenticado.",
         "tags": [
           "produccion"
@@ -9224,6 +9263,9 @@
                   "observaciones": {
                     "type": "string",
                     "maxLength": 2000
+                  },
+                  "devolverStock": {
+                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -10522,6 +10564,140 @@
                         "items"
                       ],
                       "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/configuracion": {
+      "get": {
+        "summary": "Que hacer con el stock al cancelar un pedido que lo desconto o una orden en proceso",
+        "description": "Acceso: autenticado.",
+        "tags": [
+          "configuracion"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Configuracion"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Cambia la configuracion (solo administradores)",
+        "description": "Acceso: administrador.",
+        "tags": [
+          "configuracion"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cancelarPedidoModo": {
+                    "type": "string",
+                    "enum": [
+                      "AUTOMATICO",
+                      "PREGUNTAR"
+                    ]
+                  },
+                  "cancelarPedidoDevolver": {
+                    "type": "boolean"
+                  },
+                  "cancelarOrdenModo": {
+                    "type": "string",
+                    "enum": [
+                      "AUTOMATICO",
+                      "PREGUNTAR"
+                    ]
+                  },
+                  "cancelarOrdenDevolver": {
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Exito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Configuracion"
                     }
                   },
                   "required": [

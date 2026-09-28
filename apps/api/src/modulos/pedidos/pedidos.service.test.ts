@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 import { prisma } from "../../lib/prisma";
+import { ErrorValidacion } from "../../compartido/errores/error-validacion";
+import { configuracionService } from "../configuracion/configuracion.service";
 import { stockService } from "../stock/stock.service";
 
 import { pedidosRepository } from "./pedidos.repository";
@@ -20,7 +22,14 @@ vi.mock("../../lib/prisma", () => ({
 vi.mock("../stock/stock.service", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../stock/stock.service")>()),
   stockService: {
-    registrarEgreso: vi.fn()
+    registrarEgreso: vi.fn(),
+    revertirMovimientos: vi.fn()
+  }
+}));
+
+vi.mock("../configuracion/configuracion.service", () => ({
+  configuracionService: {
+    decidirDevolucion: vi.fn()
   }
 }));
 
@@ -193,8 +202,7 @@ describe("pedidosService.actualizarEstado (transiciones)", () => {
     ["CONFIRMADO", "EN_PREPARACION"],
     ["EN_PREPARACION", "LISTO"],
     ["LISTO", "EN_PREPARACION"],
-    ["LISTO", "ENTREGADO"],
-    ["CONFIRMADO", "CANCELADO"]
+    ["LISTO", "ENTREGADO"]
   ] as const)("permite %s -> %s", async (actual, nuevo) => {
     repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: actual }));
 
@@ -209,6 +217,73 @@ describe("pedidosService.actualizarEstado (transiciones)", () => {
     await pedidosService.actualizarEstado(1n, { estadoPedido: "ENTREGADO", estadoCobro: "PAGADO" });
 
     expect(repo.actualizar).toHaveBeenCalledWith(prisma, 1n, { estadoPedido: "ENTREGADO", estadoCobro: "PAGADO" });
+  });
+});
+
+describe("pedidosService.actualizarEstado (cancelar un pedido que desconto stock)", () => {
+  const configuracion = vi.mocked(configuracionService);
+
+  it.each(["CONFIRMADO", "EN_PREPARACION", "LISTO"] as const)(
+    "desde %s devuelve el stock en la misma transaccion si la configuracion lo decide",
+    async (actual) => {
+      repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: actual }));
+      configuracion.decidirDevolucion.mockResolvedValue(true);
+
+      await pedidosService.actualizarEstado(1n, { estadoPedido: "CANCELADO", devolverStock: true }, 7n);
+
+      expect(configuracion.decidirDevolucion).toHaveBeenCalledWith("cancelarPedido", true);
+      expect(stock.revertirMovimientos).toHaveBeenCalledWith(tx, {
+        origenMovimiento: "PEDIDO",
+        idReferenciaOrigen: 1n,
+        tipoMovimiento: "EGRESO_PEDIDO",
+        idUsuario: 7n,
+        observaciones: "Cancelacion del pedido PED-000001"
+      });
+      // devolverStock no se guarda en el pedido.
+      expect(repo.actualizar).toHaveBeenCalledWith(tx, 1n, { estadoPedido: "CANCELADO" });
+    }
+  );
+
+  it("no devuelve nada si la configuracion (o quien cancela) decide no devolver", async () => {
+    repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: "CONFIRMADO" }));
+    configuracion.decidirDevolucion.mockResolvedValue(false);
+
+    await pedidosService.actualizarEstado(1n, { estadoPedido: "CANCELADO", devolverStock: false });
+
+    expect(stock.revertirMovimientos).not.toHaveBeenCalled();
+    expect(repo.actualizar).toHaveBeenCalledWith(tx, 1n, { estadoPedido: "CANCELADO" });
+  });
+
+  it("si hay que preguntar y no se eligio, no cancela", async () => {
+    repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: "CONFIRMADO" }));
+    configuracion.decidirDevolucion.mockRejectedValue(new ErrorValidacion("Indica si se devuelve"));
+
+    await expect(pedidosService.actualizarEstado(1n, { estadoPedido: "CANCELADO" })).rejects.toBeInstanceOf(
+      ErrorValidacion
+    );
+    expect(repo.actualizar).not.toHaveBeenCalled();
+    expect(stock.revertirMovimientos).not.toHaveBeenCalled();
+  });
+
+  it("un pedido PENDIENTE no desconto nada: se cancela sin consultar la configuracion", async () => {
+    repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: "PENDIENTE" }));
+
+    await pedidosService.actualizarEstado(1n, { estadoPedido: "CANCELADO" });
+
+    expect(configuracion.decidirDevolucion).not.toHaveBeenCalled();
+    expect(stock.revertirMovimientos).not.toHaveBeenCalled();
+    expect(repo.actualizar).toHaveBeenCalledWith(prisma, 1n, { estadoPedido: "CANCELADO" });
+  });
+
+  it("si la devolucion falla, el pedido no queda cancelado (misma transaccion)", async () => {
+    repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: "CONFIRMADO" }));
+    configuracion.decidirDevolucion.mockResolvedValue(true);
+    stock.revertirMovimientos.mockRejectedValue(new Error("lock"));
+
+    await expect(pedidosService.actualizarEstado(1n, { estadoPedido: "CANCELADO", devolverStock: true })).rejects.toThrow(
+      "lock"
+    );
+    expect(repo.actualizar).not.toHaveBeenCalled();
   });
 });
 

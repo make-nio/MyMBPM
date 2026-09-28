@@ -2,7 +2,13 @@ import { gunzipSync, gzipSync } from "node:zlib";
 
 import { Prisma, PrismaClient } from "@prisma/client";
 
-import { CLAVE_INHABILITADA, COLUMNAS_OMITIDAS, TABLAS_EXCLUIDAS, TABLAS_RESPALDO } from "./tablas";
+import {
+  CLAVE_INHABILITADA,
+  COLUMNAS_OMITIDAS,
+  TABLAS_CON_FILAS_INICIALES,
+  TABLAS_EXCLUIDAS,
+  TABLAS_RESPALDO
+} from "./tablas";
 
 // Respaldo logico de la base: un archivo de texto comprimido con gzip, una linea JSON por parte.
 // La primera es el manifiesto; cada una de las siguientes, una tabla: {"tabla": "...", "filas": [...]}.
@@ -169,6 +175,9 @@ export async function restaurarRespaldo(base: Base, contenido: Buffer) {
       }
 
       for (const tabla of TABLAS_RESPALDO) {
+        if (TABLAS_CON_FILAS_INICIALES.includes(tabla)) {
+          continue;
+        }
         const [{ hay }] = await tx.$queryRawUnsafe<Array<{ hay: boolean }>>(
           `SELECT EXISTS (SELECT 1 FROM ${citar(tabla)}) AS hay`
         );
@@ -184,6 +193,11 @@ export async function restaurarRespaldo(base: Base, contenido: Buffer) {
         const linea = porTabla.get(tabla);
         if (linea === undefined) {
           throw new Error(`El respaldo no tiene la tabla ${tabla}.`);
+        }
+
+        // La fila inicial que dejo la migracion se reemplaza por la del respaldo.
+        if (TABLAS_CON_FILAS_INICIALES.includes(tabla)) {
+          await tx.$executeRawUnsafe(`DELETE FROM ${citar(tabla)}`);
         }
 
         // Las columnas omitidas (la clave) se completan con un valor que no habilita el ingreso.

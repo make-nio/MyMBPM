@@ -255,6 +255,39 @@ export const stockService = {
     });
   },
 
+  // Devuelve al stock lo que desconto una operacion al cancelarla: un REVERSO por cada movimiento
+  // que se registro de verdad (no se recalcula de las lineas actuales). Corre en la transaccion
+  // de quien cancela, en orden de item, y es idempotente: la clave del REVERSO es la misma que la
+  // del egreso con otro tipo, asi que reintentar no devuelve dos veces.
+  async revertirMovimientos(
+    tx: Prisma.TransactionClient,
+    input: {
+      origenMovimiento: OrigenMovimiento;
+      idReferenciaOrigen: bigint;
+      tipoMovimiento: TipoMovimiento;
+      idUsuario?: bigint;
+      observaciones: string;
+    }
+  ) {
+    const movimientos = await stockRepository.listarMovimientosDeReferencia(tx, input);
+
+    for (const movimiento of ordenarPorItem(movimientos, (movimiento) => movimiento.idItemCatalogo)) {
+      await this.registrarReverso(tx, {
+        idItemCatalogo: movimiento.idItemCatalogo,
+        idUsuario: input.idUsuario,
+        tipoStock: movimiento.tipoStock as TipoStock,
+        tipoMovimiento: "REVERSO",
+        cantidad: movimiento.cantidadMovimiento,
+        origenMovimiento: input.origenMovimiento,
+        idReferenciaOrigen: input.idReferenciaOrigen,
+        idReferenciaDetalle: movimiento.idReferenciaDetalle ?? undefined,
+        observaciones: input.observaciones
+      });
+    }
+
+    return movimientos.length;
+  },
+
   // Ajuste manual pedido por un usuario (POST /api/stock/ajustes), en su propia transaccion.
   crearAjusteManual(input: RegistrarAjusteManualInput) {
     return prisma.$transaction((tx) => this.registrarAjusteManual(tx, input));

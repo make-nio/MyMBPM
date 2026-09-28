@@ -18,7 +18,7 @@ async function pedidoConEntrega(idCliente: string, dias: number) {
 
 test.afterEach(async () => {
   for (const idPedido of creados.splice(0)) {
-    await api("PATCH", `/api/pedidos/${idPedido}/estado`, { estadoPedido: "CANCELADO" });
+    await api("PATCH", `/api/pedidos/${idPedido}/estado`, { estadoPedido: "CANCELADO", devolverStock: false });
   }
 });
 

@@ -51,6 +51,10 @@ const accesosAdministracion = [
   {
     href: "/usuarios",
     label: "Usuarios"
+  },
+  {
+    href: "/configuracion",
+    label: "Configuracion"
   }
 ];
 

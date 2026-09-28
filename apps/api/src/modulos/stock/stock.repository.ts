@@ -111,6 +111,21 @@ export const stockRepository = {
     });
   },
 
+  // Los movimientos de un tipo que registro una operacion (un pedido, una orden), para revertirlos.
+  listarMovimientosDeReferencia(
+    prismaOrTx: PrismaOrTx,
+    input: { origenMovimiento: string; idReferenciaOrigen: bigint; tipoMovimiento: string }
+  ) {
+    return prismaOrTx.estadoStock.findMany({
+      where: {
+        origenMovimiento: input.origenMovimiento,
+        idReferenciaOrigen: input.idReferenciaOrigen,
+        tipoMovimiento: input.tipoMovimiento
+      },
+      orderBy: { idEstadoStock: "asc" }
+    });
+  },
+
   crearMovimiento(prismaOrTx: PrismaOrTx, input: CrearMovimientoInput) {
     return prismaOrTx.estadoStock.create({
       data: {

@@ -8,6 +8,7 @@ import { EstadoVacio } from "../../ui/estado-vacio";
 import { MensajeError } from "../../ui/mensaje-error";
 import { Modal } from "../../ui/modal";
 import { TablaDatos } from "../../ui/tabla-datos";
+import { useDevolucionStock } from "../../../hooks/use-devolucion-stock";
 import { useModal } from "../../../hooks/use-modal";
 import {
   diaArgentina,
@@ -39,6 +40,7 @@ import {
 } from "../../../types/pedidos";
 import { MovimientoStock } from "../../../types/stock";
 import { TablaImpactoStock } from "../stock/tabla-impacto-stock";
+import { EleccionDevolverStock } from "../configuracion/eleccion-devolver-stock";
 import { FormularioLineaPedido } from "./formulario-linea-pedido";
 import { RepetirPedido } from "./repetir-pedido";
 
@@ -69,6 +71,12 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
   const [estadoPedido, setEstadoPedido] = useState<EstadoPedido>("PENDIENTE");
   const [estadoCobro, setEstadoCobro] = useState<EstadoCobro>("PENDIENTE");
   const [fechaEntrega, setFechaEntrega] = useState("");
+  // Cancelar un pedido que ya desconto stock: se devuelve o no segun la configuracion (#89).
+  const cancelaConStock =
+    estadoPedido === "CANCELADO" &&
+    pedido !== null &&
+    ["CONFIRMADO", "EN_PREPARACION", "LISTO"].includes(pedido.estadoPedido);
+  const devolucion = useDevolucionStock("cancelarPedido", cancelaConStock);
 
   const cargar = useCallback(async () => {
     const actual = await obtenerPedido(idPedido);
@@ -295,8 +303,14 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
             <TablaDatos
               columns={[
                 { header: "Item", cell: (movimiento) => movimiento.nombreItem },
+                { header: "Tipo", cell: (movimiento) => formatearEstado(movimiento.tipoMovimiento) },
                 { header: "Stock antes", cell: (movimiento) => formatearCantidad(movimiento.stockAnterior) },
-                { header: "Egreso", cell: (movimiento) => `-${formatearCantidad(movimiento.cantidadMovimiento)}` },
+                {
+                  // El egreso al confirmar y, si se cancelo devolviendo el stock, su REVERSO.
+                  header: "Movimiento",
+                  cell: (movimiento) =>
+                    `${movimiento.tipoMovimiento.startsWith("EGRESO") ? "-" : "+"}${formatearCantidad(movimiento.cantidadMovimiento)}`
+                },
                 { header: "Stock despues", cell: (movimiento) => formatearCantidad(movimiento.stockActual) },
                 {
                   header: "Registrado por",
@@ -349,7 +363,8 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
             void ejecutar(() =>
               actualizarEstadoPedido(idPedido, {
                 estadoPedido: estadoPedido === pedido.estadoPedido ? undefined : estadoPedido,
-                estadoCobro
+                estadoCobro,
+                ...(cancelaConStock && devolucion.eleccion !== undefined ? { devolverStock: devolucion.eleccion } : {})
               })
             )
           }
@@ -379,10 +394,14 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
           </button>
         </div>
       ) : null}
-      {estadoPedido === "CANCELADO" && pedido.estadoPedido !== "PENDIENTE" && pedido.estadoPedido !== "CANCELADO" ? (
-        <p className="texto-secundario">
-          Cancelar un pedido confirmado no devuelve el stock descontado: si corresponde, ajustalo desde Stock.
-        </p>
+      {cancelaConStock ? (
+        <EleccionDevolverStock
+          devolver={devolucion.devolver}
+          id="pedido-devolver-stock"
+          modo={devolucion.modo}
+          onChange={devolucion.setDevolver}
+          queSeDevuelve="los productos"
+        />
       ) : null}
 
       <Modal

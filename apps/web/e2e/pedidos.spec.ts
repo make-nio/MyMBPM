@@ -32,6 +32,7 @@ async function agregarLinea(page: Page, producto: string, cantidad: string) {
 }
 
 test("pedido completo: items, impacto en stock, confirmacion y seguimiento", async ({ page }) => {
+  await api("PATCH", "/api/configuracion", { cancelarPedidoModo: "PREGUNTAR", cancelarPedidoDevolver: true });
   const cliente = unico("PRUEBA-ClientePed");
   await crearCliente(cliente);
   const vela = await crearProductoConStock(unico("PRUEBA-Vela"), 1000.5, 5);
@@ -83,10 +84,16 @@ test("pedido completo: items, impacto en stock, confirmacion y seguimiento", asy
   await expect(fila).toContainText("En preparacion");
   await expect(fila).toContainText("Señado");
 
+  // Cancelar un pedido que ya desconto stock pregunta si se devuelve (configuracion inicial:
+  // preguntar, con "devolver" marcado). Devolviendo, el stock vuelve con un REVERSO.
   await panel.getByLabel("Estado del pedido").selectOption("CANCELADO");
-  await expect(panel.getByText("no devuelve el stock descontado")).toBeVisible();
+  const devolver = panel.getByRole("group", { name: "¿Devolver al stock los productos que se descontaron?" });
+  await expect(devolver.getByLabel("Si, devolverlos")).toBeChecked();
   await panel.getByRole("button", { name: "Guardar estado" }).click();
   await expect(panel.getByTestId("estado-pedido")).toHaveText("Cancelado");
+  await expect(movimientos.getByRole("row").filter({ hasText: vela.nombre }).filter({ hasText: "Reverso" })).toContainText(
+    /3\s*\+2\s*5/
+  );
   // Cancelado es final.
   await expect(panel.getByLabel("Estado del pedido")).toBeDisabled();
 });

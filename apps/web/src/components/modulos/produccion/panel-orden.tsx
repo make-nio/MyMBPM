@@ -7,6 +7,7 @@ import { EstadoVacio } from "../../ui/estado-vacio";
 import { MensajeError } from "../../ui/mensaje-error";
 import { Modal } from "../../ui/modal";
 import { TablaDatos } from "../../ui/tabla-datos";
+import { useDevolucionStock } from "../../../hooks/use-devolucion-stock";
 import { useModal } from "../../../hooks/use-modal";
 import { formatearCantidad, formatearEstado, formatearFecha } from "../../../lib/formato";
 import { listarComponentesItem } from "../../../lib/modulos/items-catalogo";
@@ -25,6 +26,7 @@ import { calcularImpactoStock, hayStockInsuficiente, ImpactoStockItem } from "..
 import { OrdenProduccionCompleta, OrdenProduccionDetalle } from "../../../types/produccion";
 import { MovimientoStock, TipoStock } from "../../../types/stock";
 import { TablaImpactoStock } from "../stock/tabla-impacto-stock";
+import { EleccionDevolverStock } from "../configuracion/eleccion-devolver-stock";
 import { FormularioDetalleOrden } from "./formulario-detalle-orden";
 
 export type AccionOrden = "iniciar" | "finalizar" | "cancelar";
@@ -84,6 +86,9 @@ export function PanelOrden({ idOrdenProduccion, onCambio, accionInicial = null }
   const [movimientos, setMovimientos] = useState<MovimientoOrden[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [procesando, setProcesando] = useState(false);
+  // Cancelar una orden en proceso: sus insumos se devuelven o no segun la configuracion (#89).
+  const cancelaEnProceso = modalAccion.contexto === "cancelar" && orden?.estadoProduccion === "EN_PROCESO";
+  const devolucion = useDevolucionStock("cancelarOrden", cancelaEnProceso);
 
   const cargar = useCallback(async () => {
     const actual = await obtenerOrdenProduccion(idOrdenProduccion);
@@ -204,7 +209,7 @@ export function PanelOrden({ idOrdenProduccion, onCambio, accionInicial = null }
     const acciones: Record<Accion, () => Promise<unknown>> = {
       iniciar: () => iniciarOrdenProduccion(idOrdenProduccion),
       finalizar: () => finalizarOrdenProduccion(idOrdenProduccion),
-      cancelar: () => cancelarOrdenProduccion(idOrdenProduccion)
+      cancelar: () => cancelarOrdenProduccion(idOrdenProduccion, cancelaEnProceso ? devolucion.eleccion : undefined)
     };
     const accion = modalAccion.contexto;
 
@@ -388,7 +393,7 @@ export function PanelOrden({ idOrdenProduccion, onCambio, accionInicial = null }
             : accion === "finalizar"
               ? "Se suma al stock la cantidad fabricada de cada producto."
               : enProceso
-                ? "La orden queda cancelada. Los insumos ya consumidos NO vuelven al stock."
+                ? "La orden queda cancelada. Sus insumos ya se descontaron al iniciarla."
                 : "La orden queda cancelada y no se podra iniciar."
         }
         onClose={modalAccion.cerrar}
@@ -407,6 +412,15 @@ export function PanelOrden({ idOrdenProduccion, onCambio, accionInicial = null }
           ) : null}
           {accion === "finalizar" ? (
             <TablaImpactoStock etiquetaItem="Producto" impacto={ingresoPrevisto} sentido="ingreso" />
+          ) : null}
+          {cancelaEnProceso ? (
+            <EleccionDevolverStock
+              devolver={devolucion.devolver}
+              id="orden-devolver-stock"
+              modo={devolucion.modo}
+              onChange={devolucion.setDevolver}
+              queSeDevuelve="los insumos"
+            />
           ) : null}
           <div className="acciones-formulario">
             <button className="boton-secundario" onClick={modalAccion.cerrar} type="button">

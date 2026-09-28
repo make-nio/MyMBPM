@@ -15,6 +15,7 @@ import { endpoints as solicitudesEspeciales } from "./modulos/solicitudes-especi
 import { endpoints as auditoria } from "./modulos/auditoria";
 import { endpoints as reportes } from "./modulos/reportes";
 import { endpoints as busqueda } from "./modulos/busqueda";
+import { endpoints as configuracion } from "./modulos/configuracion";
 
 // Todos los endpoints de la API, por modulo (un archivo por modulo en ./modulos). Una prueba
 // (contrato.test.ts) falla si una ruta de Express no esta aca o si aca hay una que no existe.
@@ -34,5 +35,6 @@ export const endpoints = [
   ...solicitudesEspeciales,
   ...auditoria,
   ...reportes,
-  ...busqueda
+  ...busqueda,
+  ...configuracion
 ] as const satisfies readonly Endpoint[];
