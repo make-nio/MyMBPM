@@ -12,7 +12,7 @@ pocas personas desde un panel privado con usuario y clave. Monorepo con `npm wor
 MyMBPM/
   apps/
     web/   Next.js 15 + React 19 + TypeScript (export estatico)
-    api/   Node 20 + Express + TypeScript + Prisma sobre PostgreSQL (Netlify Function en produccion)
+    api/   Node 22 + Express + TypeScript + Prisma 7 sobre PostgreSQL (Netlify Function en produccion)
   docs/    arquitectura, despliegue, respaldos, modelo de datos, pedidos HTTP de ejemplo
   scripts/ build de Netlify, reporte de cobertura, resumenes del CI
   netlify.toml
@@ -42,7 +42,7 @@ Pantallas (`apps/web/app/(privado)/`), todas usables desde el celular (375 px):
 | Clientes | Alta y edicion, ficha con historial de compras y total, historial de cambios, importacion desde CSV (administradores) |
 | Categorias, Solicitudes especiales | Alta, edicion y estados; una solicitud se convierte en pedido |
 | Reportes (administradores) | Lo vendido en un mes por item y por cliente, grafico de 12 meses, exportar CSV |
-| Usuarios (administradores) | Alta, roles, activar y desactivar, restablecer la clave |
+| Usuarios (administradores) | Alta, roles, activar y desactivar, restablecer la clave, cerrar las sesiones de un usuario |
 | Ayuda (`/ayuda`) | Guia para el dia a dia y, para administradores, la guia de administracion |
 
 En el encabezado: **busqueda global** (Ctrl+K / Cmd+K) de pedidos, clientes e items, y la
@@ -311,7 +311,7 @@ usuario, piden sesion. El mapa completo, con que hace cada modulo, esta en
 
 - `/api/health` (estado de la API y la base, sin sesion)
 - `/api/autenticacion` (login con limite de intentos, `me`)
-- `/api/usuarios` (gestion solo para administradores; cada uno cambia su clave)
+- `/api/usuarios` (gestion solo para administradores, incluido cerrar sesiones; cada uno cambia su clave)
 - `/api/categorias`, `/api/items-catalogo` (con receta e imagenes), `/api/items-catalogo/importacion`
 - `/api/clientes` (con `/:id/resumen` de compras), `/api/clientes/importacion`
 - `/api/stock` (existencias, historial, bajo stock, ajustes)
@@ -332,6 +332,9 @@ usuario, piden sesion. El mapa completo, con que hace cada modulo, esta en
 - La validacion de stock se hace dentro de la misma transaccion donde se registra el egreso.
 - Los ajustes manuales solo aceptan `AJUSTE_POSITIVO` y `AJUSTE_NEGATIVO`, exigen motivo (`observaciones`, 400 si falta o esta vacio); el usuario sale de la sesion y el origen es siempre `MANUAL`.
 - Los movimientos de pedidos y produccion quedan a nombre del usuario de la sesion.
+- Quien puede usar cada endpoint (sin sesion, cualquier usuario o administrador) esta declarado en el contrato y se prueba contra la API real (`e2e/autorizacion.spec.ts`); un usuario solo cambia su propia clave y una linea, componente o imagen solo se alcanza desde su propio padre. Ver [docs/contrato-api.md](docs/contrato-api.md#quién-puede-usar-cada-endpoint).
+- Las entradas tienen topes (textos, cantidades, montos, paginacion, ids, 100 lineas por pedido u orden): uno de mas da 400 o 409 con mensaje, nunca 500. Ver [docs/contrato-api.md](docs/contrato-api.md#límites-de-entrada).
+- Las sesiones duran como mucho 12 h y un administrador puede cerrarlas (tambien al restablecer la clave). Ver [docs/despliegue-netlify.md](docs/despliegue-netlify.md#sesiones).
 - `GET /api/stock/existencias` devuelve el stock vigente de cada item: los productos contra su stock de `PRODUCTO` y los insumos contra el de `INSUMO`.
 
 ### Politica actual de idempotencia
