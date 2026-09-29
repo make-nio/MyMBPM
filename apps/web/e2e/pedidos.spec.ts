@@ -32,7 +32,7 @@ async function agregarLinea(page: Page, producto: string, cantidad: string) {
 }
 
 test("pedido completo: items, impacto en stock, confirmacion y seguimiento", async ({ page }) => {
-  await api("PATCH", "/api/configuracion", { cancelarPedidoModo: "PREGUNTAR", cancelarPedidoDevolver: true });
+  await api("PATCH", "/api/configuracion", { cancelarPedido: "PREGUNTAR" });
   const cliente = unico("PRUEBA-ClientePed");
   await crearCliente(cliente);
   const vela = await crearProductoConStock(unico("PRUEBA-Vela"), 1000.5, 5);

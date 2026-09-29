@@ -398,7 +398,7 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
         <EleccionDevolverStock
           devolver={devolucion.devolver}
           id="pedido-devolver-stock"
-          modo={devolucion.modo}
+          opcion={devolucion.opcion}
           onChange={devolucion.setDevolver}
           queSeDevuelve="los productos"
         />

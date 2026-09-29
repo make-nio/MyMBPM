@@ -417,7 +417,7 @@ export function PanelOrden({ idOrdenProduccion, onCambio, accionInicial = null }
             <EleccionDevolverStock
               devolver={devolucion.devolver}
               id="orden-devolver-stock"
-              modo={devolucion.modo}
+              opcion={devolucion.opcion}
               onChange={devolucion.setDevolver}
               queSeDevuelve="los insumos"
             />

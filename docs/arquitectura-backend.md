@@ -109,17 +109,17 @@ Confirmar un pedido descuenta sus productos (`EGRESO_PEDIDO`) e iniciar una orde
 insumos (`EGRESO_PRODUCCION`). Al cancelar un pedido CONFIRMADO, EN_PREPARACION o LISTO, o una orden
 EN_PROCESO, lo descontado se devuelve o no segun `CONFIGURACION` (una sola fila, `configuracion.service`):
 
-- Por accion (cancelar pedido, cancelar orden) hay un **modo** y un **por defecto** (devolver o no).
-  - `AUTOMATICO`: se aplica el por defecto; lo que mande quien cancela no cuenta.
+- Por accion (cancelar pedido, cancelar orden) hay una de tres opciones (`OPCIONES_DEVOLUCION_STOCK`):
+  - `DEVOLVER` o `NO_DEVOLVER`: se aplica sin preguntar; lo que mande quien cancela no cuenta.
   - `PREGUNTAR`: el cambio de estado tiene que traer `devolverStock` (si no, 400). La web lo pregunta
-    con el por defecto marcado.
+    con "devolver" marcado.
 - La devolucion la hace `stockService.revertirMovimientos`: un `REVERSO` (ingreso) por cada egreso
   que la operacion registro de verdad en `ESTADO_STOCK`, no recalculado de las lineas actuales. Corre
   en la misma transaccion que el cambio de estado, en orden de item, y es idempotente (la clave del
   reverso es la del egreso con otro tipo).
 - La configuracion se lee **antes** de la transaccion: sin la tabla (deploy preview sin migrar) la
   consulta abortaria la transaccion en Postgres. Sin tabla o sin fila se comporta como antes de que
-  existiera: automatico y sin devolver.
+  existiera: `NO_DEVOLVER`.
 - Los consumos de la orden (`ORDEN_PRODUCCION_CONSUMO`) quedan como historia aunque se devuelvan.
 - `CONFIGURACION` entra en el respaldo. La migracion crea su fila, asi que al restaurar esa tabla se
   reemplaza en vez de exigir que este vacia (`TABLAS_CON_FILAS_INICIALES`).

@@ -1,26 +1,26 @@
-import { ModoDevolucionStock } from "../../../types/configuracion";
+import { OpcionDevolucionStock } from "../../../types/configuracion";
 
 type EleccionDevolverStockProps = {
   id: string;
-  modo: ModoDevolucionStock | null;
+  opcion: OpcionDevolucionStock | null;
   devolver: boolean;
   onChange: (devolver: boolean) => void;
   // "los productos" (pedido) o "los insumos" (orden en proceso).
   queSeDevuelve: string;
 };
 
-// Al cancelar algo que ya desconto stock: en PREGUNTAR, quien cancela elige (con el "por defecto"
-// marcado); en AUTOMATICO se avisa que decide la configuracion (Configuracion, administradores).
-export function EleccionDevolverStock({ id, modo, devolver, onChange, queSeDevuelve }: EleccionDevolverStockProps) {
-  if (modo === null) {
+// Al cancelar algo que ya desconto stock: con PREGUNTAR, quien cancela elige; con DEVOLVER o
+// NO_DEVOLVER se avisa que decide la configuracion (Configuracion, administradores).
+export function EleccionDevolverStock({ id, opcion, devolver, onChange, queSeDevuelve }: EleccionDevolverStockProps) {
+  if (opcion === null) {
     return null;
   }
 
-  if (modo === "AUTOMATICO") {
+  if (opcion !== "PREGUNTAR") {
     return (
       <p className="texto-secundario" data-testid={`${id}-automatico`}>
-        Segun la configuracion, {devolver ? "se devuelven al stock" : "no se devuelven al stock"} {queSeDevuelve} que
-        se descontaron.
+        Segun la configuracion, {opcion === "DEVOLVER" ? "se devuelven al stock" : "no se devuelven al stock"}{" "}
+        {queSeDevuelve} que se descontaron.
       </p>
     );
   }

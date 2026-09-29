@@ -2911,35 +2911,29 @@
       "Configuracion": {
         "type": "object",
         "properties": {
-          "cancelarPedidoModo": {
+          "cancelarPedido": {
             "type": "string",
             "enum": [
-              "AUTOMATICO",
-              "PREGUNTAR"
+              "PREGUNTAR",
+              "DEVOLVER",
+              "NO_DEVOLVER"
             ]
           },
-          "cancelarPedidoDevolver": {
-            "type": "boolean"
-          },
-          "cancelarOrdenModo": {
+          "cancelarOrden": {
             "type": "string",
             "enum": [
-              "AUTOMATICO",
-              "PREGUNTAR"
+              "PREGUNTAR",
+              "DEVOLVER",
+              "NO_DEVOLVER"
             ]
-          },
-          "cancelarOrdenDevolver": {
-            "type": "boolean"
           },
           "guardada": {
             "type": "boolean"
           }
         },
         "required": [
-          "cancelarPedidoModo",
-          "cancelarPedidoDevolver",
-          "cancelarOrdenModo",
-          "cancelarOrdenDevolver",
+          "cancelarPedido",
+          "cancelarOrden",
           "guardada"
         ],
         "additionalProperties": false
@@ -10656,25 +10650,21 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "cancelarPedidoModo": {
+                  "cancelarPedido": {
                     "type": "string",
                     "enum": [
-                      "AUTOMATICO",
-                      "PREGUNTAR"
+                      "PREGUNTAR",
+                      "DEVOLVER",
+                      "NO_DEVOLVER"
                     ]
                   },
-                  "cancelarPedidoDevolver": {
-                    "type": "boolean"
-                  },
-                  "cancelarOrdenModo": {
+                  "cancelarOrden": {
                     "type": "string",
                     "enum": [
-                      "AUTOMATICO",
-                      "PREGUNTAR"
+                      "PREGUNTAR",
+                      "DEVOLVER",
+                      "NO_DEVOLVER"
                     ]
-                  },
-                  "cancelarOrdenDevolver": {
-                    "type": "boolean"
                   }
                 },
                 "additionalProperties": false

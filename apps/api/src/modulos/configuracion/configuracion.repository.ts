@@ -5,10 +5,8 @@ import { prisma } from "../../lib/prisma";
 const ID_CONFIGURACION = 1;
 
 type ActualizarConfiguracionInput = {
-  cancelarPedidoModo?: string;
-  cancelarPedidoDevolver?: boolean;
-  cancelarOrdenModo?: string;
-  cancelarOrdenDevolver?: boolean;
+  cancelarPedido?: string;
+  cancelarOrden?: string;
 };
 
 // P2021: la tabla no existe. Pasa en un deploy preview (usa la base de produccion y no migra)

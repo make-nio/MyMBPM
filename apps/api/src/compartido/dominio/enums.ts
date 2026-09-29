@@ -52,10 +52,10 @@ export const ORIGENES_MOVIMIENTO = ["MANUAL", "PEDIDO", "PRODUCCION"] as const;
 export type OrigenMovimiento = (typeof ORIGENES_MOVIMIENTO)[number];
 
 // Que hacer con el stock al cancelar un pedido que ya lo desconto o una orden en proceso
-// (CONFIGURACION): AUTOMATICO aplica el "por defecto" sin preguntar; PREGUNTAR lo decide quien
-// cancela, con el "por defecto" ya marcado.
-export const MODOS_DEVOLUCION_STOCK = ["AUTOMATICO", "PREGUNTAR"] as const;
-export type ModoDevolucionStock = (typeof MODOS_DEVOLUCION_STOCK)[number];
+// (CONFIGURACION), por accion: PREGUNTAR lo decide quien cancela; DEVOLVER y NO_DEVOLVER se
+// aplican sin preguntar.
+export const OPCIONES_DEVOLUCION_STOCK = ["PREGUNTAR", "DEVOLVER", "NO_DEVOLVER"] as const;
+export type OpcionDevolucionStock = (typeof OPCIONES_DEVOLUCION_STOCK)[number];
 
 // Registro de cambios (AUDITORIA_CAMBIO): que entidades se auditan y que tipo de cambio fue.
 export const ENTIDADES_AUDITADAS = ["ITEM_CATALOGO", "CLIENTE"] as const;

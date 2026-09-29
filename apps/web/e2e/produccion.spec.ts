@@ -107,7 +107,7 @@ test("cancelar una orden en proceso pregunta si los insumos vuelven y los devuel
 
   // Cancelar una orden en proceso pregunta si se devuelven los insumos (configuracion inicial:
   // preguntar, con "devolver" marcado). Devolviendo, el insumo vuelve con un REVERSO.
-  await api("PATCH", "/api/configuracion", { cancelarOrdenModo: "PREGUNTAR", cancelarOrdenDevolver: true });
+  await api("PATCH", "/api/configuracion", { cancelarOrden: "PREGUNTAR" });
   await panel.getByRole("button", { name: "Cancelar orden" }).click();
   const modal = page.getByRole("dialog", { name: "Cancelar orden" });
   const devolver = modal.getByRole("group", { name: "¿Devolver al stock los insumos que se descontaron?" });

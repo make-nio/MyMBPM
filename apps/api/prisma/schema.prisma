@@ -43,12 +43,11 @@ model SesionUsuario {
 // Configuracion del negocio: una sola fila (ID_CONFIGURACION = 1). Que hacer con el stock al
 // cancelar un pedido que ya lo desconto o una orden en proceso (ver configuracion.service).
 model Configuracion {
-  idConfiguracion        Int      @id @default(1) @map("ID_CONFIGURACION")
-  cancelarPedidoModo     String   @default("PREGUNTAR") @map("CANCELAR_PEDIDO_MODO") @db.VarChar(20)
-  cancelarPedidoDevolver Boolean  @default(true) @map("CANCELAR_PEDIDO_DEVOLVER")
-  cancelarOrdenModo      String   @default("PREGUNTAR") @map("CANCELAR_ORDEN_MODO") @db.VarChar(20)
-  cancelarOrdenDevolver  Boolean  @default(true) @map("CANCELAR_ORDEN_DEVOLVER")
-  fechaModificacion      DateTime @default(now()) @updatedAt @map("FECHA_MODIFICACION") @db.Timestamptz(3)
+  idConfiguracion   Int      @id @default(1) @map("ID_CONFIGURACION")
+  // PREGUNTAR, DEVOLVER o NO_DEVOLVER (OPCIONES_DEVOLUCION_STOCK).
+  cancelarPedido    String   @default("PREGUNTAR") @map("CANCELAR_PEDIDO") @db.VarChar(20)
+  cancelarOrden     String   @default("PREGUNTAR") @map("CANCELAR_ORDEN") @db.VarChar(20)
+  fechaModificacion DateTime @default(now()) @updatedAt @map("FECHA_MODIFICACION") @db.Timestamptz(3)
 
   @@map("CONFIGURACION")
 }

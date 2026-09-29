@@ -3,12 +3,7 @@ import { expect, test, unico } from "./fixtures";
 
 // Que hacer con el stock al cancelar algo que ya lo desconto (issue #89). La configuracion es
 // global: cada prueba la fija al empezar y la deja en los valores iniciales al terminar.
-const INICIAL = {
-  cancelarPedidoModo: "PREGUNTAR",
-  cancelarPedidoDevolver: true,
-  cancelarOrdenModo: "PREGUNTAR",
-  cancelarOrdenDevolver: true
-};
+const INICIAL = { cancelarPedido: "PREGUNTAR", cancelarOrden: "PREGUNTAR" };
 
 test.afterEach(async () => {
   await api("PATCH", "/api/configuracion", INICIAL);
@@ -39,16 +34,19 @@ test("un administrador cambia la configuracion desde el menu y queda guardada", 
 
   const pedido = page.getByRole("region", { name: "Cancelar un pedido confirmado" });
   await expect(pedido.getByLabel("Al cancelar")).toHaveValue("PREGUNTAR");
-  await expect(pedido.getByLabel("Opcion marcada al preguntar")).toHaveValue("si");
+  // Las tres opciones que pidio Mariano.
+  await expect(pedido.getByLabel("Al cancelar").locator("option")).toHaveText([
+    "Preguntar en el momento",
+    "Devolver al stock, sin preguntar",
+    "No devolver, sin preguntar"
+  ]);
 
-  await pedido.getByLabel("Al cancelar").selectOption("AUTOMATICO");
-  await pedido.getByLabel("Que se hace").selectOption("no");
+  await pedido.getByLabel("Al cancelar").selectOption("NO_DEVOLVER");
   await page.getByRole("button", { name: "Guardar configuracion" }).click();
   await expect(page.getByRole("status")).toHaveText("Configuracion guardada.");
 
   await page.reload();
-  await expect(pedido.getByLabel("Al cancelar")).toHaveValue("AUTOMATICO");
-  await expect(pedido.getByLabel("Que se hace")).toHaveValue("no");
+  await expect(pedido.getByLabel("Al cancelar")).toHaveValue("NO_DEVOLVER");
   const orden = page.getByRole("region", { name: "Cancelar una orden en proceso" });
   await expect(orden.getByLabel("Al cancelar")).toHaveValue("PREGUNTAR");
 });
@@ -69,16 +67,16 @@ test("en PREGUNTAR la API exige elegir y devuelve el stock solo si se pide", asy
   expect(await stockActual(sinDevolucion.producto.idItemCatalogo, "PRODUCTO")).toBe(6);
 });
 
-test("en AUTOMATICO manda la configuracion, sin preguntar", async ({ page }) => {
-  await api("PATCH", "/api/configuracion", { ...INICIAL, cancelarPedidoModo: "AUTOMATICO", cancelarPedidoDevolver: true });
+test("con DEVOLVER o NO_DEVOLVER manda la configuracion, sin preguntar", async ({ page }) => {
+  await api("PATCH", "/api/configuracion", { ...INICIAL, cancelarPedido: "DEVOLVER" });
 
-  // Aunque se pida no devolver, en automatico decide la configuracion.
+  // Aunque se pida no devolver, sin preguntar decide la configuracion.
   const { pedido, producto } = await pedidoConfirmado(8, 3);
   await api("PATCH", `/api/pedidos/${pedido.idPedido}/estado`, { estadoPedido: "CANCELADO", devolverStock: false });
   expect(await stockActual(producto.idItemCatalogo, "PRODUCTO")).toBe(8);
 
-  // Y en la orden en proceso, en automatico sin devolver, el modal solo lo avisa.
-  await api("PATCH", "/api/configuracion", { ...INICIAL, cancelarOrdenModo: "AUTOMATICO", cancelarOrdenDevolver: false });
+  // Y en la orden en proceso, con NO_DEVOLVER, el modal solo lo avisa.
+  await api("PATCH", "/api/configuracion", { ...INICIAL, cancelarOrden: "NO_DEVOLVER" });
   const { producto: llavero, insumo } = await crearProductoConReceta({
     producto: unico("PRUEBA-LlaveroConfig"),
     insumo: unico("PRUEBA-ResinaConfig"),

@@ -1,14 +1,14 @@
-import { ModoDevolucionStock, MODOS_DEVOLUCION_STOCK } from "../../compartido/dominio/enums";
+import { OPCIONES_DEVOLUCION_STOCK, OpcionDevolucionStock } from "../../compartido/dominio/enums";
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { ErrorValidacion } from "../../compartido/errores/error-validacion";
 
 import { configuracionRepository } from "./configuracion.repository";
 
+// Que hacer con el stock al cancelar algo que ya lo desconto, por accion: preguntar en el
+// momento, devolverlo siempre o no devolverlo nunca (issue #89).
 export type Configuracion = {
-  cancelarPedidoModo: ModoDevolucionStock;
-  cancelarPedidoDevolver: boolean;
-  cancelarOrdenModo: ModoDevolucionStock;
-  cancelarOrdenDevolver: boolean;
+  cancelarPedido: OpcionDevolucionStock;
+  cancelarOrden: OpcionDevolucionStock;
   // false en un deploy preview sin la migracion: se usa el comportamiento de antes y no se
   // puede guardar.
   guardada: boolean;
@@ -17,15 +17,13 @@ export type Configuracion = {
 // Sin la tabla (o sin la fila) se comporta como antes de que existiera: al cancelar no se
 // devuelve nada y no se pregunta.
 const SIN_CONFIGURACION: Configuracion = {
-  cancelarPedidoModo: "AUTOMATICO",
-  cancelarPedidoDevolver: false,
-  cancelarOrdenModo: "AUTOMATICO",
-  cancelarOrdenDevolver: false,
+  cancelarPedido: "NO_DEVOLVER",
+  cancelarOrden: "NO_DEVOLVER",
   guardada: false
 };
 
-function aModo(valor: string): ModoDevolucionStock {
-  return (MODOS_DEVOLUCION_STOCK as readonly string[]).includes(valor) ? (valor as ModoDevolucionStock) : "PREGUNTAR";
+function aOpcion(valor: string): OpcionDevolucionStock {
+  return (OPCIONES_DEVOLUCION_STOCK as readonly string[]).includes(valor) ? (valor as OpcionDevolucionStock) : "PREGUNTAR";
 }
 
 export type AccionCancelacion = "cancelarPedido" | "cancelarOrden";
@@ -39,20 +37,13 @@ export const configuracionService = {
     }
 
     return {
-      cancelarPedidoModo: aModo(fila.cancelarPedidoModo),
-      cancelarPedidoDevolver: fila.cancelarPedidoDevolver,
-      cancelarOrdenModo: aModo(fila.cancelarOrdenModo),
-      cancelarOrdenDevolver: fila.cancelarOrdenDevolver,
+      cancelarPedido: aOpcion(fila.cancelarPedido),
+      cancelarOrden: aOpcion(fila.cancelarOrden),
       guardada: true
     };
   },
 
-  async actualizar(data: {
-    cancelarPedidoModo?: ModoDevolucionStock;
-    cancelarPedidoDevolver?: boolean;
-    cancelarOrdenModo?: ModoDevolucionStock;
-    cancelarOrdenDevolver?: boolean;
-  }) {
+  async actualizar(data: { cancelarPedido?: OpcionDevolucionStock; cancelarOrden?: OpcionDevolucionStock }) {
     // En un deploy preview (base sin migrar) la tabla no existe.
     if (!(await configuracionRepository.guardar(data))) {
       throw new ErrorConflicto("La configuracion todavia no esta disponible en esta base: falta migrar");
@@ -61,16 +52,14 @@ export const configuracionService = {
     return this.obtener();
   },
 
-  // Decide si al cancelar se devuelve el stock. En AUTOMATICO manda la configuracion (lo que
-  // pida quien cancela no cuenta); en PREGUNTAR quien cancela tiene que decirlo.
+  // Decide si al cancelar se devuelve el stock. Con DEVOLVER o NO_DEVOLVER manda la
+  // configuracion (lo que pida quien cancela no cuenta); con PREGUNTAR quien cancela tiene que
+  // decirlo.
   async decidirDevolucion(accion: AccionCancelacion, elegido: boolean | undefined) {
-    const configuracion = await this.obtener();
-    const modo = accion === "cancelarPedido" ? configuracion.cancelarPedidoModo : configuracion.cancelarOrdenModo;
-    const porDefecto =
-      accion === "cancelarPedido" ? configuracion.cancelarPedidoDevolver : configuracion.cancelarOrdenDevolver;
+    const opcion = (await this.obtener())[accion];
 
-    if (modo === "AUTOMATICO") {
-      return porDefecto;
+    if (opcion !== "PREGUNTAR") {
+      return opcion === "DEVOLVER";
     }
 
     if (elegido === undefined) {

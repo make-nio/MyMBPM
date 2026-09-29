@@ -43,7 +43,7 @@ Pantallas (`apps/web/app/(privado)/`), todas usables desde el celular (375 px):
 | Categorias, Solicitudes especiales | Alta, edicion y estados; una solicitud se convierte en pedido |
 | Reportes (administradores) | Lo vendido en un mes por item y por cliente, grafico de 12 meses, exportar CSV |
 | Usuarios (administradores) | Alta, roles, activar y desactivar, restablecer la clave, cerrar las sesiones de un usuario |
-| Configuracion (administradores) | Que hacer con el stock al cancelar un pedido confirmado o una orden en proceso: preguntar cada vez o hacerlo solo, y que se hace por defecto |
+| Configuracion (administradores) | Que hacer con el stock al cancelar un pedido confirmado o una orden en proceso: preguntar en el momento, devolver siempre o no devolver nunca |
 | Ayuda (`/ayuda`) | Guia para el dia a dia y, para administradores, la guia de administracion |
 
 En el encabezado: **busqueda global** (Ctrl+K / Cmd+K) de pedidos, clientes e items, y la
@@ -334,7 +334,7 @@ usuario, piden sesion. El mapa completo, con que hace cada modulo, esta en
 - La validacion de stock se hace dentro de la misma transaccion donde se registra el egreso.
 - Los ajustes manuales solo aceptan `AJUSTE_POSITIVO` y `AJUSTE_NEGATIVO`, exigen motivo (`observaciones`, 400 si falta o esta vacio); el usuario sale de la sesion y el origen es siempre `MANUAL`.
 - Los movimientos de pedidos y produccion quedan a nombre del usuario de la sesion.
-- Cancelar un pedido que ya desconto stock (confirmado, en preparacion o listo) o una orden en proceso devuelve lo descontado o no segun `CONFIGURACION` (automatico o preguntar, y el "por defecto" de cada accion). La devolucion es un `REVERSO` por cada egreso que se registro, en la misma transaccion que el cambio de estado. Ver [docs/arquitectura-backend.md](docs/arquitectura-backend.md#cancelar-y-devolver-el-stock).
+- Cancelar un pedido que ya desconto stock (confirmado, en preparacion o listo) o una orden en proceso devuelve lo descontado o no segun `CONFIGURACION` (por accion: preguntar, devolver o no devolver). La devolucion es un `REVERSO` por cada egreso que se registro, en la misma transaccion que el cambio de estado. Ver [docs/arquitectura-backend.md](docs/arquitectura-backend.md#cancelar-y-devolver-el-stock).
 - Quien puede usar cada endpoint (sin sesion, cualquier usuario o administrador) esta declarado en el contrato y se prueba contra la API real (`e2e/autorizacion.spec.ts`); un usuario solo cambia su propia clave y una linea, componente o imagen solo se alcanza desde su propio padre. Ver [docs/contrato-api.md](docs/contrato-api.md#quién-puede-usar-cada-endpoint).
 - Las entradas tienen topes (textos, cantidades, montos, paginacion, ids, 100 lineas por pedido u orden): uno de mas da 400 o 409 con mensaje, nunca 500. Ver [docs/contrato-api.md](docs/contrato-api.md#límites-de-entrada).
 - Las sesiones duran como mucho 12 h y un administrador puede cerrarlas (tambien al restablecer la clave). Ver [docs/despliegue-netlify.md](docs/despliegue-netlify.md#sesiones).

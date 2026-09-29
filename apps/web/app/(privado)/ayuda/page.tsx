@@ -73,8 +73,8 @@ const guias: Paso[] = [
     titulo: "Que pasa con el stock al cancelar (administradores)",
     pasos: [
       "En Configuracion elegis, para cancelar un pedido confirmado y para cancelar una orden en proceso, que hace el sistema con lo que ya se desconto del stock.",
-      "\"Preguntar cada vez\": al cancelar aparece la pregunta \"¿Devolver al stock...?\" con la opcion que elijas aca ya marcada.",
-      "\"Hacerlo automaticamente\": no pregunta y hace lo que elijas aca (devolver o no devolver).",
+      "\"Preguntar en el momento\": al cancelar aparece la pregunta \"¿Devolver al stock...?\" y elegis ahi.",
+      "\"Devolver al stock, sin preguntar\" o \"No devolver, sin preguntar\": no pregunta y hace siempre eso.",
       "Lo devuelto queda en los movimientos de Stock como \"Reverso\", con tu usuario y la fecha."
     ]
   },

@@ -9,7 +9,7 @@ import { EstadoVacio } from "../../../src/components/ui/estado-vacio";
 import { MensajeError } from "../../../src/components/ui/mensaje-error";
 import { MensajeExito } from "../../../src/components/ui/mensaje-exito";
 import { actualizarConfiguracion, obtenerConfiguracion } from "../../../src/lib/modulos/configuracion";
-import { Configuracion, ModoDevolucionStock } from "../../../src/types/configuracion";
+import { Configuracion, OpcionDevolucionStock } from "../../../src/types/configuracion";
 
 export default function ConfiguracionPage() {
   const usuario = useUsuarioAutenticado();
@@ -27,44 +27,36 @@ export default function ConfiguracionPage() {
 
 type Valores = Omit<Configuracion, "guardada">;
 
-// Una accion de cancelacion: el modo (automatico o preguntar) y que se hace por defecto.
+// Una accion de cancelacion: preguntar en el momento, devolver siempre o no devolver nunca.
 function Accion({
   id,
   titulo,
   explicacion,
-  modo,
-  devolver,
-  onModo,
-  onDevolver
+  opcion,
+  onCambiar
 }: {
   id: string;
   titulo: string;
   explicacion: string;
-  modo: ModoDevolucionStock;
-  devolver: boolean;
-  onModo: (modo: ModoDevolucionStock) => void;
-  onDevolver: (devolver: boolean) => void;
+  opcion: OpcionDevolucionStock;
+  onCambiar: (opcion: OpcionDevolucionStock) => void;
 }) {
   return (
     <section aria-labelledby={`${id}-titulo`} className="tarjeta-seccion">
       <h2 id={`${id}-titulo`}>{titulo}</h2>
       <p className="texto-secundario">{explicacion}</p>
-      <div className="filtros-inline">
-        <label className="campo-formulario" htmlFor={`${id}-modo`}>
-          <span>Al cancelar</span>
-          <select id={`${id}-modo`} onChange={(event) => onModo(event.target.value as ModoDevolucionStock)} value={modo}>
-            <option value="PREGUNTAR">Preguntar cada vez</option>
-            <option value="AUTOMATICO">Hacerlo automaticamente</option>
-          </select>
-        </label>
-        <label className="campo-formulario" htmlFor={`${id}-devolver`}>
-          <span>{modo === "PREGUNTAR" ? "Opcion marcada al preguntar" : "Que se hace"}</span>
-          <select id={`${id}-devolver`} onChange={(event) => onDevolver(event.target.value === "si")} value={devolver ? "si" : "no"}>
-            <option value="si">Devolver al stock</option>
-            <option value="no">No devolver</option>
-          </select>
-        </label>
-      </div>
+      <label className="campo-formulario" htmlFor={`${id}-opcion`}>
+        <span>Al cancelar</span>
+        <select
+          id={`${id}-opcion`}
+          onChange={(event) => onCambiar(event.target.value as OpcionDevolucionStock)}
+          value={opcion}
+        >
+          <option value="PREGUNTAR">Preguntar en el momento</option>
+          <option value="DEVOLVER">Devolver al stock, sin preguntar</option>
+          <option value="NO_DEVOLVER">No devolver, sin preguntar</option>
+        </select>
+      </label>
     </section>
   );
 }
@@ -114,7 +106,7 @@ function FormularioConfiguracion() {
   return (
     <section className="modulo-panel">
       <EncabezadoModulo
-        descripcion="Que hacer con el stock al cancelar algo que ya lo desconto. En modo automatico se aplica sin preguntar; si no, quien cancela elige, con la opcion de abajo ya marcada."
+        descripcion="Que hacer con el stock al cancelar algo que ya lo desconto: preguntar en el momento, o devolverlo o no devolverlo siempre, sin preguntar."
         titulo="Configuracion"
       />
       {error ? <MensajeError mensaje={error} /> : null}
@@ -129,21 +121,17 @@ function FormularioConfiguracion() {
       ) : (
         <>
           <Accion
-            devolver={valores.cancelarPedidoDevolver}
             explicacion="Un pedido confirmado, en preparacion o listo ya desconto sus productos del stock."
             id="config-pedido"
-            modo={valores.cancelarPedidoModo}
-            onDevolver={(devolver) => cambiar({ cancelarPedidoDevolver: devolver })}
-            onModo={(modo) => cambiar({ cancelarPedidoModo: modo })}
+            onCambiar={(opcion) => cambiar({ cancelarPedido: opcion })}
+            opcion={valores.cancelarPedido}
             titulo="Cancelar un pedido confirmado"
           />
           <Accion
-            devolver={valores.cancelarOrdenDevolver}
             explicacion="Una orden en proceso ya desconto los insumos de su receta al iniciarse."
             id="config-orden"
-            modo={valores.cancelarOrdenModo}
-            onDevolver={(devolver) => cambiar({ cancelarOrdenDevolver: devolver })}
-            onModo={(modo) => cambiar({ cancelarOrdenModo: modo })}
+            onCambiar={(opcion) => cambiar({ cancelarOrden: opcion })}
+            opcion={valores.cancelarOrden}
             titulo="Cancelar una orden en proceso"
           />
           <div className="acciones-formulario">

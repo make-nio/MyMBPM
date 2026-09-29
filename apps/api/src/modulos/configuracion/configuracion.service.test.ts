@@ -18,10 +18,8 @@ const repo = vi.mocked(configuracionRepository);
 function fila(overrides: Record<string, unknown> = {}) {
   return {
     idConfiguracion: 1,
-    cancelarPedidoModo: "PREGUNTAR",
-    cancelarPedidoDevolver: true,
-    cancelarOrdenModo: "AUTOMATICO",
-    cancelarOrdenDevolver: false,
+    cancelarPedido: "PREGUNTAR",
+    cancelarOrden: "NO_DEVOLVER",
     fechaModificacion: new Date(),
     ...overrides
   } as never;
@@ -36,44 +34,53 @@ describe("configuracionService.obtener", () => {
     repo.obtener.mockResolvedValue(fila());
 
     expect(await configuracionService.obtener()).toEqual({
-      cancelarPedidoModo: "PREGUNTAR",
-      cancelarPedidoDevolver: true,
-      cancelarOrdenModo: "AUTOMATICO",
-      cancelarOrdenDevolver: false,
+      cancelarPedido: "PREGUNTAR",
+      cancelarOrden: "NO_DEVOLVER",
       guardada: true
     });
+  });
+
+  it("un valor desconocido en la base se lee como PREGUNTAR", async () => {
+    repo.obtener.mockResolvedValue(fila({ cancelarPedido: "AUTOMATICO" }));
+
+    expect((await configuracionService.obtener()).cancelarPedido).toBe("PREGUNTAR");
   });
 
   it("sin la tabla (preview sin migrar) se comporta como antes: no pregunta y no devuelve", async () => {
     repo.obtener.mockResolvedValue(null);
 
     expect(await configuracionService.obtener()).toEqual({
-      cancelarPedidoModo: "AUTOMATICO",
-      cancelarPedidoDevolver: false,
-      cancelarOrdenModo: "AUTOMATICO",
-      cancelarOrdenDevolver: false,
+      cancelarPedido: "NO_DEVOLVER",
+      cancelarOrden: "NO_DEVOLVER",
       guardada: false
     });
   });
 });
 
 describe("configuracionService.decidirDevolucion", () => {
-  it("en AUTOMATICO manda la configuracion, aunque quien cancela pida otra cosa", async () => {
-    repo.obtener.mockResolvedValue(fila({ cancelarOrdenModo: "AUTOMATICO", cancelarOrdenDevolver: true }));
+  it("con DEVOLVER devuelve, aunque quien cancela pida otra cosa", async () => {
+    repo.obtener.mockResolvedValue(fila({ cancelarOrden: "DEVOLVER" }));
 
     expect(await configuracionService.decidirDevolucion("cancelarOrden", false)).toBe(true);
     expect(await configuracionService.decidirDevolucion("cancelarOrden", undefined)).toBe(true);
   });
 
-  it("en PREGUNTAR usa lo que elige quien cancela", async () => {
-    repo.obtener.mockResolvedValue(fila({ cancelarPedidoModo: "PREGUNTAR", cancelarPedidoDevolver: true }));
+  it("con NO_DEVOLVER no devuelve, aunque quien cancela lo pida", async () => {
+    repo.obtener.mockResolvedValue(fila({ cancelarPedido: "NO_DEVOLVER" }));
+
+    expect(await configuracionService.decidirDevolucion("cancelarPedido", true)).toBe(false);
+    expect(await configuracionService.decidirDevolucion("cancelarPedido", undefined)).toBe(false);
+  });
+
+  it("con PREGUNTAR usa lo que elige quien cancela", async () => {
+    repo.obtener.mockResolvedValue(fila({ cancelarPedido: "PREGUNTAR" }));
 
     expect(await configuracionService.decidirDevolucion("cancelarPedido", false)).toBe(false);
     expect(await configuracionService.decidirDevolucion("cancelarPedido", true)).toBe(true);
   });
 
-  it("en PREGUNTAR, sin elegir, responde 400 en devolverStock", async () => {
-    repo.obtener.mockResolvedValue(fila({ cancelarPedidoModo: "PREGUNTAR" }));
+  it("con PREGUNTAR, sin elegir, responde 400 en devolverStock", async () => {
+    repo.obtener.mockResolvedValue(fila({ cancelarPedido: "PREGUNTAR" }));
 
     const error = await configuracionService.decidirDevolucion("cancelarPedido", undefined).catch((e) => e);
 
@@ -91,17 +98,17 @@ describe("configuracionService.decidirDevolucion", () => {
 describe("configuracionService.actualizar", () => {
   it("guarda y devuelve la configuracion nueva", async () => {
     repo.guardar.mockResolvedValue(fila());
-    repo.obtener.mockResolvedValue(fila({ cancelarOrdenModo: "PREGUNTAR" }));
+    repo.obtener.mockResolvedValue(fila({ cancelarOrden: "DEVOLVER" }));
 
-    const nueva = await configuracionService.actualizar({ cancelarOrdenModo: "PREGUNTAR" });
+    const nueva = await configuracionService.actualizar({ cancelarOrden: "DEVOLVER" });
 
-    expect(repo.guardar).toHaveBeenCalledWith({ cancelarOrdenModo: "PREGUNTAR" });
-    expect(nueva.cancelarOrdenModo).toBe("PREGUNTAR");
+    expect(repo.guardar).toHaveBeenCalledWith({ cancelarOrden: "DEVOLVER" });
+    expect(nueva.cancelarOrden).toBe("DEVOLVER");
   });
 
   it("sin la tabla responde 409 en vez de fallar con 500", async () => {
     repo.guardar.mockResolvedValue(null);
 
-    await expect(configuracionService.actualizar({ cancelarPedidoDevolver: false })).rejects.toBeInstanceOf(ErrorConflicto);
+    await expect(configuracionService.actualizar({ cancelarPedido: "NO_DEVOLVER" })).rejects.toBeInstanceOf(ErrorConflicto);
   });
 });

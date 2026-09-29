@@ -44,7 +44,7 @@ export function eliminarDetalleOrden(idOrdenProduccion: string, idOrdenProduccio
 }
 
 // devolverStock: al cancelar una orden en proceso, si se devuelven los insumos (solo en modo
-// PREGUNTAR; en AUTOMATICO decide la configuracion).
+// PREGUNTAR; con DEVOLVER o NO_DEVOLVER decide la configuracion).
 export function cancelarOrdenProduccion(idOrdenProduccion: string, devolverStock?: boolean) {
   return pedirApi("patch /api/produccion/{id}/estado", {
     params: { id: idOrdenProduccion },
