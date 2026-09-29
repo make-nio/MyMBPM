@@ -110,7 +110,7 @@ describe("pagosService.registrar", () => {
   it("no registra pagos en un pedido cancelado", async () => {
     pedidos.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: "CANCELADO" }));
 
-    await expect(pagosService.registrar(1n, { fecha: hoy, monto: 1, medioPago: "OTRO" })).rejects.toBeInstanceOf(ErrorConflicto);
+    await expect(pagosService.registrar(1n, { fecha: hoy, monto: 1, medioPago: "EFECTIVO" })).rejects.toBeInstanceOf(ErrorConflicto);
     expect(repo.crear).not.toHaveBeenCalled();
   });
 });

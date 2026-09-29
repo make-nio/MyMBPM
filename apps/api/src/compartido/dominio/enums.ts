@@ -18,7 +18,7 @@ export const ESTADOS_COBRO = ["PENDIENTE", "SEÑADO", "PAGADO"] as const;
 export type EstadoCobro = (typeof ESTADOS_COBRO)[number];
 
 // Medios con los que se registra un pago (PAGO.MEDIO_PAGO). Maxi confirma cuales usa (#90).
-export const MEDIOS_PAGO = ["EFECTIVO", "TRANSFERENCIA", "MERCADO_PAGO", "TARJETA", "OTRO"] as const;
+export const MEDIOS_PAGO = ["EFECTIVO", "TRANSFERENCIA", "MERCADO_PAGO"] as const;
 export type MedioPago = (typeof MEDIOS_PAGO)[number];
 
 export const ESTADOS_PRODUCCION = [

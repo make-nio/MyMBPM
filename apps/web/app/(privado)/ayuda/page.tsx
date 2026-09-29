@@ -34,7 +34,7 @@ const guias: Paso[] = [
     titulo: "Cobrar un pedido",
     pasos: [
       "En el detalle del pedido, en \"Pagos\", ves lo cobrado y el saldo.",
-      "Toca \"Registrar pago\": la fecha, el monto (arranca en lo que falta cobrar) y el medio (efectivo, transferencia, Mercado Pago, tarjeta u otro).",
+      "Toca \"Registrar pago\": la fecha, el monto (arranca en lo que falta cobrar) y el medio (efectivo, transferencia o Mercado Pago).",
       "El cobro del pedido se calcula solo: Señado si pagaron una parte, Pagado cuando se completa el total.",
       "Si un pago se cargo mal, un administrador lo anula con el motivo: no se borra, queda en la lista como anulado y deja de contar."
     ],

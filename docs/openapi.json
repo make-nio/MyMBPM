@@ -1992,9 +1992,7 @@
             "enum": [
               "EFECTIVO",
               "TRANSFERENCIA",
-              "MERCADO_PAGO",
-              "TARJETA",
-              "OTRO"
+              "MERCADO_PAGO"
             ]
           },
           "observaciones": {
@@ -3108,9 +3106,7 @@
                   "enum": [
                     "EFECTIVO",
                     "TRANSFERENCIA",
-                    "MERCADO_PAGO",
-                    "TARJETA",
-                    "OTRO"
+                    "MERCADO_PAGO"
                   ]
                 },
                 "cobrado": {
@@ -8964,9 +8960,7 @@
                     "enum": [
                       "EFECTIVO",
                       "TRANSFERENCIA",
-                      "MERCADO_PAGO",
-                      "TARJETA",
-                      "OTRO"
+                      "MERCADO_PAGO"
                     ]
                   },
                   "observaciones": {
