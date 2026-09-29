@@ -141,8 +141,11 @@ actualizá esos dos.
   ingreso, matriz de autorización y límites de entrada, ambos declarados en el contrato de la API
   (`docs/contrato-api.md`).
 - **Abierto:** lo que falta para cerrar la primera versión está en el issue #87 (devolver stock al
-  cancelar, #89; pagos, #90; facturación, #91).
-- **Decisiones de negocio (28-sep, Mariano):** devolver el stock al cancelar un pedido confirmado
-  o una orden en proceso será configurable (#89), y pagos y facturación entran en la v1 (#90, #91).
-  Hasta que se integren, cancelar **no** devuelve el stock (se corrige a mano con un ajuste) y no
-  hay pagos ni facturas. La facturación espera los datos fiscales de Maxi (ver #91).
+  cancelar, #89; pagos, #90; remito, #95).
+- **Decisiones de negocio (Mariano, 28 y 29-sep):**
+  - Devolver el stock al cancelar un pedido confirmado o una orden en proceso será configurable (#89).
+  - Pagos entra en la v1 (#90), con efectivo, transferencia y Mercado Pago.
+  - La factura electrónica queda **fuera** de la v1 (#91): el sistema emite un remito no fiscal
+    (#95) y Maxi factura a mano. Maxi es monotributista.
+  - Hasta que se integren, cancelar **no** devuelve el stock (se corrige a mano con un ajuste) y no
+    hay pagos.
