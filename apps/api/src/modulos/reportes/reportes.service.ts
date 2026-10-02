@@ -110,6 +110,24 @@ export const reportesService = {
     return { desde, hasta: actual.hasta, meses: [...porMes.values()] };
   },
 
+  // Lo cobrado en el mes (hora de Argentina) por medio de pago, segun la fecha de cada pago.
+  async cobrosDelMes({ mes }: { mes?: string }, ahora = new Date()) {
+    const rango = rangoMesArgentina(mes ? instanteDelMes(mes) : ahora);
+    const grupos = await reportesRepository.cobradoPorMedioEntre(prisma, rango.desde, rango.hasta);
+    const porMedio = grupos.map((grupo) => ({
+      medioPago: grupo.medioPago,
+      cobrado: grupo._sum.monto ?? new Prisma.Decimal(0),
+      pagos: grupo._count._all
+    }));
+
+    return {
+      desde: rango.desde,
+      hasta: rango.hasta,
+      total: porMedio.reduce((suma, medio) => suma.add(medio.cobrado), new Prisma.Decimal(0)),
+      porMedio
+    };
+  },
+
   // Vendido del mes por item y por cliente. Mismo criterio que "Este mes" del panel: lo
   // confirmado en el mes (hora de Argentina), sin cancelados; costo = snapshot de cada linea.
   async ventasDelMes({ mes }: { mes?: string }, ahora = new Date()) {

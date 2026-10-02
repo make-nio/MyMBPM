@@ -14,6 +14,12 @@ export const reportesController = {
     responderExito(response, reporte);
   },
 
+  async cobrosDelMes(request: Request, response: Response) {
+    const query = validar(ventasMesQuerySchema, request.query);
+
+    responderExito(response, await reportesService.cobrosDelMes(query));
+  },
+
   async ventasPorMes(_request: Request, response: Response) {
     responderExito(response, await reportesService.ventasPorMes());
   }

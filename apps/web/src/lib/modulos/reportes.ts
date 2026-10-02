@@ -9,3 +9,8 @@ export function obtenerVentasDelMes(mes?: string) {
 export function obtenerVentasPorMes() {
   return pedirApi("get /api/reportes/ventas-por-mes");
 }
+
+// Lo cobrado en el mes ("AAAA-MM") por medio de pago. Solo administradores.
+export function obtenerCobrosDelMes(mes?: string) {
+  return pedirApi("get /api/reportes/cobros-mes", { consulta: { mes } });
+}

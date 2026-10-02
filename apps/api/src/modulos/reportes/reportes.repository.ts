@@ -40,5 +40,16 @@ export const reportesRepository = {
       },
       select: { total: true, fechaConfirmacion: true }
     });
+  },
+
+  // Lo cobrado en el rango por medio de pago: pagos vigentes (sin anulados) segun su fecha.
+  cobradoPorMedioEntre(prismaOrTx: PrismaOrTx, desde: Date, hasta: Date) {
+    return prismaOrTx.pago.groupBy({
+      by: ["medioPago"],
+      where: { anulado: false, fecha: { gte: desde, lt: hasta } },
+      _sum: { monto: true },
+      _count: { _all: true },
+      orderBy: { medioPago: "asc" }
+    });
   }
 };

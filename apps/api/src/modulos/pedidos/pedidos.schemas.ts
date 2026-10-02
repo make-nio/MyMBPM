@@ -54,7 +54,7 @@ export const listarPedidosQuerySchema = paginacionSchema
 export const crearPedidoSchema = z.object({
   idCliente: idSchema,
   origenPedido: z.enum(ORIGENES_PEDIDO),
-  estadoCobro: z.enum(ESTADOS_COBRO).optional(),
+  // El estado de cobro no se elige: lo calculan los pagos (#90).
   observacionesCliente: z.string().max(2000).optional(),
   observacionesInternas: z.string().max(2000).optional(),
   fechaEntrega: fechaEntregaSchema.optional(),
@@ -73,7 +73,6 @@ export const actualizarDetallePedidoSchema = z.object({
 export const actualizarEstadoPedidoSchema = z
   .object({
     estadoPedido: z.enum(ESTADOS_PEDIDO).optional(),
-    estadoCobro: z.enum(ESTADOS_COBRO).optional(),
     observacionesInternas: z.string().max(2000).optional(),
     fechaEntrega: fechaEntregaSchema.optional(),
     // Al cancelar un pedido que ya desconto stock, si se devuelve (ver configuracion.service).

@@ -22,6 +22,8 @@ model Usuario {
   estadosStock      EstadoStock[]
   auditoriasCambio  AuditoriaCambio[]
   sesion            SesionUsuario?
+  pagosRegistrados  Pago[]            @relation("PagoRegistradoPor")
+  pagosAnulados     Pago[]            @relation("PagoAnuladoPor")
 
   // Ademas de estos unicos, la migracion inicial crea UQ_USUARIO_EMAIL_LOWER y
   // UQ_USUARIO_USUARIO_LOWER sobre lower(...) (SQL crudo: Prisma no modela indices por expresion).
@@ -183,6 +185,7 @@ model Pedido {
   fechaModificacion     DateTime        @updatedAt @map("FECHA_MODIFICACION") @db.Timestamptz(3)
   cliente               Cliente         @relation(fields: [idCliente], references: [idCliente], onDelete: NoAction, onUpdate: NoAction)
   detalles              PedidoDetalle[]
+  pagos                 Pago[]
 
   solicitudEspecial SolicitudEspecial?
 
@@ -193,6 +196,30 @@ model Pedido {
   @@index([fechaAlta], map: "IX_PEDIDO_FECHA_ALTA")
   @@index([fechaConfirmacion], map: "IX_PEDIDO_FECHA_CONFIRMACION")
   @@map("PEDIDO")
+}
+
+// Cobros de un pedido. No se borran ni se editan: se anulan con motivo. La suma de los pagos
+// vigentes calcula ESTADO_COBRO del pedido (ver pagos.service).
+model Pago {
+  idPago             BigInt    @id @default(autoincrement()) @map("ID_PAGO") @db.BigInt
+  idPedido           BigInt    @map("ID_PEDIDO") @db.BigInt
+  fecha              DateTime  @map("FECHA") @db.Timestamptz(3)
+  monto              Decimal   @map("MONTO") @db.Decimal(18, 2)
+  medioPago          String    @map("MEDIO_PAGO") @db.VarChar(30)
+  observaciones      String?   @map("OBSERVACIONES") @db.VarChar(500)
+  idUsuario          BigInt?   @map("ID_USUARIO") @db.BigInt
+  fechaAlta          DateTime  @default(now()) @map("FECHA_ALTA") @db.Timestamptz(3)
+  anulado            Boolean   @default(false) @map("ANULADO")
+  fechaAnulacion     DateTime? @map("FECHA_ANULACION") @db.Timestamptz(3)
+  motivoAnulacion    String?   @map("MOTIVO_ANULACION") @db.VarChar(500)
+  idUsuarioAnulacion BigInt?   @map("ID_USUARIO_ANULACION") @db.BigInt
+  pedido             Pedido    @relation(fields: [idPedido], references: [idPedido], onDelete: NoAction, onUpdate: NoAction)
+  usuario            Usuario?  @relation("PagoRegistradoPor", fields: [idUsuario], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction)
+  usuarioAnulacion   Usuario?  @relation("PagoAnuladoPor", fields: [idUsuarioAnulacion], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([idPedido], map: "IX_PAGO_ID_PEDIDO")
+  @@index([fecha], map: "IX_PAGO_FECHA")
+  @@map("PAGO")
 }
 
 model PedidoDetalle {

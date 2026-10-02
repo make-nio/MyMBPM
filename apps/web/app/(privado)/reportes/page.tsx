@@ -11,6 +11,7 @@ import { MensajeError } from "../../../src/components/ui/mensaje-error";
 import { TablaDatos } from "../../../src/components/ui/tabla-datos";
 import { generarCsv, numeroCsv } from "../../../src/lib/csv";
 import { diaArgentina, formatearCantidad, formatearMoneda } from "../../../src/lib/formato";
+import { CobrosDelMes } from "../../../src/components/modulos/reportes/cobros-del-mes";
 import { GraficoVentas } from "../../../src/components/modulos/reportes/grafico-ventas";
 import { obtenerVentasDelMes, obtenerVentasPorMes } from "../../../src/lib/modulos/reportes";
 import { ReporteVentasMes, VentaDelMes } from "../../../src/types/reportes";
@@ -196,6 +197,8 @@ function ReporteVentas() {
           </section>
         </>
       ) : null}
+
+      {mes ? <CobrosDelMes mes={mes} /> : null}
     </section>
   );
 }

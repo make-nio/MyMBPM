@@ -33,6 +33,12 @@ vi.mock("../configuracion/configuracion.service", () => ({
   }
 }));
 
+vi.mock("../pagos/pagos.service", () => ({
+  pagosService: {
+    recalcularEstadoCobro: vi.fn()
+  }
+}));
+
 vi.mock("./pedidos.repository", () => ({
   pedidosRepository: {
     listar: vi.fn(),

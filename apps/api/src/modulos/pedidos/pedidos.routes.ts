@@ -2,6 +2,8 @@ import { Router } from "express";
 
 import { asyncHandler } from "../../compartido/http/async-handler";
 
+import { registrarRutasPagos } from "../pagos/pagos.routes";
+
 import { pedidosController } from "./pedidos.controller";
 
 export const pedidosRouter = Router();
@@ -16,3 +18,5 @@ pedidosRouter.patch("/:id/estado", asyncHandler(pedidosController.actualizarEsta
 pedidosRouter.post("/:id/confirmar", asyncHandler(pedidosController.confirmar));
 pedidosRouter.get("/:id/repeticion", asyncHandler(pedidosController.prepararRepeticion));
 pedidosRouter.post("/:id/repetir", asyncHandler(pedidosController.repetir));
+
+registrarRutasPagos(pedidosRouter);
