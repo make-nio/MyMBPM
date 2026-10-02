@@ -135,7 +135,8 @@ type PagosPedidoProps = {
 };
 
 // Cobros del pedido (#90): lo cobrado y el saldo, registrar un pago y, para administradores,
-// anularlo con motivo. El estado de cobro lo calcula la API con estos pagos.
+// anularlo con motivo. El estado de cobro lo calcula la API con estos pagos. Si hubo
+// devoluciones (#96), lo devuelto baja el saldo y los reintegros aparecen como pagos negativos.
 export function PagosPedido({ idPedido, version, cancelado, esAdministrador, onCambio }: PagosPedidoProps) {
   const [resumen, setResumen] = useState<PagosDelPedido | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -178,6 +179,11 @@ export function PagosPedido({ idPedido, version, cancelado, esAdministrador, onC
       {resumen ? (
         <>
           <p className="texto-secundario texto-secundario--compacto">
+            {Number(resumen.devuelto) > 0 ? (
+              <>
+                Devuelto: <strong data-testid="pedido-devuelto">{formatearMoneda(resumen.devuelto)}</strong> ·{" "}
+              </>
+            ) : null}
             Cobrado: <strong data-testid="pedido-cobrado">{formatearMoneda(resumen.cobrado)}</strong> · Saldo:{" "}
             <strong data-testid="pedido-saldo">{formatearMoneda(resumen.saldo)}</strong>
             {cancelado && Number(resumen.cobrado) > 0 ? (
@@ -198,12 +204,14 @@ export function PagosPedido({ idPedido, version, cancelado, esAdministrador, onC
                 },
                 {
                   header: "Estado",
-                  cell: (pago) => (pago.anulado ? `Anulado: ${pago.motivoAnulacion ?? ""}` : "Vigente")
+                  // Un reintegro de una devolucion es un pago negativo (#96).
+                  cell: (pago) =>
+                    pago.anulado ? `Anulado: ${pago.motivoAnulacion ?? ""}` : Number(pago.monto) < 0 ? "Reintegro" : "Vigente"
                 },
                 {
                   header: "Acciones",
                   cell: (pago) =>
-                    esAdministrador && !pago.anulado ? (
+                    esAdministrador && !pago.anulado && Number(pago.monto) > 0 ? (
                       <button
                         aria-label={`Anular pago de ${formatearMoneda(pago.monto)} del ${formatearDia(pago.fecha)}`}
                         className="boton-secundario"

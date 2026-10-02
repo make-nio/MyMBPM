@@ -5,12 +5,13 @@ import { useEffect, useState } from "react";
 import { obtenerConfiguracion } from "../lib/modulos/configuracion";
 import { Configuracion } from "../types/configuracion";
 
-export type AccionCancelacion = "cancelarPedido" | "cancelarOrden";
+// Cancelar (#89) o la devolucion de un pedido entregado (#96): stock y reintegro.
+export type AccionConfigurable = Exclude<keyof Configuracion, "guardada">;
 
-// Que hacer con el stock al cancelar (issue #89): lee la configuracion cuando hace falta
-// (activo) y, si hay que preguntar, guarda lo que elige quien cancela (arranca en "devolver").
+// Que hacer con lo ya descontado o cobrado (issues #89 y #96): lee la configuracion cuando hace
+// falta (activo) y, si hay que preguntar, guarda lo que elige quien lo hace (arranca en "si").
 // Con DEVOLVER o NO_DEVOLVER no se manda nada: decide la API con la configuracion.
-export function useDevolucionStock(accion: AccionCancelacion, activo: boolean) {
+export function useDevolucionStock(accion: AccionConfigurable, activo: boolean) {
   const [configuracion, setConfiguracion] = useState<Configuracion | null>(null);
   const [devolver, setDevolver] = useState(true);
 
