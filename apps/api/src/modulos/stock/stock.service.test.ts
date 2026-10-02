@@ -19,7 +19,8 @@ vi.mock("./stock.repository", () => ({
     listarItemsParaExistencias: vi.fn(),
     listarUltimosEstados: vi.fn(),
     listarUltimosMovimientos: vi.fn(),
-    bloquearItem: vi.fn()
+    bloquearItem: vi.fn(),
+    listarMovimientosDeReferencia: vi.fn()
   }
 }));
 
@@ -378,5 +379,73 @@ describe("stockService.obtenerUltimosMovimientos", () => {
     await stockService.obtenerUltimosMovimientos(tx, 8);
 
     expect(repo.listarUltimosMovimientos).toHaveBeenCalledWith(tx, 8);
+  });
+});
+
+describe("stockService.revertirMovimientos (cancelar)", () => {
+  function egreso(idItemCatalogo: bigint, idReferenciaDetalle: bigint, cantidad: string, tipoStock = "PRODUCTO") {
+    return { idItemCatalogo, idReferenciaDetalle, tipoStock, cantidadMovimiento: dec(cantidad) } as never;
+  }
+
+  it("registra un REVERSO por cada egreso real, en orden de item y con la misma referencia", async () => {
+    repo.listarMovimientosDeReferencia.mockResolvedValue([egreso(9n, 2n, "1.5"), egreso(3n, 1n, "2")]);
+    repo.obtenerUltimoEstado.mockResolvedValue(ultimoEstado("10"));
+
+    const cantidad = await stockService.revertirMovimientos(tx, {
+      origenMovimiento: "PEDIDO",
+      idReferenciaOrigen: 5n,
+      tipoMovimiento: "EGRESO_PEDIDO",
+      idUsuario: 7n,
+      observaciones: "Cancelacion del pedido PED-000005"
+    });
+
+    expect(cantidad).toBe(2);
+    expect(repo.listarMovimientosDeReferencia).toHaveBeenCalledWith(tx, expect.objectContaining({
+      origenMovimiento: "PEDIDO",
+      idReferenciaOrigen: 5n,
+      tipoMovimiento: "EGRESO_PEDIDO"
+    }));
+    const creados = repo.crearMovimiento.mock.calls.map((llamada) => llamada[1]);
+    expect(creados.map((m) => m.idItemCatalogo)).toEqual([3n, 9n]);
+    expect(creados[0]).toMatchObject({
+      tipoMovimiento: "REVERSO",
+      origenMovimiento: "PEDIDO",
+      idReferenciaOrigen: 5n,
+      idReferenciaDetalle: 1n,
+      tipoStock: "PRODUCTO",
+      idUsuario: 7n
+    });
+    expect(creados[0].cantidadMovimiento.toString()).toBe("2");
+    expect(creados[0].stockActual.toString()).toBe("12");
+    expect(repo.bloquearItem).toHaveBeenCalledTimes(2);
+  });
+
+  it("es idempotente: un reverso que ya existe no se registra de nuevo", async () => {
+    repo.listarMovimientosDeReferencia.mockResolvedValue([egreso(3n, 1n, "2", "INSUMO")]);
+    repo.buscarMovimientoDuplicado.mockResolvedValue({ idEstadoStock: 99n } as never);
+
+    await stockService.revertirMovimientos(tx, {
+      origenMovimiento: "PRODUCCION",
+      idReferenciaOrigen: 5n,
+      tipoMovimiento: "EGRESO_PRODUCCION",
+      observaciones: "Cancelacion de la orden de produccion 5"
+    });
+
+    expect(repo.buscarMovimientoDuplicado).toHaveBeenCalledWith(tx, expect.objectContaining({ tipoMovimiento: "REVERSO" }));
+    expect(repo.crearMovimiento).not.toHaveBeenCalled();
+  });
+
+  it("sin egresos registrados no hace nada", async () => {
+    repo.listarMovimientosDeReferencia.mockResolvedValue([]);
+
+    expect(
+      await stockService.revertirMovimientos(tx, {
+        origenMovimiento: "PEDIDO",
+        idReferenciaOrigen: 5n,
+        tipoMovimiento: "EGRESO_PEDIDO",
+        observaciones: "x"
+      })
+    ).toBe(0);
+    expect(repo.crearMovimiento).not.toHaveBeenCalled();
   });
 });

@@ -96,6 +96,19 @@ describe("restaurarRespaldo", () => {
     expect(ejecutadas.some((consulta) => consulta.sql.includes("INSERT"))).toBe(false);
   });
 
+  it("la configuracion que crea la migracion no cuenta como datos: se reemplaza por la del respaldo", async () => {
+    const contenido = await respaldoDePrueba();
+    const { base, ejecutadas } = baseSimulada({ conDatos: "CONFIGURACION" });
+
+    await restaurarRespaldo(base, contenido);
+
+    const borrado = ejecutadas.findIndex((consulta) => consulta.sql === 'DELETE FROM "CONFIGURACION"');
+    const insert = ejecutadas.findIndex((consulta) => consulta.sql.includes('INSERT INTO "CONFIGURACION"'));
+    expect(borrado).toBeGreaterThan(-1);
+    expect(insert).toBeGreaterThan(borrado);
+    expect(ejecutadas.some((consulta) => consulta.sql === 'DELETE FROM "PEDIDO"')).toBe(false);
+  });
+
   it("falla si las filas insertadas no coinciden con el manifiesto", async () => {
     const contenido = await respaldoDePrueba();
     const { base } = baseSimulada({ filasInsertadas: 0 });

@@ -48,7 +48,7 @@ test("ficha del cliente: total comprado (solo confirmados, sin cancelados) e his
   await api("POST", `/api/pedidos/${confirmado.idPedido}/confirmar`);
   const cancelado = await nuevoPedido(1);
   await api("POST", `/api/pedidos/${cancelado.idPedido}/confirmar`);
-  await api("PATCH", `/api/pedidos/${cancelado.idPedido}/estado`, { estadoPedido: "CANCELADO" });
+  await api("PATCH", `/api/pedidos/${cancelado.idPedido}/estado`, { estadoPedido: "CANCELADO", devolverStock: false });
   const pendiente = await nuevoPedido(3);
 
   await page.goto("/clientes");

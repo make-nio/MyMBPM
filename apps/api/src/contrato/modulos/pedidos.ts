@@ -177,7 +177,7 @@ export const endpoints = [
     metodo: "patch",
     ruta: "/api/pedidos/{id}/estado",
     acceso: "autenticado",
-    resumen: "Cambia estado, cobro, observaciones internas o fecha de entrega (para confirmar se usa /confirmar)",
+    resumen: "Cambia estado, cobro, observaciones internas o fecha de entrega (para confirmar se usa /confirmar); al cancelar un pedido que desconto stock lo devuelve o no segun la configuracion (devolverStock)",
     etiqueta,
     params,
     body: actualizarEstadoPedidoSchema,

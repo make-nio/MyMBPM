@@ -5,6 +5,7 @@ import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { LIMITES } from "../../compartido/validaciones/esquemas-comunes";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 import { prisma } from "../../lib/prisma";
+import { configuracionService } from "../configuracion/configuracion.service";
 import { ordenarPorItem, stockService } from "../stock/stock.service";
 
 import { produccionRepository } from "./produccion.repository";
@@ -134,8 +135,10 @@ export const produccionService = {
 
   async actualizarEstado(
     idOrdenProduccion: bigint,
-    data: { estadoProduccion: EstadoProduccion; observaciones?: string }
+    cambios: { estadoProduccion: EstadoProduccion; observaciones?: string; devolverStock?: boolean },
+    idUsuario?: bigint
   ) {
+    const { devolverStock, ...data } = cambios;
     const orden = await this.obtenerPorId(idOrdenProduccion);
 
     if (data.estadoProduccion === "EN_PROCESO" || data.estadoProduccion === "FINALIZADA") {
@@ -152,6 +155,27 @@ export const produccionService = {
       throw new ErrorConflicto(
         `No se puede pasar una orden de ${orden.estadoProduccion} a ${data.estadoProduccion}`
       );
+    }
+
+    // Cancelar una orden en proceso: sus insumos ya se consumieron al iniciarla. Se devuelven o no
+    // segun la configuracion (o lo que elija quien cancela), en la misma transaccion. Los consumos
+    // (ORDEN_PRODUCCION_CONSUMO) quedan como historia de lo que se uso al iniciar.
+    if (data.estadoProduccion === "CANCELADA" && orden.estadoProduccion === "EN_PROCESO") {
+      const devolver = await configuracionService.decidirDevolucion("cancelarOrden", devolverStock);
+
+      return prisma.$transaction(async (tx) => {
+        if (devolver) {
+          await stockService.revertirMovimientos(tx, {
+            origenMovimiento: "PRODUCCION",
+            idReferenciaOrigen: orden.idOrdenProduccion,
+            tipoMovimiento: "EGRESO_PRODUCCION",
+            idUsuario,
+            observaciones: `Cancelacion de la orden de produccion ${orden.idOrdenProduccion.toString()}`
+          });
+        }
+
+        return produccionRepository.actualizar(tx, orden.idOrdenProduccion, data);
+      });
     }
 
     return produccionRepository.actualizar(prisma, orden.idOrdenProduccion, data);

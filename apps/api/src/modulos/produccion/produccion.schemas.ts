@@ -36,7 +36,14 @@ export const actualizarDetalleProduccionSchema = z
   })
   .refine((data) => Object.keys(data).length > 0, "Debe enviar al menos un campo para actualizar");
 
-export const actualizarEstadoProduccionSchema = z.object({
-  estadoProduccion: z.enum(ESTADOS_PRODUCCION),
-  observaciones: z.string().max(2000).optional()
-});
+export const actualizarEstadoProduccionSchema = z
+  .object({
+    estadoProduccion: z.enum(ESTADOS_PRODUCCION),
+    observaciones: z.string().max(2000).optional(),
+    // Al cancelar una orden en proceso, si se devuelven los insumos (ver configuracion.service).
+    devolverStock: z.boolean().optional()
+  })
+  .refine((data) => data.devolverStock === undefined || data.estadoProduccion === "CANCELADA", {
+    message: "devolverStock solo se envia al cancelar",
+    path: ["devolverStock"]
+  });

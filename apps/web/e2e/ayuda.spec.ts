@@ -14,9 +14,9 @@ test("la ayuda se abre desde el menu y explica los pasos y los estados", async (
 
   const estados = page.getByRole("region", { name: "Que significa cada estado" });
   await expect(estados.getByRole("definition").filter({ hasText: "Ya se desconto el stock" })).toBeVisible();
-  // Los avisos importantes: cancelar no devuelve el stock.
-  await expect(page.getByRole("region", { name: "Confirmar un pedido" })).toContainText("no devuelve el stock");
-  await expect(page.getByRole("region", { name: "Producir" })).toContainText("no vuelven al stock");
+  // Los avisos importantes: al cancelar se pregunta (o decide la Configuracion) si vuelve el stock.
+  await expect(page.getByRole("region", { name: "Confirmar un pedido" })).toContainText("te pregunta si los productos vuelven al stock");
+  await expect(page.getByRole("region", { name: "Producir" })).toContainText("te pregunta si los insumos vuelven al stock");
 });
 
 test("la guia del administrador: la ve un administrador y no un operador", async ({ page, browser }) => {

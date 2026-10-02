@@ -28,7 +28,7 @@ const guias: Paso[] = [
       "Toca \"Confirmar pedido\" y despues \"Confirmar y descontar stock\". Ahi se descuentan los productos.",
       "Despues vas cambiando el estado (En preparacion, Listo, Entregado) y el cobro con \"Guardar estado\"."
     ],
-    ojo: "Cancelar un pedido ya confirmado no devuelve el stock. Si los productos vuelven a estar disponibles, sumalos desde Stock con \"Ajustar\"."
+    ojo: "Al cancelar un pedido ya confirmado, el sistema te pregunta si los productos vuelven al stock (o lo hace solo, segun la Configuracion). Si vuelven, lo ves en sus movimientos como \"Reverso\"."
   },
   {
     titulo: "Darle un comprobante al cliente",
@@ -50,7 +50,7 @@ const guias: Paso[] = [
       "Con \"Tablero\" (arriba, al lado de \"Lista\") ves las ordenes en columnas por estado. Los botones de cada tarjeta abren el detalle con la misma confirmacion, que muestra el impacto en stock.",
       "Atajo: en Stock, un producto bajo minimo tiene \"Crear orden de produccion\". Abre la orden nueva con ese producto y lo que falta para llegar al minimo; revisa la cantidad y toca \"Crear orden\" (hasta ahi no se crea nada)."
     ],
-    ojo: "Si cancelas una orden que ya estaba en proceso, los insumos que se usaron no vuelven al stock."
+    ojo: "Si cancelas una orden que ya estaba en proceso, el sistema te pregunta si los insumos vuelven al stock (o lo hace solo, segun la Configuracion)."
   },
   {
     titulo: "Ajustar el stock",
@@ -67,6 +67,15 @@ const guias: Paso[] = [
       "La sesion dura hasta 8 horas: despues el sistema pide ingresar de nuevo.",
       "Si alguien perdio el celular o su clave la conoce otra persona, en Usuarios toca \"Cerrar sesiones\" en su fila: va a tener que ingresar de nuevo en todos sus dispositivos.",
       "\"Restablecer clave\" tambien cierra todas sus sesiones: vuelve a entrar ya con la clave nueva."
+    ]
+  },
+  {
+    titulo: "Que pasa con el stock al cancelar (administradores)",
+    pasos: [
+      "En Configuracion elegis, para cancelar un pedido confirmado y para cancelar una orden en proceso, que hace el sistema con lo que ya se desconto del stock.",
+      "\"Preguntar en el momento\": al cancelar aparece la pregunta \"¿Devolver al stock...?\" y elegis ahi.",
+      "\"Devolver al stock, sin preguntar\" o \"No devolver, sin preguntar\": no pregunta y hace siempre eso.",
+      "Lo devuelto queda en los movimientos de Stock como \"Reverso\", con tu usuario y la fecha."
     ]
   },
   {
@@ -143,7 +152,7 @@ const estados: Array<{ grupo: string; items: Array<[string, string]> }> = [
       ["En preparacion", "Lo estas armando o terminando."],
       ["Listo", "Listo para entregar."],
       ["Entregado", "Ya lo tiene el cliente. Es el final."],
-      ["Cancelado", "No va. Si estaba confirmado, el stock no vuelve solo."]
+      ["Cancelado", "No va. Si estaba confirmado, el stock vuelve o no segun lo que elijas (o la Configuracion)."]
     ]
   },
   {
@@ -160,7 +169,7 @@ const estados: Array<{ grupo: string; items: Array<[string, string]> }> = [
       ["Pendiente", "Armando que fabricar. No toco el stock."],
       ["En proceso", "Iniciada: ya se descontaron los insumos."],
       ["Finalizada", "Terminada: los productos se sumaron al stock."],
-      ["Cancelada", "No se hace. Si estaba en proceso, los insumos no vuelven."]
+      ["Cancelada", "No se hace. Si estaba en proceso, los insumos vuelven o no segun lo que elijas (o la Configuracion)."]
     ]
   },
   {

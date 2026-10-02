@@ -64,7 +64,7 @@ test("un pedido con la fecha vencida se marca atrasado y, entregado o cancelado,
   const panel = await abrirPedido(page, pedido.idPedido, pedido.numeroPedido);
   await expect(panel.getByTestId("pedido-atrasado")).toBeVisible();
 
-  await api("PATCH", `/api/pedidos/${pedido.idPedido}/estado`, { estadoPedido: "CANCELADO" });
+  await api("PATCH", `/api/pedidos/${pedido.idPedido}/estado`, { estadoPedido: "CANCELADO", devolverStock: false });
   await page.reload();
   await expect(panel.getByTestId("estado-pedido")).toHaveText("Cancelado");
   await expect(panel.getByTestId("pedido-atrasado")).toHaveCount(0);
@@ -99,7 +99,7 @@ test("el panel muestra las entregas atrasadas y las de esta semana", async ({ pa
   } finally {
     // Cancelados dejan de contar: no se acumulan en el panel de otras corridas.
     for (const pedido of pedidos) {
-      await api("PATCH", `/api/pedidos/${pedido.idPedido}/estado`, { estadoPedido: "CANCELADO" });
+      await api("PATCH", `/api/pedidos/${pedido.idPedido}/estado`, { estadoPedido: "CANCELADO", devolverStock: false });
     }
   }
 });

@@ -43,6 +43,7 @@ Cada modulo vive en `src/modulos/<modulo>/` con cinco archivos: `routes` → `co
 | `solicitudes-especiales` | `solicitudes-especiales` | Pedidos a medida; se convierten en pedido |
 | `panel` | `panel/resumen`, `panel/avisos` | Dashboard y avisos del encabezado. Solo lectura |
 | `busqueda` | `busqueda?q=` | Busqueda global de pedidos, clientes e items (desde 2 caracteres) |
+| `configuracion` | `configuracion` | Que hacer con el stock al cancelar (abajo). La lee cualquiera con sesion; la cambian administradores |
 | `reportes` | `reportes/ventas-mes`, `reportes/ventas-por-mes` | Ventas del mes y de 12 meses. Administradores |
 | `auditoria` | `auditoria`, `auditoria/precios` | Historial de cambios y de precio y costo. Administradores |
 
@@ -101,6 +102,27 @@ Los topes de entrada estan en `LIMITES` (`compartido/validaciones/esquemas-comun
 de cada modulo los usan; el contrato toma esos mismos schemas, asi que no pueden separarse. Un valor
 de mas da 400 (o 409 si es la linea 101 de un pedido u orden). El detalle de ambos, en
 [contrato-api.md](contrato-api.md).
+
+## Cancelar y devolver el stock
+
+Confirmar un pedido descuenta sus productos (`EGRESO_PEDIDO`) e iniciar una orden consume sus
+insumos (`EGRESO_PRODUCCION`). Al cancelar un pedido CONFIRMADO, EN_PREPARACION o LISTO, o una orden
+EN_PROCESO, lo descontado se devuelve o no segun `CONFIGURACION` (una sola fila, `configuracion.service`):
+
+- Por accion (cancelar pedido, cancelar orden) hay una de tres opciones (`OPCIONES_DEVOLUCION_STOCK`):
+  - `DEVOLVER` o `NO_DEVOLVER`: se aplica sin preguntar; lo que mande quien cancela no cuenta.
+  - `PREGUNTAR`: el cambio de estado tiene que traer `devolverStock` (si no, 400). La web lo pregunta
+    con "devolver" marcado.
+- La devolucion la hace `stockService.revertirMovimientos`: un `REVERSO` (ingreso) por cada egreso
+  que la operacion registro de verdad en `ESTADO_STOCK`, no recalculado de las lineas actuales. Corre
+  en la misma transaccion que el cambio de estado, en orden de item, y es idempotente (la clave del
+  reverso es la del egreso con otro tipo).
+- La configuracion se lee **antes** de la transaccion: sin la tabla (deploy preview sin migrar) la
+  consulta abortaria la transaccion en Postgres. Sin tabla o sin fila se comporta como antes de que
+  existiera: `NO_DEVOLVER`.
+- Los consumos de la orden (`ORDEN_PRODUCCION_CONSUMO`) quedan como historia aunque se devuelvan.
+- `CONFIGURACION` entra en el respaldo. La migracion crea su fila, asi que al restaurar esa tabla se
+  reemplaza en vez de exigir que este vacia (`TABLAS_CON_FILAS_INICIALES`).
 
 ## Historial de cambios (auditoria)
 

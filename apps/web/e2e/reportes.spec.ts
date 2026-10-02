@@ -23,7 +23,7 @@ test("ventas del mes por item y por cliente, con su CSV", async ({ page }) => {
   await venderHoy(cliente.idCliente, producto.idItemCatalogo, 1);
   // Un pedido cancelado no cuenta como vendido.
   const cancelado = await venderHoy(cliente.idCliente, producto.idItemCatalogo, 5);
-  await api("PATCH", `/api/pedidos/${cancelado.idPedido}/estado`, { estadoPedido: "CANCELADO" });
+  await api("PATCH", `/api/pedidos/${cancelado.idPedido}/estado`, { estadoPedido: "CANCELADO", devolverStock: false });
 
   await page.goto("/reportes");
   const porItem = page.getByRole("region", { name: "Por item" });
