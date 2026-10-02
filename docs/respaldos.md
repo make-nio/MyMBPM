@@ -63,8 +63,15 @@ npm run respaldo:respaldar --workspace @myfirstproject/api -- --base "<url>" --a
 
 ## Restaurar en una base local
 
-El script **sólo acepta una base local** (`localhost` / `127.0.0.1`) y **vacía**. La base tiene que
-estar migrada **hasta la misma migración del respaldo** (la dice el manifiesto). Si no, no restaura.
+El script **sólo acepta una base local** (`localhost`, `127.0.0.1` o `[::1]`) y **vacía**. La base
+tiene que estar migrada **hasta la misma migración del respaldo** (la dice el manifiesto). Si no, no
+restaura.
+
+Si Postgres corre en un contenedor de Docker, el host tiene que seguir siendo `localhost`: publicá
+el puerto (`-p 5432:5432`) o corré el script en la red del contenedor
+(`docker run --network container:<postgres> ...`). Una URL con el nombre del contenedor
+(`postgresql://...@mbpm-pg:5432/...`) se rechaza a propósito, para no apuntar por error a una base
+que no es descartable.
 
 La migración del manifiesto es la **última por nombre** entre las aplicadas, no la última que se
 aplicó. No siempre coinciden: una migración con fecha anterior puede aplicarse después (pasó con
@@ -82,9 +89,11 @@ NETLIFY_DATABASE_URL_UNPOOLED=postgresql://postgres:postgres@localhost:5432/mymb
 
 # 2. Restaurar (todo en una transaccion: si falla, la base queda vacia).
 #    --habilitar le pone la clave de CLAVE_NUEVA a ese usuario, para poder entrar con la copia.
+#    Va el nombre de usuario real del respaldo (en produccion no es "admin"): si no existe, la
+#    restauracion queda hecha igual y el script dice como consultarlo.
 CLAVE_NUEVA='una-clave-local' npm run respaldo:restaurar --workspace @myfirstproject/api -- \
   --base postgresql://postgres:postgres@localhost:5432/mymbpm_restaurada \
-  --archivo respaldo.ndjson.gz --habilitar admin
+  --archivo respaldo.ndjson.gz --habilitar <usuario>
 ```
 
 La restauración inserta las tablas en orden de dependencias y compara las filas contra el
