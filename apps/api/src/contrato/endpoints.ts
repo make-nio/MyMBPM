@@ -11,6 +11,7 @@ import { endpoints as stock } from "./modulos/stock";
 import { endpoints as panel } from "./modulos/panel";
 import { endpoints as pedidos } from "./modulos/pedidos";
 import { endpoints as pagos } from "./modulos/pagos";
+import { endpoints as devoluciones } from "./modulos/devoluciones";
 import { endpoints as produccion } from "./modulos/produccion";
 import { endpoints as solicitudesEspeciales } from "./modulos/solicitudes-especiales";
 import { endpoints as auditoria } from "./modulos/auditoria";
@@ -33,6 +34,7 @@ export const endpoints = [
   ...panel,
   ...pedidos,
   ...pagos,
+  ...devoluciones,
   ...produccion,
   ...solicitudesEspeciales,
   ...auditoria,

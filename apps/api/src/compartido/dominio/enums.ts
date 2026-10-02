@@ -48,16 +48,19 @@ export const TIPOS_MOVIMIENTO = [
   "INGRESO_PRODUCCION",
   "EGRESO_PEDIDO",
   "EGRESO_PRODUCCION",
-  "REVERSO"
+  "REVERSO",
+  // Lo que vuelve de un pedido entregado (DEVOLUCION, #96).
+  "INGRESO_DEVOLUCION"
 ] as const;
 export type TipoMovimiento = (typeof TIPOS_MOVIMIENTO)[number];
 
-export const ORIGENES_MOVIMIENTO = ["MANUAL", "PEDIDO", "PRODUCCION"] as const;
+export const ORIGENES_MOVIMIENTO = ["MANUAL", "PEDIDO", "PRODUCCION", "DEVOLUCION"] as const;
 export type OrigenMovimiento = (typeof ORIGENES_MOVIMIENTO)[number];
 
-// Que hacer con el stock al cancelar un pedido que ya lo desconto o una orden en proceso
-// (CONFIGURACION), por accion: PREGUNTAR lo decide quien cancela; DEVOLVER y NO_DEVOLVER se
-// aplican sin preguntar.
+// Que hacer con el stock al cancelar un pedido que ya lo desconto o una orden en proceso, y con
+// el stock y la plata al registrar la devolucion de un pedido entregado (CONFIGURACION), por
+// accion: PREGUNTAR lo decide quien lo hace; DEVOLVER y NO_DEVOLVER se aplican sin preguntar.
+// En el reintegro, DEVOLVER es reintegrar la plata.
 export const OPCIONES_DEVOLUCION_STOCK = ["PREGUNTAR", "DEVOLVER", "NO_DEVOLVER"] as const;
 export type OpcionDevolucionStock = (typeof OPCIONES_DEVOLUCION_STOCK)[number];
 

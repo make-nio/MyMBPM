@@ -132,12 +132,16 @@ export const reportesService = {
   // confirmado en el mes (hora de Argentina), sin cancelados; costo = snapshot de cada linea.
   async ventasDelMes({ mes }: { mes?: string }, ahora = new Date()) {
     const rango = rangoMesArgentina(mes ? instanteDelMes(mes) : ahora);
-    const pedidos = await reportesRepository.listarPedidosVendidosEntre(prisma, rango.desde, rango.hasta);
+    const [pedidos, devuelto] = await Promise.all([
+      reportesRepository.listarPedidosVendidosEntre(prisma, rango.desde, rango.hasta),
+      reportesRepository.devueltoEntre(prisma, rango.desde, rango.hasta)
+    ]);
 
     return {
       desde: rango.desde,
       hasta: rango.hasta,
       totales: calcularVentas(pedidos),
+      devuelto,
       porItem: porItem(pedidos),
       porCliente: porCliente(pedidos)
     };

@@ -5,20 +5,24 @@ import { MedioPago } from "../../compartido/dominio/enums";
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 import { prisma } from "../../lib/prisma";
+import { devolucionesRepository } from "../devoluciones/devoluciones.repository";
 import { pedidosRepository } from "../pedidos/pedidos.repository";
 
 import { pagosRepository } from "./pagos.repository";
 
 type Pagos = Awaited<ReturnType<typeof pagosRepository.listarPorPedido>>;
 
+// Lo cobrado neto: pagos vigentes menos reintegros (los reintegros de una devolucion son pagos
+// con monto negativo, #96).
 function sumarVigentes(pagos: Pagos) {
   return pagos.filter((pago) => !pago.anulado).reduce((suma, pago) => suma.add(pago.monto), new Prisma.Decimal(0));
 }
 
-function resumen(total: Prisma.Decimal, estadoCobro: string, pagos: Pagos) {
+// Lo que hay que cobrar es el total menos lo devuelto (valor de las lineas que volvieron).
+function resumen(total: Prisma.Decimal, devuelto: Prisma.Decimal, estadoCobro: string, pagos: Pagos) {
   const cobrado = sumarVigentes(pagos);
 
-  return { total, cobrado, saldo: total.sub(cobrado), estadoCobro, pagos };
+  return { total, devuelto, cobrado, saldo: total.sub(devuelto).sub(cobrado), estadoCobro, pagos };
 }
 
 async function obtenerPedido(prismaOrTx: Prisma.TransactionClient | typeof prisma, idPedido: bigint) {
@@ -35,22 +39,25 @@ export const pagosService = {
   async listar(idPedido: bigint) {
     const pedido = await obtenerPedido(prisma, idPedido);
     const pagos = await pagosRepository.listarPorPedido(prisma, idPedido);
+    const devuelto = await devolucionesRepository.valorDevuelto(prisma, idPedido);
 
-    return resumen(pedido.total, pedido.estadoCobro, pagos);
+    return resumen(pedido.total, devuelto, pedido.estadoCobro, pagos);
   },
 
   // Recalcula ESTADO_COBRO con los pagos del pedido (en la transaccion de quien lo llama: un pago,
-  // una anulacion o un cambio de lineas que mueve el total). Sin pagos no toca nada.
+  // una anulacion, una devolucion o un cambio de lineas que mueve el total). Se compara lo cobrado
+  // neto contra el total menos lo devuelto. Sin pagos no toca nada.
   async recalcularEstadoCobro(tx: Prisma.TransactionClient, idPedido: bigint) {
     const pedido = await obtenerPedido(tx, idPedido);
     const pagos = await pagosRepository.listarPorPedido(tx, idPedido);
-    const estado = calcularEstadoCobro(pedido.total, sumarVigentes(pagos), pagos.length > 0);
+    const devuelto = await devolucionesRepository.valorDevuelto(tx, idPedido);
+    const estado = calcularEstadoCobro(pedido.total.sub(devuelto), sumarVigentes(pagos), pagos.length > 0);
 
     if (estado && estado !== pedido.estadoCobro) {
       await pedidosRepository.actualizar(tx, idPedido, { estadoCobro: estado });
     }
 
-    return resumen(pedido.total, estado ?? pedido.estadoCobro, pagos);
+    return resumen(pedido.total, devuelto, estado ?? pedido.estadoCobro, pagos);
   },
 
   async registrar(
@@ -67,7 +74,8 @@ export const pagosService = {
       }
 
       const monto = new Prisma.Decimal(data.monto);
-      const saldo = pedido.total.sub(sumarVigentes(await pagosRepository.listarPorPedido(tx, idPedido)));
+      const devuelto = await devolucionesRepository.valorDevuelto(tx, idPedido);
+      const saldo = pedido.total.sub(devuelto).sub(sumarVigentes(await pagosRepository.listarPorPedido(tx, idPedido)));
 
       if (monto.greaterThan(saldo)) {
         throw new ErrorConflicto(`El pago supera el saldo del pedido (${saldo.toFixed(2)})`, {
@@ -102,6 +110,11 @@ export const pagosService = {
 
       if (pago.anulado) {
         throw new ErrorConflicto("El pago ya esta anulado");
+      }
+
+      // Un reintegro (monto negativo) es parte de una devolucion, que no se deshace.
+      if (pago.monto.isNegative()) {
+        throw new ErrorConflicto("Un reintegro no se anula: es parte de una devolucion del pedido");
       }
 
       await pagosRepository.anular(tx, idPago, { motivo, idUsuario, fecha: ahora });

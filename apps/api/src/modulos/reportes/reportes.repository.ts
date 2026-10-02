@@ -42,6 +42,17 @@ export const reportesRepository = {
     });
   },
 
+  // Valor de lo devuelto en el rango (segun la fecha de la devolucion) y cuantas devoluciones.
+  async devueltoEntre(prismaOrTx: PrismaOrTx, desde: Date, hasta: Date) {
+    const rango = { fecha: { gte: desde, lt: hasta } };
+    const [suma, devoluciones] = await Promise.all([
+      prismaOrTx.devolucionDetalle.aggregate({ where: { devolucion: rango }, _sum: { subtotal: true } }),
+      prismaOrTx.devolucion.count({ where: rango })
+    ]);
+
+    return { valor: suma._sum.subtotal ?? new Prisma.Decimal(0), devoluciones };
+  },
+
   // Lo cobrado en el rango por medio de pago: pagos vigentes (sin anulados) segun su fecha.
   cobradoPorMedioEntre(prismaOrTx: PrismaOrTx, desde: Date, hasta: Date) {
     return prismaOrTx.pago.groupBy({

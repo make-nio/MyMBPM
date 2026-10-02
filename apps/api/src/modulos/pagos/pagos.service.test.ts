@@ -5,6 +5,7 @@ import { calcularEstadoCobro } from "../../compartido/dominio/cobro";
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 import { prisma } from "../../lib/prisma";
+import { devolucionesRepository } from "../devoluciones/devoluciones.repository";
 import { pedidosRepository } from "../pedidos/pedidos.repository";
 
 import { pagosRepository } from "./pagos.repository";
@@ -25,6 +26,12 @@ vi.mock("../pedidos/pedidos.repository", () => ({
   }
 }));
 
+vi.mock("../devoluciones/devoluciones.repository", () => ({
+  devolucionesRepository: {
+    valorDevuelto: vi.fn()
+  }
+}));
+
 vi.mock("./pagos.repository", () => ({
   pagosRepository: {
     listarPorPedido: vi.fn(),
@@ -36,6 +43,7 @@ vi.mock("./pagos.repository", () => ({
 }));
 
 const pedidos = vi.mocked(pedidosRepository);
+const devoluciones = vi.mocked(devolucionesRepository);
 const repo = vi.mocked(pagosRepository);
 const dec = (valor: number | string) => new Prisma.Decimal(valor);
 
@@ -53,6 +61,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(prisma.$transaction).mockImplementation((async (callback: (client: unknown) => unknown) =>
     callback(tx)) as never);
+  devoluciones.valorDevuelto.mockResolvedValue(dec(0));
 });
 
 describe("calcularEstadoCobro", () => {
@@ -112,6 +121,40 @@ describe("pagosService.registrar", () => {
 
     await expect(pagosService.registrar(1n, { fecha: hoy, monto: 1, medioPago: "EFECTIVO" })).rejects.toBeInstanceOf(ErrorConflicto);
     expect(repo.crear).not.toHaveBeenCalled();
+  });
+});
+
+describe("pagosService con devoluciones (#96)", () => {
+  it("lo devuelto baja lo que hay que cobrar: el saldo es total - devuelto - cobrado", async () => {
+    pedidos.obtenerPorId.mockResolvedValue(pedido({ estadoCobro: "PAGADO" }));
+    devoluciones.valorDevuelto.mockResolvedValue(dec(400));
+    repo.listarPorPedido.mockResolvedValue([pago(1000), pago(-400, { idPago: 10n })]);
+
+    const resultado = await pagosService.recalcularEstadoCobro(tx as never, 1n);
+
+    expect(resultado.devuelto.toString()).toBe("400");
+    expect(resultado.cobrado.toString()).toBe("600");
+    expect(resultado.saldo.toString()).toBe("0");
+    expect(pedidos.actualizar).not.toHaveBeenCalled();
+  });
+
+  it("no deja cobrar mas que el saldo con lo devuelto descontado (409)", async () => {
+    pedidos.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: "ENTREGADO" }));
+    devoluciones.valorDevuelto.mockResolvedValue(dec(500));
+    repo.listarPorPedido.mockResolvedValue([pago(400)]);
+
+    await expect(pagosService.registrar(1n, { fecha: hoy, monto: 200, medioPago: "EFECTIVO" })).rejects.toBeInstanceOf(
+      ErrorConflicto
+    );
+    expect(repo.crear).not.toHaveBeenCalled();
+  });
+
+  it("un reintegro (pago negativo) no se anula (409)", async () => {
+    pedidos.obtenerPorId.mockResolvedValue(pedido());
+    repo.obtenerPorId.mockResolvedValue(pago(-300));
+
+    await expect(pagosService.anular(1n, 9n, "x")).rejects.toThrow(/reintegro no se anula/);
+    expect(repo.anular).not.toHaveBeenCalled();
   });
 });
 

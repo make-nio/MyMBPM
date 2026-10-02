@@ -538,7 +538,8 @@
               "INGRESO_PRODUCCION",
               "EGRESO_PEDIDO",
               "EGRESO_PRODUCCION",
-              "REVERSO"
+              "REVERSO",
+              "INGRESO_DEVOLUCION"
             ]
           },
           "cantidadMovimiento": {
@@ -550,7 +551,8 @@
             "enum": [
               "MANUAL",
               "PEDIDO",
-              "PRODUCCION"
+              "PRODUCCION",
+              "DEVOLUCION"
             ]
           },
           "idReferenciaOrigen": {
@@ -981,7 +983,8 @@
               "INGRESO_PRODUCCION",
               "EGRESO_PEDIDO",
               "EGRESO_PRODUCCION",
-              "REVERSO"
+              "REVERSO",
+              "INGRESO_DEVOLUCION"
             ]
           },
           "cantidadMovimiento": {
@@ -993,7 +996,8 @@
             "enum": [
               "MANUAL",
               "PEDIDO",
-              "PRODUCCION"
+              "PRODUCCION",
+              "DEVOLUCION"
             ]
           },
           "idReferenciaOrigen": {
@@ -2109,6 +2113,10 @@
             "type": "string",
             "pattern": "^-?\\d+(\\.\\d+)?$"
           },
+          "devuelto": {
+            "type": "string",
+            "pattern": "^-?\\d+(\\.\\d+)?$"
+          },
           "cobrado": {
             "type": "string",
             "pattern": "^-?\\d+(\\.\\d+)?$"
@@ -2134,10 +2142,194 @@
         },
         "required": [
           "total",
+          "devuelto",
           "cobrado",
           "saldo",
           "estadoCobro",
           "pagos"
+        ],
+        "additionalProperties": false
+      },
+      "Devolucion": {
+        "type": "object",
+        "properties": {
+          "idDevolucion": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "idPedido": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "motivo": {
+            "type": "string"
+          },
+          "devuelveStock": {
+            "type": "boolean"
+          },
+          "idPagoReintegro": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d+$"
+          },
+          "idUsuario": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d+$"
+          },
+          "usuario": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "idUsuario": {
+                "type": "string",
+                "pattern": "^\\d+$"
+              },
+              "nombre": {
+                "type": "string"
+              },
+              "apellido": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "idUsuario",
+              "nombre",
+              "apellido"
+            ],
+            "additionalProperties": false
+          },
+          "pagoReintegro": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "idPago": {
+                "type": "string",
+                "pattern": "^\\d+$"
+              },
+              "monto": {
+                "type": "string",
+                "pattern": "^-?\\d+(\\.\\d+)?$"
+              },
+              "medioPago": {
+                "type": "string",
+                "enum": [
+                  "EFECTIVO",
+                  "TRANSFERENCIA",
+                  "MERCADO_PAGO"
+                ]
+              }
+            },
+            "required": [
+              "idPago",
+              "monto",
+              "medioPago"
+            ],
+            "additionalProperties": false
+          },
+          "detalles": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "idDevolucionDetalle": {
+                  "type": "string",
+                  "pattern": "^\\d+$"
+                },
+                "idDevolucion": {
+                  "type": "string",
+                  "pattern": "^\\d+$"
+                },
+                "idPedidoDetalle": {
+                  "type": "string",
+                  "pattern": "^\\d+$"
+                },
+                "cantidad": {
+                  "type": "string",
+                  "pattern": "^-?\\d+(\\.\\d+)?$"
+                },
+                "precioUnitario": {
+                  "type": "string",
+                  "pattern": "^-?\\d+(\\.\\d+)?$"
+                },
+                "subtotal": {
+                  "type": "string",
+                  "pattern": "^-?\\d+(\\.\\d+)?$"
+                },
+                "pedidoDetalle": {
+                  "type": "object",
+                  "properties": {
+                    "idItemCatalogo": {
+                      "type": "string",
+                      "pattern": "^\\d+$"
+                    },
+                    "nombreItemSnapshot": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "idItemCatalogo",
+                    "nombreItemSnapshot"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "idDevolucionDetalle",
+                "idDevolucion",
+                "idPedidoDetalle",
+                "cantidad",
+                "precioUnitario",
+                "subtotal",
+                "pedidoDetalle"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "idDevolucion",
+          "idPedido",
+          "fecha",
+          "motivo",
+          "devuelveStock",
+          "idPagoReintegro",
+          "idUsuario",
+          "usuario",
+          "pagoReintegro",
+          "detalles"
+        ],
+        "additionalProperties": false
+      },
+      "DevolucionesDelPedido": {
+        "type": "object",
+        "properties": {
+          "devuelto": {
+            "type": "string",
+            "pattern": "^-?\\d+(\\.\\d+)?$"
+          },
+          "devoluciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Devolucion"
+            }
+          }
+        },
+        "required": [
+          "devuelto",
+          "devoluciones"
         ],
         "additionalProperties": false
       },
@@ -2944,6 +3136,23 @@
           "totales": {
             "$ref": "#/components/schemas/TotalesVentas"
           },
+          "devuelto": {
+            "type": "object",
+            "properties": {
+              "valor": {
+                "type": "string",
+                "pattern": "^-?\\d+(\\.\\d+)?$"
+              },
+              "devoluciones": {
+                "type": "integer"
+              }
+            },
+            "required": [
+              "valor",
+              "devoluciones"
+            ],
+            "additionalProperties": false
+          },
           "porItem": {
             "type": "array",
             "items": {
@@ -3032,6 +3241,7 @@
           "desde",
           "hasta",
           "totales",
+          "devuelto",
           "porItem",
           "porCliente"
         ],
@@ -3153,6 +3363,22 @@
               "NO_DEVOLVER"
             ]
           },
+          "devolucionStock": {
+            "type": "string",
+            "enum": [
+              "PREGUNTAR",
+              "DEVOLVER",
+              "NO_DEVOLVER"
+            ]
+          },
+          "devolucionReintegro": {
+            "type": "string",
+            "enum": [
+              "PREGUNTAR",
+              "DEVOLVER",
+              "NO_DEVOLVER"
+            ]
+          },
           "guardada": {
             "type": "boolean"
           }
@@ -3160,6 +3386,8 @@
         "required": [
           "cancelarPedido",
           "cancelarOrden",
+          "devolucionStock",
+          "devolucionReintegro",
           "guardada"
         ],
         "additionalProperties": false
@@ -7091,7 +7319,8 @@
                                 "INGRESO_PRODUCCION",
                                 "EGRESO_PEDIDO",
                                 "EGRESO_PRODUCCION",
-                                "REVERSO"
+                                "REVERSO",
+                                "INGRESO_DEVOLUCION"
                               ]
                             },
                             "cantidadMovimiento": {
@@ -7103,7 +7332,8 @@
                               "enum": [
                                 "MANUAL",
                                 "PEDIDO",
-                                "PRODUCCION"
+                                "PRODUCCION",
+                                "DEVOLUCION"
                               ]
                             },
                             "idReferenciaOrigen": {
@@ -7245,7 +7475,8 @@
               "enum": [
                 "MANUAL",
                 "PEDIDO",
-                "PRODUCCION"
+                "PRODUCCION",
+                "DEVOLUCION"
               ]
             },
             "required": false,
@@ -7564,7 +7795,8 @@
                       "INGRESO_PRODUCCION",
                       "EGRESO_PEDIDO",
                       "EGRESO_PRODUCCION",
-                      "REVERSO"
+                      "REVERSO",
+                      "INGRESO_DEVOLUCION"
                     ]
                   },
                   "cantidad": {
@@ -7645,7 +7877,8 @@
                             "INGRESO_PRODUCCION",
                             "EGRESO_PEDIDO",
                             "EGRESO_PRODUCCION",
-                            "REVERSO"
+                            "REVERSO",
+                            "INGRESO_DEVOLUCION"
                           ]
                         },
                         "cantidadMovimiento": {
@@ -7657,7 +7890,8 @@
                           "enum": [
                             "MANUAL",
                             "PEDIDO",
-                            "PRODUCCION"
+                            "PRODUCCION",
+                            "DEVOLUCION"
                           ]
                         },
                         "idReferenciaOrigen": {
@@ -9117,6 +9351,192 @@
                     },
                     "data": {
                       "$ref": "#/components/schemas/PagosDelPedido"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pedidos/{id}/devoluciones": {
+      "get": {
+        "summary": "Devoluciones de un pedido entregado, con su valor total",
+        "description": "Acceso: autenticado.",
+        "tags": [
+          "devoluciones"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DevolucionesDelPedido"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Registra la devolucion de un pedido entregado: lo devuelto vuelve al stock y se reintegra la plata segun la configuracion",
+        "description": "Acceso: autenticado.",
+        "tags": [
+          "devoluciones"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "lineas": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "idPedidoDetalle": {
+                          "type": "string",
+                          "pattern": "^\\d+$"
+                        },
+                        "cantidad": {
+                          "type": "number",
+                          "exclusiveMinimum": 0,
+                          "maximum": 100000
+                        }
+                      },
+                      "required": [
+                        "idPedidoDetalle",
+                        "cantidad"
+                      ]
+                    },
+                    "minItems": 1,
+                    "maxItems": 100
+                  },
+                  "motivo": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 500
+                  },
+                  "devolverStock": {
+                    "type": "boolean"
+                  },
+                  "reintegrar": {
+                    "type": "boolean"
+                  },
+                  "montoReintegro": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 100000000
+                  },
+                  "medioReintegro": {
+                    "type": "string",
+                    "enum": [
+                      "EFECTIVO",
+                      "TRANSFERENCIA",
+                      "MERCADO_PAGO"
+                    ]
+                  }
+                },
+                "required": [
+                  "lineas",
+                  "motivo"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Exito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/DevolucionesDelPedido"
                     }
                   },
                   "required": [
@@ -11110,7 +11530,7 @@
     },
     "/api/configuracion": {
       "get": {
-        "summary": "Que hacer con el stock al cancelar un pedido que lo desconto o una orden en proceso",
+        "summary": "Que hacer con el stock al cancelar, y con el stock y la plata al registrar una devolucion",
         "description": "Acceso: autenticado.",
         "tags": [
           "configuracion"
@@ -11185,6 +11605,22 @@
                     ]
                   },
                   "cancelarOrden": {
+                    "type": "string",
+                    "enum": [
+                      "PREGUNTAR",
+                      "DEVOLVER",
+                      "NO_DEVOLVER"
+                    ]
+                  },
+                  "devolucionStock": {
+                    "type": "string",
+                    "enum": [
+                      "PREGUNTAR",
+                      "DEVOLVER",
+                      "NO_DEVOLVER"
+                    ]
+                  },
+                  "devolucionReintegro": {
                     "type": "string",
                     "enum": [
                       "PREGUNTAR",
