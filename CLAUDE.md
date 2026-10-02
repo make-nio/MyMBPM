@@ -140,12 +140,14 @@ actualizá esos dos.
 - **Seguridad:** sesiones con tope de 12 h y "cerrar sesiones" de un usuario, límite de intentos de
   ingreso, matriz de autorización y límites de entrada, ambos declarados en el contrato de la API
   (`docs/contrato-api.md`).
-- **Abierto:** lo que falta para cerrar la primera versión está en el issue #87 (devolver stock al
-  cancelar, #89; pagos, #90; remito, #95).
+- **Abierto:** lo que falta para cerrar la primera versión está en el issue #87 (pagos, #90; remito,
+  #95; devolución de un pedido entregado, #96).
 - **Decisiones de negocio (Mariano, 28 y 29-sep):**
-  - Devolver el stock al cancelar un pedido confirmado o una orden en proceso será configurable (#89).
+  - Devolver el stock al cancelar un pedido confirmado o una orden en proceso es configurable (#89):
+    en Configuración, por acción, preguntar en el momento, devolver o no devolver.
   - Pagos entra en la v1 (#90), con efectivo, transferencia y Mercado Pago.
   - La factura electrónica queda **fuera** de la v1 (#91): el sistema emite un remito no fiscal
     (#95) y Maxi factura a mano. Maxi es monotributista.
-  - Hasta que se integren, cancelar **no** devuelve el stock (se corrige a mano con un ajuste) y no
-    hay pagos.
+  - La devolución de un pedido entregado entra en la v1 (#96), con la vuelta al stock y el
+    reintegro configurables.
+  - Hasta que se integre #90, no hay pagos.
