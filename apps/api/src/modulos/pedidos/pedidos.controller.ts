@@ -78,7 +78,8 @@ export const pedidosController = {
   async actualizarEstado(request: Request, response: Response) {
     const params = validar(pedidoParamsSchema, request.params);
     const body = validar(actualizarEstadoPedidoSchema, request.body);
-    const pedido = await pedidosService.actualizarEstado(params.id, body);
+    // Si se devuelve stock al cancelar, el movimiento queda a nombre del usuario de la sesion.
+    const pedido = await pedidosService.actualizarEstado(params.id, body, request.usuarioAutenticado?.idUsuario);
 
     responderExito(response, pedido);
   },

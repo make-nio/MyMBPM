@@ -16,8 +16,13 @@ export const TABLAS_RESPALDO = [
   "ORDEN_PRODUCCION",
   "ORDEN_PRODUCCION_DETALLE",
   "ORDEN_PRODUCCION_CONSUMO",
-  "AUDITORIA_CAMBIO"
+  "AUDITORIA_CAMBIO",
+  "CONFIGURACION"
 ] as const;
+
+// Tablas que la migracion crea con su fila inicial (la configuracion, de una sola fila): al
+// restaurar no se exige que esten vacias; su contenido se reemplaza por el del respaldo.
+export const TABLAS_CON_FILAS_INICIALES: readonly (typeof TABLAS_RESPALDO)[number][] = ["CONFIGURACION"];
 
 // Fuera del respaldo: los intentos de ingreso y los cortes de sesion son de vida corta (una
 // base restaurada arranca sin sesiones: las claves tampoco viajan) y la tabla de Prisma se recrea

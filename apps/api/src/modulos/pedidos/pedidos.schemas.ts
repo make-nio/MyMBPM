@@ -74,6 +74,12 @@ export const actualizarEstadoPedidoSchema = z
   .object({
     estadoPedido: z.enum(ESTADOS_PEDIDO).optional(),
     observacionesInternas: z.string().max(2000).optional(),
-    fechaEntrega: fechaEntregaSchema.optional()
+    fechaEntrega: fechaEntregaSchema.optional(),
+    // Al cancelar un pedido que ya desconto stock, si se devuelve (ver configuracion.service).
+    devolverStock: z.boolean().optional()
   })
-  .refine((data) => Object.keys(data).length > 0, "Debe enviar al menos un campo para actualizar");
+  .refine((data) => Object.keys(data).length > 0, "Debe enviar al menos un campo para actualizar")
+  .refine((data) => data.devolverStock === undefined || data.estadoPedido === "CANCELADO", {
+    message: "devolverStock solo se envia al cancelar",
+    path: ["devolverStock"]
+  });

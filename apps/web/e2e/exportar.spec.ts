@@ -54,7 +54,7 @@ test("pedidos: filtra por fecha de alta y exporta lo filtrado, no solo lo que se
   await expect(page.getByRole("row").filter({ hasText: pedido.numeroPedido })).toBeVisible();
 
   // Cancelado deja de contar en las entregas del panel (entregas.spec.ts).
-  await api("PATCH", `/api/pedidos/${pedido.idPedido}/estado`, { estadoPedido: "CANCELADO" });
+  await api("PATCH", `/api/pedidos/${pedido.idPedido}/estado`, { estadoPedido: "CANCELADO", devolverStock: false });
 });
 
 test("stock: exporta las existencias con los filtros aplicados", async ({ page }) => {

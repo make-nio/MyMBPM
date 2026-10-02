@@ -16,6 +16,7 @@ const pantallas = [
   "/produccion",
   "/stock",
   "/reportes",
+  "/configuracion",
   "/ayuda"
 ];
 

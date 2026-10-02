@@ -41,7 +41,9 @@ Un archivo de texto comprimido con gzip, con una línea JSON por parte:
 - El repositorio es público: **nunca** se commitea un respaldo (`*.ndjson.gz` está en `.gitignore`).
 
 Tamaño de referencia: la base local de los E2E (unas 18.000 filas) da **401 KB** comprimido
-(7,1 MB sin comprimir). El tamaño real de producción queda en el log de la primera corrida.
+(7,1 MB sin comprimir). Producción, a fines de septiembre de 2026 (1 usuario y ninguna otra fila),
+da **556 B** comprimido (1.632 B sin comprimir); cada corrida lo deja en el log y en la metadata del
+blob.
 
 ## Descargar un respaldo
 
@@ -63,6 +65,13 @@ npm run respaldo:respaldar --workspace @myfirstproject/api -- --base "<url>" --a
 
 El script **sólo acepta una base local** (`localhost` / `127.0.0.1`) y **vacía**. La base tiene que
 estar migrada **hasta la misma migración del respaldo** (la dice el manifiesto). Si no, no restaura.
+
+La migración del manifiesto es la **última por nombre** entre las aplicadas, no la última que se
+aplicó. No siempre coinciden: una migración con fecha anterior puede aplicarse después (pasó con
+`20260924104242_sesiones_usuario`, aplicada después de `20260924140637_indices_…`), y `/api/health`
+informa la última **aplicada**. Para restaurar, migrá la base hasta la del manifiesto. Lo más simple es
+hacer checkout del commit que la trae y correr `prisma migrate deploy`, que aplica todas las anteriores
+sin importar el orden en que llegaron.
 
 ```bash
 # 1. Base vacia, migrada hasta la version del respaldo (hacer checkout del commit que la trae si hace falta).

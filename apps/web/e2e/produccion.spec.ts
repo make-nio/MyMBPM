@@ -91,7 +91,7 @@ test("no deja iniciar si faltan insumos o un producto no tiene receta", async ({
   await expect(panel.getByRole("button", { name: "Iniciar produccion" })).toBeEnabled();
 });
 
-test("cancelar una orden en proceso avisa que los insumos no vuelven", async ({ page }) => {
+test("cancelar una orden en proceso pregunta si los insumos vuelven y los devuelve", async ({ page }) => {
   const { producto } = await crearProductoConReceta({
     producto: unico("PRUEBA-Llavero"),
     insumo: unico("PRUEBA-Resina"),
@@ -105,12 +105,18 @@ test("cancelar una orden en proceso avisa que los insumos no vuelven", async ({ 
   await page.getByRole("dialog", { name: "Iniciar produccion" }).getByRole("button", { name: "Iniciar y descontar insumos" }).click();
   await expect(panel.getByTestId("estado-orden")).toHaveText("En proceso");
 
+  // Cancelar una orden en proceso pregunta si se devuelven los insumos (configuracion inicial:
+  // preguntar, con "devolver" marcado). Devolviendo, el insumo vuelve con un REVERSO.
+  await api("PATCH", "/api/configuracion", { cancelarOrden: "PREGUNTAR" });
   await panel.getByRole("button", { name: "Cancelar orden" }).click();
   const modal = page.getByRole("dialog", { name: "Cancelar orden" });
-  await expect(modal).toContainText("NO vuelven al stock");
+  const devolver = modal.getByRole("group", { name: "¿Devolver al stock los insumos que se descontaron?" });
+  await expect(devolver.getByLabel("Si, devolverlos")).toBeChecked();
   await modal.getByRole("button", { name: "Cancelar orden" }).click();
 
   await expect(panel.getByTestId("estado-orden")).toHaveText("Cancelada");
+  const movimientos = panel.getByRole("region", { name: "Movimientos de stock de la orden" });
+  await expect(movimientos.getByRole("row").filter({ hasText: "Reverso" })).toContainText(/4\s*\+1\s*5/);
   await expect(panel.getByRole("button", { name: "Finalizar produccion" })).toHaveCount(0);
 });
 

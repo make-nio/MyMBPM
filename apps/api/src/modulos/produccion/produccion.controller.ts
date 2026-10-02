@@ -62,7 +62,8 @@ export const produccionController = {
   async actualizarEstado(request: Request, response: Response) {
     const params = validar(ordenProduccionParamsSchema, request.params);
     const body = validar(actualizarEstadoProduccionSchema, request.body);
-    const orden = await produccionService.actualizarEstado(params.id, body);
+    // Si se devuelven insumos al cancelar, el movimiento queda a nombre del usuario de la sesion.
+    const orden = await produccionService.actualizarEstado(params.id, body, request.usuarioAutenticado?.idUsuario);
 
     responderExito(response, orden);
   },

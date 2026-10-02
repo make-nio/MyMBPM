@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 import { prisma } from "../../lib/prisma";
+import { configuracionService } from "../configuracion/configuracion.service";
 import { stockService } from "../stock/stock.service";
 
 import { produccionRepository } from "./produccion.repository";
@@ -21,7 +22,14 @@ vi.mock("../stock/stock.service", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../stock/stock.service")>()),
   stockService: {
     registrarEgreso: vi.fn(),
-    registrarIngreso: vi.fn()
+    registrarIngreso: vi.fn(),
+    revertirMovimientos: vi.fn()
+  }
+}));
+
+vi.mock("../configuracion/configuracion.service", () => ({
+  configuracionService: {
+    decidirDevolucion: vi.fn()
   }
 }));
 
@@ -123,12 +131,34 @@ describe("produccionService.actualizarEstado (transiciones)", () => {
     expect(repo.actualizar).not.toHaveBeenCalled();
   });
 
-  it.each(["PENDIENTE", "EN_PROCESO"] as const)("permite cancelar una orden %s", async (actual) => {
-    repo.obtenerPorId.mockResolvedValue(orden({ estadoProduccion: actual }));
+  it("permite cancelar una orden PENDIENTE sin consultar la configuracion (no consumio nada)", async () => {
+    repo.obtenerPorId.mockResolvedValue(orden({ estadoProduccion: "PENDIENTE" }));
 
     await produccionService.actualizarEstado(1n, { estadoProduccion: "CANCELADA" });
 
+    expect(vi.mocked(configuracionService).decidirDevolucion).not.toHaveBeenCalled();
     expect(repo.actualizar).toHaveBeenCalledWith(prisma, 1n, { estadoProduccion: "CANCELADA" });
+  });
+
+  it.each([true, false])("cancelar una orden EN_PROCESO devuelve los insumos solo si se decide (%s)", async (devolver) => {
+    repo.obtenerPorId.mockResolvedValue(orden({ estadoProduccion: "EN_PROCESO" }));
+    vi.mocked(configuracionService).decidirDevolucion.mockResolvedValue(devolver);
+
+    await produccionService.actualizarEstado(1n, { estadoProduccion: "CANCELADA", devolverStock: devolver }, 7n);
+
+    expect(vi.mocked(configuracionService).decidirDevolucion).toHaveBeenCalledWith("cancelarOrden", devolver);
+    if (devolver) {
+      expect(stock.revertirMovimientos).toHaveBeenCalledWith(tx, {
+        origenMovimiento: "PRODUCCION",
+        idReferenciaOrigen: 1n,
+        tipoMovimiento: "EGRESO_PRODUCCION",
+        idUsuario: 7n,
+        observaciones: "Cancelacion de la orden de produccion 1"
+      });
+    } else {
+      expect(stock.revertirMovimientos).not.toHaveBeenCalled();
+    }
+    expect(repo.actualizar).toHaveBeenCalledWith(tx, 1n, { estadoProduccion: "CANCELADA" });
   });
 
   it("permite actualizar observaciones sin cambiar el estado", async () => {

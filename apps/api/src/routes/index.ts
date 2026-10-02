@@ -11,6 +11,7 @@ import { autenticacionRouter } from "../modulos/autenticacion/autenticacion.rout
 import { busquedaRouter } from "../modulos/busqueda/busqueda.routes";
 import { categoriasRouter } from "../modulos/categorias/categorias.routes";
 import { clientesRouter } from "../modulos/clientes/clientes.routes";
+import { configuracionRouter } from "../modulos/configuracion/configuracion.routes";
 import { importacionCatalogoRouter } from "../modulos/importacion-catalogo/importacion-catalogo.routes";
 import { importacionClientesRouter } from "../modulos/importacion-clientes/importacion-clientes.routes";
 import { itemsCatalogoRouter } from "../modulos/items-catalogo/items-catalogo.routes";
@@ -47,5 +48,6 @@ rutasPrivadasRouter.use("/solicitudes-especiales", solicitudesEspecialesRouter);
 rutasPrivadasRouter.use("/auditoria", auditoriaRouter);
 rutasPrivadasRouter.use("/reportes", reportesRouter);
 rutasPrivadasRouter.use("/busqueda", busquedaRouter);
+rutasPrivadasRouter.use("/configuracion", configuracionRouter);
 
 apiRouter.use(rutasPrivadasRouter);

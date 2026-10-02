@@ -42,6 +42,18 @@ model SesionUsuario {
   @@map("USUARIO_SESION")
 }
 
+// Configuracion del negocio: una sola fila (ID_CONFIGURACION = 1). Que hacer con el stock al
+// cancelar un pedido que ya lo desconto o una orden en proceso (ver configuracion.service).
+model Configuracion {
+  idConfiguracion   Int      @id @default(1) @map("ID_CONFIGURACION")
+  // PREGUNTAR, DEVOLVER o NO_DEVOLVER (OPCIONES_DEVOLUCION_STOCK).
+  cancelarPedido    String   @default("PREGUNTAR") @map("CANCELAR_PEDIDO") @db.VarChar(20)
+  cancelarOrden     String   @default("PREGUNTAR") @map("CANCELAR_ORDEN") @db.VarChar(20)
+  fechaModificacion DateTime @default(now()) @updatedAt @map("FECHA_MODIFICACION") @db.Timestamptz(3)
+
+  @@map("CONFIGURACION")
+}
+
 // Ingresos fallidos, para limitar intentos por cuenta y por IP (ver autenticacion.service).
 // CLAVE es "usuario:<id>", "identificador:<texto>" (si no existe la cuenta) o "ip:<ip>".
 model IntentoLogin {

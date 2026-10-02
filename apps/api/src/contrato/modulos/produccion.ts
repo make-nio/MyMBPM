@@ -163,7 +163,7 @@ export const endpoints = [
     metodo: "patch",
     ruta: "/api/produccion/{id}/estado",
     acceso: "autenticado",
-    resumen: "Cancela una orden pendiente o en proceso (no devuelve el stock consumido)",
+    resumen: "Cancela una orden pendiente o en proceso; al cancelar una en proceso devuelve o no los insumos segun la configuracion (devolverStock)",
     etiqueta,
     params,
     body: actualizarEstadoProduccionSchema,
