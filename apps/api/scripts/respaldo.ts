@@ -70,7 +70,15 @@ async function restaurar(url: string, archivo: string, habilitar?: string) {
         await bcrypt.hash(clave, 10),
         habilitar
       );
-      console.log(cambiados === 1 ? `El usuario ${habilitar} ya puede ingresar.` : `No existe el usuario ${habilitar}.`);
+      // La restauracion ya quedo hecha: si el usuario no existe solo se avisa como encontrarlo, sin
+      // imprimir datos del respaldo.
+      console.log(
+        cambiados === 1
+          ? `El usuario ${habilitar} ya puede ingresar.`
+          : `No existe el usuario ${habilitar}: la restauracion quedo hecha y los usuarios siguen con la clave ` +
+              `inhabilitada. --habilitar lleva el nombre de usuario real; consultalo en la base restaurada con ` +
+              `SELECT "USUARIO" FROM "USUARIO" y volve a habilitarlo desde la web (Usuarios, "Clave nueva") o con SQL.`
+      );
     }
   } finally {
     await base.$disconnect();
