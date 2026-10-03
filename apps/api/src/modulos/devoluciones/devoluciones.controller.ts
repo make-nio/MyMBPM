@@ -16,8 +16,14 @@ export const devolucionesController = {
   async registrar(request: Request, response: Response) {
     const params = validar(devolucionesParamsSchema, request.params);
     const body = validar(registrarDevolucionSchema, request.body);
-    // La devolucion (y su reintegro, si hay) queda a nombre del usuario de la sesion.
-    const resultado = await devolucionesService.registrar(params.id, body, request.usuarioAutenticado?.idUsuario);
+    // La devolucion (y su reintegro, si hay) queda a nombre del usuario de la sesion. El reintegro
+    // es solo de administradores (lo decide el service, que sabe si hay plata para reintegrar).
+    const resultado = await devolucionesService.registrar(
+      params.id,
+      body,
+      request.usuarioAutenticado?.idUsuario,
+      request.usuarioAutenticado?.esAdministrador === true
+    );
 
     responderExito(response, resultado, 201);
   }

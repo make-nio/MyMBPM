@@ -308,6 +308,7 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
       <DevolucionesPedido
         detalles={pedido.detalles ?? []}
         entregado={pedido.estadoPedido === "ENTREGADO"}
+        esAdministrador={esAdministrador}
         idPedido={idPedido}
         key={idPedido}
         onCambio={async () => {

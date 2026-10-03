@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { MedioPago } from "../../compartido/dominio/enums";
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
+import { ErrorProhibido } from "../../compartido/errores/error-prohibido";
 import { ErrorValidacion } from "../../compartido/errores/error-validacion";
 import { prisma } from "../../lib/prisma";
 import { configuracionService } from "../configuracion/configuracion.service";
@@ -52,7 +53,9 @@ export const devolucionesService = {
   // al stock y si se reintegra la plata lo decide la configuracion (o quien la registra, cuando
   // hay que preguntar). Todo en una transaccion con lock del pedido: dos devoluciones a la vez no
   // pueden devolver entre las dos mas de lo entregado.
-  async registrar(idPedido: bigint, data: RegistrarDevolucionInput, idUsuario?: bigint) {
+  // Reintegrar plata es solo de administradores (decision de Mariano, 3-oct), como anular un pago:
+  // cualquiera con sesion registra la devolucion, pero si hay reintegro y no es administrador, 403.
+  async registrar(idPedido: bigint, data: RegistrarDevolucionInput, idUsuario?: bigint, esAdministrador = false) {
     // La configuracion se lee antes de la transaccion (ver configuracion.repository).
     const devuelveStock = await configuracionService.decidirDevolucion("devolucionStock", data.devolverStock);
     const quiereReintegrar = await configuracionService.decidirDevolucion("devolucionReintegro", data.reintegrar);
@@ -112,6 +115,10 @@ export const devolucionesService = {
 
       const valor = detalles.reduce((suma, detalle) => suma.add(detalle.subtotal), cero());
       const reintegro = quiereReintegrar ? await this.calcularReintegro(tx, idPedido, valor, data) : null;
+
+      if (reintegro && !esAdministrador) {
+        throw new ErrorProhibido("Solo un administrador puede reintegrar plata en una devolucion");
+      }
       const pagoReintegro = reintegro
         ? await pagosRepository.crear(tx, {
             idPedido,

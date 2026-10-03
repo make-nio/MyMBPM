@@ -161,6 +161,8 @@ del pedido y subtotal, el valor devuelto). No se edita ni se borra, y el pedido 
   en otro pedido, 409.
 - Si vuelve al stock, `stockService.registrarIngreso` registra un `INGRESO_DEVOLUCION` con origen
   `DEVOLUCION` por linea (referencia: la devolucion y su linea), en orden de item e idempotente.
+- **Reintegrar es solo de administradores** (decision de Mariano, 3-oct), como anular un pago: un
+  operador registra la devolucion, pero si hay plata para reintegrar y no es administrador, 403.
 - El reintegro es un `PAGO` con **monto negativo**, enlazado desde `DEVOLUCION.ID_PAGO_REINTEGRO`:
   lo cobrado neto baja solo, y Reportes lo resta del medio por el que se reintegro. Sin monto, se
   reintegra lo devuelto; nunca mas de lo cobrado neto (409), y sin nada cobrado no hay reintegro.

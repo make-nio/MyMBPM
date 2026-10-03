@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
+import { ErrorProhibido } from "../../compartido/errores/error-prohibido";
 import { ErrorValidacion } from "../../compartido/errores/error-validacion";
 import { prisma } from "../../lib/prisma";
 import { configuracionService } from "../configuracion/configuracion.service";
@@ -182,9 +183,9 @@ describe("devolucionesService.registrar: idempotencia", () => {
     pagos.listarPorPedido.mockResolvedValue([{ monto: dec(1000), anulado: false }] as never);
     const entrada = { lineas: ambasLineas, motivo: "Llego rota", claveIdempotencia: CLAVE, medioReintegro: "EFECTIVO" as const };
 
-    await devolucionesService.registrar(1n, entrada);
+    await devolucionesService.registrar(1n, entrada, 7n, true);
     repo.obtenerPorClave.mockResolvedValue({ idDevolucion: 40n, idPedido: 1n } as never);
-    await devolucionesService.registrar(1n, entrada);
+    await devolucionesService.registrar(1n, entrada, 7n, true);
 
     expect(repo.crear).toHaveBeenCalledTimes(1);
     expect(stock.registrarIngreso).toHaveBeenCalledTimes(2);
@@ -212,7 +213,8 @@ describe("devolucionesService.registrar: reintegro", () => {
     await devolucionesService.registrar(
       1n,
       { lineas: ambasLineas, motivo: "Llego rota", claveIdempotencia: CLAVE, medioReintegro: "TRANSFERENCIA" },
-      7n
+      7n,
+      true
     );
 
     expect(pagos.crear).toHaveBeenCalledWith(
@@ -226,7 +228,7 @@ describe("devolucionesService.registrar: reintegro", () => {
     decide(false, true);
     pagos.listarPorPedido.mockResolvedValue([{ monto: dec(300), anulado: false }, { monto: dec(500), anulado: true }] as never);
 
-    await devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "x", claveIdempotencia: CLAVE, medioReintegro: "EFECTIVO" });
+    await devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "x", claveIdempotencia: CLAVE, medioReintegro: "EFECTIVO" }, 7n, true);
 
     expect(pagos.crear).toHaveBeenCalledWith(tx, expect.objectContaining({ monto: dec(-300) }));
   });
@@ -249,6 +251,25 @@ describe("devolucionesService.registrar: reintegro", () => {
 
     expect(error).toBeInstanceOf(ErrorValidacion);
     expect(error.detalles).toEqual([{ path: "medioReintegro", message: "Elegi el medio del reintegro" }]);
+  });
+
+  it("reintegrar es solo de administradores: un operador recibe 403 y no se registra nada", async () => {
+    decide(true, true);
+    pagos.listarPorPedido.mockResolvedValue([{ monto: dec(1000), anulado: false }] as never);
+
+    await expect(
+      devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "x", claveIdempotencia: CLAVE, medioReintegro: "EFECTIVO" }, 7n, false)
+    ).rejects.toBeInstanceOf(ErrorProhibido);
+    expect(pagos.crear).not.toHaveBeenCalled();
+    expect(repo.crear).not.toHaveBeenCalled();
+  });
+
+  it("un operador si registra una devolucion sin reintegro", async () => {
+    decide(true, false);
+
+    await devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "x", claveIdempotencia: CLAVE }, 7n, false);
+
+    expect(repo.crear).toHaveBeenCalled();
   });
 
   it("si no se cobro nada no hay reintegro", async () => {

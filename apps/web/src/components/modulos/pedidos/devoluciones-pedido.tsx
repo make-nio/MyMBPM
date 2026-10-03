@@ -71,10 +71,12 @@ function FormularioDevolucion({
   idPedido,
   detalles,
   devueltas,
+  esAdministrador,
   onCancel,
   onSubmit
 }: {
   idPedido: string;
+  esAdministrador: boolean;
   detalles: PedidoDetalle[];
   devueltas: Map<string, number>;
   onCancel: () => void;
@@ -110,8 +112,10 @@ function FormularioDevolucion({
   );
   // Sin tocar el monto, lo devuelto (nunca mas de lo cobrado).
   const montoSugerido = Math.min(Math.round(valor * 100) / 100, cobrado ?? 0);
-  const reintegra =
-    (reintegro.opcion === "PREGUNTAR" ? reintegro.devolver : reintegro.opcion === "DEVOLVER") && (cobrado ?? 0) > 0;
+  // Reintegrar plata es solo de administradores: a un operador no se le ofrece (y si la
+  // configuracion reintegra sola, la API responde 403 y se ve el mensaje).
+  const eligeReintegro = reintegro.opcion === "PREGUNTAR" ? esAdministrador && reintegro.devolver : reintegro.opcion === "DEVOLVER";
+  const reintegra = eligeReintegro && (cobrado ?? 0) > 0;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -143,7 +147,7 @@ function FormularioDevolucion({
         motivo,
         claveIdempotencia,
         ...(stock.eleccion !== undefined ? { devolverStock: stock.eleccion } : {}),
-        ...(reintegro.eleccion !== undefined ? { reintegrar: reintegro.eleccion } : {}),
+        ...(reintegro.opcion === "PREGUNTAR" ? { reintegrar: esAdministrador && reintegro.devolver } : {}),
         ...(reintegra ? { montoReintegro: Number(monto ?? montoSugerido), medioReintegro: medio } : {})
       });
     } catch (currentError) {
@@ -189,6 +193,10 @@ function FormularioDevolucion({
       />
       {cobrado !== null && cobrado <= 0 ? (
         <p className="texto-secundario">Este pedido no tiene nada cobrado: no hay plata para reintegrar.</p>
+      ) : !esAdministrador && reintegro.opcion !== "DEVOLVER" ? (
+        <p className="texto-secundario" data-testid="devolucion-reintegro-solo-admin">
+          Reintegrar la plata es solo de administradores: esta devolucion se registra sin reintegro.
+        </p>
       ) : (
         <Eleccion
           avisoNo="no se reintegra la plata"
@@ -227,6 +235,7 @@ function FormularioDevolucion({
 
 type DevolucionesPedidoProps = {
   idPedido: string;
+  esAdministrador: boolean;
   detalles: PedidoDetalle[];
   entregado: boolean;
   onCambio: () => Promise<void> | void;
@@ -234,7 +243,7 @@ type DevolucionesPedidoProps = {
 
 // Devoluciones de un pedido entregado (#96): que volvio, si volvio al stock y si se reintegro la
 // plata. Se registra una nueva desde aca; no se editan ni se borran.
-export function DevolucionesPedido({ idPedido, detalles, entregado, onCambio }: DevolucionesPedidoProps) {
+export function DevolucionesPedido({ idPedido, detalles, entregado, esAdministrador, onCambio }: DevolucionesPedidoProps) {
   const [resumen, setResumen] = useState<DevolucionesDelPedido | null>(null);
   const [error, setError] = useState<string | null>(null);
   const modal = useModal();
@@ -327,6 +336,7 @@ export function DevolucionesPedido({ idPedido, detalles, entregado, onCambio }: 
           <FormularioDevolucion
             detalles={detalles}
             devueltas={devueltas}
+            esAdministrador={esAdministrador}
             idPedido={idPedido}
             onCancel={modal.cerrar}
             onSubmit={registrar}

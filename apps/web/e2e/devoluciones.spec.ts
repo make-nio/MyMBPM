@@ -176,6 +176,30 @@ test("un pago que ya se reintegro no se anula", async () => {
   ).rejects.toThrow(/409/);
 });
 
+test("reintegrar es solo de administradores: un operador recibe 403, pero registra la devolucion sin reintegro", async () => {
+  await api("PATCH", "/api/configuracion", PREGUNTAR);
+  const { pedido, vela } = await pedidoEntregado();
+  const usuario = unico("prueba-devol-op").toLowerCase();
+  const password = "clave-devol-op-1";
+  await api("POST", "/api/usuarios", { nombre: "Operador", apellido: "PRUEBA", email: `${usuario}@mymbpm.test`, usuario, password });
+  const { token } = await api<{ token: string }>("POST", "/api/autenticacion/login", { identificador: usuario, password });
+  const cuerpo = (reintegrar: boolean) => ({
+    lineas: [{ idPedidoDetalle: vela.linea, cantidad: 1 }],
+    motivo: "Operador",
+    claveIdempotencia: randomUUID(),
+    devolverStock: true,
+    reintegrar,
+    ...(reintegrar ? { medioReintegro: "EFECTIVO" } : {})
+  });
+
+  await expect(api("POST", `/api/pedidos/${pedido.idPedido}/devoluciones`, cuerpo(true), token)).rejects.toThrow(/403/);
+  expect(await stockActual(vela.idItemCatalogo)).toBe(7);
+
+  const sinReintegro = await api<{ devoluciones: unknown[] }>("POST", `/api/pedidos/${pedido.idPedido}/devoluciones`, cuerpo(false), token);
+  expect(sinReintegro.devoluciones).toHaveLength(1);
+  expect(await stockActual(vela.idItemCatalogo)).toBe(8);
+});
+
 test("un pedido sin entregar no acepta devoluciones", async () => {
   const cliente = await crearCliente(unico("PRUEBA-ClienteDevolNo"));
   const vela = await crearProductoConStock(unico("PRUEBA-VelaDevolNo"), 100, 10);
