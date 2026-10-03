@@ -48,7 +48,7 @@ const guias: Paso[] = [
       "Segun la Configuracion, el sistema te pregunta si lo devuelto vuelve al stock y si se le reintegra la plata (o lo hace solo).",
       "Si se reintegra, el monto arranca en lo devuelto (nunca mas de lo cobrado) y elegis el medio. El reintegro aparece en \"Pagos\" en negativo."
     ],
-    ojo: "Una devolucion no se deshace. Lo devuelto baja lo que falta cobrar del pedido, y si vuelve al stock lo ves en Stock como \"Ingreso devolucion\"."
+    ojo: "Una devolucion no se deshace. Lo devuelto baja lo que falta cobrar del pedido, y si vuelve al stock lo ves en Stock como \"Ingreso devolucion\". Un pago que ya se reintegro no se puede anular. En Reportes, la ganancia del mes no descuenta lo devuelto."
   },
   {
     titulo: "Darle un comprobante al cliente",

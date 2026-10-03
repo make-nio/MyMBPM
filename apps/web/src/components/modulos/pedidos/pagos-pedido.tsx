@@ -184,8 +184,10 @@ export function PagosPedido({ idPedido, version, cancelado, esAdministrador, onC
                 Devuelto: <strong data-testid="pedido-devuelto">{formatearMoneda(resumen.devuelto)}</strong> ·{" "}
               </>
             ) : null}
-            Cobrado: <strong data-testid="pedido-cobrado">{formatearMoneda(resumen.cobrado)}</strong> · Saldo:{" "}
-            <strong data-testid="pedido-saldo">{formatearMoneda(resumen.saldo)}</strong>
+            Cobrado: <strong data-testid="pedido-cobrado">{formatearMoneda(resumen.cobrado)}</strong> ·{" "}
+            {/* Devolver sin reintegrar un pedido pagado deja plata a favor del cliente (#96). */}
+            {Number(resumen.saldo) < 0 ? "A favor del cliente:" : "Saldo:"}{" "}
+            <strong data-testid="pedido-saldo">{formatearMoneda(Math.abs(Number(resumen.saldo)))}</strong>
             {cancelado && Number(resumen.cobrado) > 0 ? (
               <strong className="texto-alerta"> · Pedido cancelado con {formatearMoneda(resumen.cobrado)} cobrados</strong>
             ) : null}

@@ -16,6 +16,7 @@ import { devolucionesRepository } from "./devoluciones.repository";
 type RegistrarDevolucionInput = {
   lineas: Array<{ idPedidoDetalle: bigint; cantidad: number }>;
   motivo: string;
+  claveIdempotencia: string;
   devolverStock?: boolean;
   reintegrar?: boolean;
   montoReintegro?: number;
@@ -62,6 +63,17 @@ export const devolucionesService = {
 
       if (!pedido) {
         throw new ErrorNoEncontrado("Pedido no encontrado");
+      }
+
+      // Un reintento (misma clave) no registra otra devolucion ni vuelve a mover stock o plata:
+      // con el lock del pedido tomado, si la clave ya esta, se responde lo que hay.
+      const existente = await devolucionesRepository.obtenerPorClave(tx, data.claveIdempotencia);
+
+      if (existente) {
+        if (existente.idPedido !== idPedido) {
+          throw new ErrorConflicto("Esa clave de idempotencia ya se uso en una devolucion de otro pedido");
+        }
+        return;
       }
 
       if (pedido.estadoPedido !== "ENTREGADO") {
@@ -114,6 +126,7 @@ export const devolucionesService = {
 
       const devolucion = await devolucionesRepository.crear(tx, {
         idPedido,
+        claveIdempotencia: data.claveIdempotencia,
         motivo: data.motivo,
         devuelveStock,
         idPagoReintegro: pagoReintegro?.idPago,

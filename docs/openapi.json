@@ -2185,6 +2185,9 @@
             ],
             "pattern": "^\\d+$"
           },
+          "claveIdempotencia": {
+            "type": "string"
+          },
           "usuario": {
             "type": [
               "object",
@@ -2307,6 +2310,7 @@
           "devuelveStock",
           "idPagoReintegro",
           "idUsuario",
+          "claveIdempotencia",
           "usuario",
           "pagoReintegro",
           "detalles"
@@ -9493,6 +9497,11 @@
                     "minLength": 1,
                     "maxLength": 500
                   },
+                  "claveIdempotencia": {
+                    "type": "string",
+                    "maxLength": 64,
+                    "format": "uuid"
+                  },
                   "devolverStock": {
                     "type": "boolean"
                   },
@@ -9515,7 +9524,8 @@
                 },
                 "required": [
                   "lineas",
-                  "motivo"
+                  "motivo",
+                  "claveIdempotencia"
                 ]
               }
             }

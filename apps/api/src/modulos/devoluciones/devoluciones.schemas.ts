@@ -15,6 +15,9 @@ export const registrarDevolucionSchema = z
       .min(1, "Indica que se devuelve")
       .max(LIMITES.lineasPorPedido),
     motivo: z.string().trim().min(1, "Indica el motivo de la devolucion").max(500),
+    // Una por formulario (la genera la web y la reusa en cada reintento): la misma clave no
+    // registra otra devolucion.
+    claveIdempotencia: z.string().max(64).uuid("La clave de idempotencia tiene que ser un uuid"),
     // Solo cuando la configuracion pide preguntar (ver configuracion.service).
     devolverStock: z.boolean().optional(),
     reintegrar: z.boolean().optional(),

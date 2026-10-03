@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { revisarAccesibilidad } from "./accesibilidad";
 import { api, crearCliente, crearProductoConStock } from "./api";
 import { expect, test, unico } from "./fixtures";
@@ -113,7 +115,8 @@ test("con la configuracion en automatico no pregunta, y la API cuida lo que se p
   await expect(
     api("POST", `/api/pedidos/${pedido.idPedido}/devoluciones`, {
       lineas: [{ idPedidoDetalle: maceta.linea, cantidad: 1 }],
-      motivo: "otra vez"
+      motivo: "otra vez",
+      claveIdempotencia: randomUUID()
     })
   ).rejects.toThrow(/409/);
 
@@ -122,9 +125,55 @@ test("con la configuracion en automatico no pregunta, y la API cuida lo que se p
   await api("POST", `/api/pedidos/${pedido.idPedido}/devoluciones`, {
     lineas: [{ idPedidoDetalle: vela.linea, cantidad: 1 }],
     motivo: "Una fallada",
+    claveIdempotencia: randomUUID(),
     devolverStock: false
   });
   expect(await stockActual(vela.idItemCatalogo)).toBe(8);
+});
+
+test("un reintento con la misma clave no registra otra devolucion ni vuelve a mover stock y plata", async () => {
+  await api("PATCH", "/api/configuracion", { devolucionStock: "DEVOLVER", devolucionReintegro: "DEVOLVER" });
+  const { pedido, vela } = await pedidoEntregado();
+  const cuerpo = {
+    lineas: [{ idPedidoDetalle: vela.linea, cantidad: 1 }],
+    motivo: "Reintento",
+    claveIdempotencia: randomUUID(),
+    medioReintegro: "EFECTIVO"
+  };
+
+  await api("POST", `/api/pedidos/${pedido.idPedido}/devoluciones`, cuerpo);
+  const segunda = await api<{ devoluciones: unknown[] }>("POST", `/api/pedidos/${pedido.idPedido}/devoluciones`, cuerpo);
+
+  expect(segunda.devoluciones).toHaveLength(1);
+  expect(await stockActual(vela.idItemCatalogo)).toBe(8);
+  const resumen = await api<{ cobrado: string }>("GET", `/api/pedidos/${pedido.idPedido}/pagos`);
+  expect(Number(resumen.cobrado)).toBe(900);
+
+  // La misma clave en otro pedido: 409.
+  const otro = await pedidoEntregado();
+  await expect(
+    api("POST", `/api/pedidos/${otro.pedido.idPedido}/devoluciones`, { ...cuerpo, lineas: [{ idPedidoDetalle: otro.vela.linea, cantidad: 1 }] })
+  ).rejects.toThrow(/409/);
+});
+
+test("un pago que ya se reintegro no se anula", async () => {
+  await api("PATCH", "/api/configuracion", { devolucionStock: "NO_DEVOLVER", devolucionReintegro: "DEVOLVER" });
+  const { pedido, vela, maceta } = await pedidoEntregado();
+  await api("POST", `/api/pedidos/${pedido.idPedido}/devoluciones`, {
+    lineas: [
+      { idPedidoDetalle: vela.linea, cantidad: 3 },
+      { idPedidoDetalle: maceta.linea, cantidad: 1 }
+    ],
+    motivo: "Devuelve todo",
+    claveIdempotencia: randomUUID(),
+    medioReintegro: "EFECTIVO"
+  });
+  const resumen = await api<{ pagos: Array<{ idPago: string; monto: string }> }>("GET", `/api/pedidos/${pedido.idPedido}/pagos`);
+  const cobro = resumen.pagos.find((pago) => Number(pago.monto) > 0)!;
+
+  await expect(
+    api("POST", `/api/pedidos/${pedido.idPedido}/pagos/${cobro.idPago}/anular`, { motivo: "error" })
+  ).rejects.toThrow(/409/);
 });
 
 test("un pedido sin entregar no acepta devoluciones", async () => {
@@ -142,6 +191,7 @@ test("un pedido sin entregar no acepta devoluciones", async () => {
     api("POST", `/api/pedidos/${pedido.idPedido}/devoluciones`, {
       lineas: [{ idPedidoDetalle: conLinea.detalles[0].idPedidoDetalle, cantidad: 1 }],
       motivo: "x",
+      claveIdempotencia: randomUUID(),
       devolverStock: true,
       reintegrar: false
     })

@@ -155,17 +155,25 @@ del pedido y subtotal, el valor devuelto). No se edita ni se borra, y el pedido 
   falta). Se leen antes de la transaccion.
 - Corre en una transaccion con lock de la fila del pedido (el mismo de pagos): de cada linea no se
   devuelve mas que lo entregado menos lo ya devuelto (409).
+- **Idempotente:** el cuerpo trae `claveIdempotencia` (un uuid que la web genera una vez por
+  formulario y reusa en cada reintento; `DEVOLUCION.CLAVE_IDEMPOTENCIA`, unica). Con el lock del
+  pedido tomado, si la clave ya esta en ese pedido se responde lo que hay sin mover stock ni plata;
+  en otro pedido, 409.
 - Si vuelve al stock, `stockService.registrarIngreso` registra un `INGRESO_DEVOLUCION` con origen
   `DEVOLUCION` por linea (referencia: la devolucion y su linea), en orden de item e idempotente.
 - El reintegro es un `PAGO` con **monto negativo**, enlazado desde `DEVOLUCION.ID_PAGO_REINTEGRO`:
   lo cobrado neto baja solo, y Reportes lo resta del medio por el que se reintegro. Sin monto, se
   reintegra lo devuelto; nunca mas de lo cobrado neto (409), y sin nada cobrado no hay reintegro.
-  Un reintegro no se anula (409).
+  Un reintegro no se anula (409), ni un cobro que ya se reintegro: si lo cobrado neto sin ese pago
+  queda negativo, anularlo da 409.
 - El saldo del pedido es `total - devuelto - cobrado neto`, y el estado de cobro compara lo cobrado
   neto contra `total - devuelto`. Para no abortar transacciones en un deploy preview sin la tabla,
   `devolucionesRepository.valorDevuelto` pregunta antes si existe (`to_regclass`).
 - Reportes informa lo devuelto en el mes (segun la fecha de la devolucion) al lado de lo vendido;
-  lo vendido, por item, por cliente y el grafico de 12 meses no lo descuentan.
+  lo vendido, por item, por cliente y el grafico de 12 meses no lo descuentan, y la ganancia del
+  mes tampoco descuenta el costo de lo devuelto (limitacion aceptada para la v1).
+- Devolver sin reintegrar un pedido pagado deja el saldo negativo: la web lo muestra como "a favor
+  del cliente".
 - `DEVOLUCION` y `DEVOLUCION_DETALLE` entran en el respaldo.
 
 ## Historial de cambios (auditoria)

@@ -21,6 +21,10 @@ export const devolucionesRepository = {
     });
   },
 
+  obtenerPorClave(prismaOrTx: PrismaOrTx, claveIdempotencia: string) {
+    return prismaOrTx.devolucion.findUnique({ where: { claveIdempotencia }, select: { idDevolucion: true, idPedido: true } });
+  },
+
   // Cuanto se devolvio ya de cada linea del pedido.
   async cantidadesDevueltas(prismaOrTx: PrismaOrTx, idPedido: bigint) {
     const grupos = await prismaOrTx.devolucionDetalle.groupBy({
@@ -56,6 +60,7 @@ export const devolucionesRepository = {
     prismaOrTx: PrismaOrTx,
     data: {
       idPedido: bigint;
+      claveIdempotencia: string;
       motivo: string;
       devuelveStock: boolean;
       idPagoReintegro?: bigint;

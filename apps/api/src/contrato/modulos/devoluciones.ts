@@ -26,6 +26,7 @@ const devolucionSchema = objeto({
   devuelveStock: z.boolean(),
   idPagoReintegro: id.nullable(),
   idUsuario: id.nullable(),
+  claveIdempotencia: z.string(),
   usuario: usuarioResumido.nullable(),
   pagoReintegro: objeto({ idPago: id, monto: decimal, medioPago: z.enum(MEDIOS_PAGO) }).nullable(),
   detalles: lista(detalleSchema)

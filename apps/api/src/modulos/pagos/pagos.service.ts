@@ -117,6 +117,13 @@ export const pagosService = {
         throw new ErrorConflicto("Un reintegro no se anula: es parte de una devolucion del pedido");
       }
 
+      // Si ese cobro ya se reintegro en una devolucion, anularlo dejaria lo cobrado neto en
+      // negativo (el cliente "deberia" lo que ya se le devolvio).
+      const vigentes = (await pagosRepository.listarPorPedido(tx, idPedido)).filter((otro) => otro.idPago !== idPago);
+      if (sumarVigentes(vigentes).isNegative()) {
+        throw new ErrorConflicto("Ese cobro ya se reintegro en una devolucion: no se puede anular");
+      }
+
       await pagosRepository.anular(tx, idPago, { motivo, idUsuario, fecha: ahora });
 
       return this.recalcularEstadoCobro(tx, idPedido);

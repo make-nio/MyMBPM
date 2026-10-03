@@ -253,17 +253,20 @@ model PedidoDetalle {
 // stock (INGRESO_DEVOLUCION en ESTADO_STOCK) y, si se reintegro plata, el PAGO negativo que la
 // registra. No se edita ni se borra.
 model Devolucion {
-  idDevolucion    BigInt              @id @default(autoincrement()) @map("ID_DEVOLUCION") @db.BigInt
-  idPedido        BigInt              @map("ID_PEDIDO") @db.BigInt
-  fecha           DateTime            @default(now()) @map("FECHA") @db.Timestamptz(3)
-  motivo          String              @map("MOTIVO") @db.VarChar(500)
-  devuelveStock   Boolean             @map("DEVUELVE_STOCK")
-  idPagoReintegro BigInt?             @unique(map: "UQ_DEVOLUCION_ID_PAGO_REINTEGRO") @map("ID_PAGO_REINTEGRO") @db.BigInt
-  idUsuario       BigInt?             @map("ID_USUARIO") @db.BigInt
-  pedido          Pedido              @relation(fields: [idPedido], references: [idPedido], onDelete: NoAction, onUpdate: NoAction)
-  pagoReintegro   Pago?               @relation(fields: [idPagoReintegro], references: [idPago], onDelete: NoAction, onUpdate: NoAction)
-  usuario         Usuario?            @relation(fields: [idUsuario], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction)
-  detalles        DevolucionDetalle[]
+  idDevolucion      BigInt              @id @default(autoincrement()) @map("ID_DEVOLUCION") @db.BigInt
+  idPedido          BigInt              @map("ID_PEDIDO") @db.BigInt
+  fecha             DateTime            @default(now()) @map("FECHA") @db.Timestamptz(3)
+  motivo            String              @map("MOTIVO") @db.VarChar(500)
+  devuelveStock     Boolean             @map("DEVUELVE_STOCK")
+  idPagoReintegro   BigInt?             @unique(map: "UQ_DEVOLUCION_ID_PAGO_REINTEGRO") @map("ID_PAGO_REINTEGRO") @db.BigInt
+  idUsuario         BigInt?             @map("ID_USUARIO") @db.BigInt
+  // La genera quien registra (una por formulario): un reintento con la misma clave no registra
+  // otra devolucion ni vuelve a mover stock o plata.
+  claveIdempotencia String              @unique(map: "UQ_DEVOLUCION_CLAVE_IDEMPOTENCIA") @map("CLAVE_IDEMPOTENCIA") @db.VarChar(64)
+  pedido            Pedido              @relation(fields: [idPedido], references: [idPedido], onDelete: NoAction, onUpdate: NoAction)
+  pagoReintegro     Pago?               @relation(fields: [idPagoReintegro], references: [idPago], onDelete: NoAction, onUpdate: NoAction)
+  usuario           Usuario?            @relation(fields: [idUsuario], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction)
+  detalles          DevolucionDetalle[]
 
   @@index([idPedido], map: "IX_DEVOLUCION_ID_PEDIDO")
   @@index([fecha], map: "IX_DEVOLUCION_FECHA")

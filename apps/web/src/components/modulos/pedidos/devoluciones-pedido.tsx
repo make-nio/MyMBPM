@@ -85,6 +85,9 @@ function FormularioDevolucion({
     pendiente: Number(detalle.cantidad) - (devueltas.get(detalle.idPedidoDetalle) ?? 0)
   }));
   const [cantidades, setCantidades] = useState<Record<string, string>>({});
+  // Una clave por apertura del formulario, la misma en cada reintento: la API no registra dos
+  // veces la misma devolucion.
+  const [claveIdempotencia] = useState(() => crypto.randomUUID());
   const [motivo, setMotivo] = useState("");
   const [cobrado, setCobrado] = useState<number | null>(null);
   const [monto, setMonto] = useState<string | null>(null);
@@ -138,6 +141,7 @@ function FormularioDevolucion({
       await onSubmit({
         lineas,
         motivo,
+        claveIdempotencia,
         ...(stock.eleccion !== undefined ? { devolverStock: stock.eleccion } : {}),
         ...(reintegro.eleccion !== undefined ? { reintegrar: reintegro.eleccion } : {}),
         ...(reintegra ? { montoReintegro: Number(monto ?? montoSugerido), medioReintegro: medio } : {})

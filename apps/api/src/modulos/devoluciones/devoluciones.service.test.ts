@@ -28,7 +28,7 @@ vi.mock("../stock/stock.service", async (original) => {
   return { ...modulo, stockService: { registrarIngreso: vi.fn() } };
 });
 vi.mock("./devoluciones.repository", () => ({
-  devolucionesRepository: { listarPorPedido: vi.fn(), cantidadesDevueltas: vi.fn(), crear: vi.fn() }
+  devolucionesRepository: { listarPorPedido: vi.fn(), cantidadesDevueltas: vi.fn(), crear: vi.fn(), obtenerPorClave: vi.fn() }
 }));
 
 const dec = (valor: number | string) => new Prisma.Decimal(valor);
@@ -65,6 +65,8 @@ function devolucionCreada(lineas: Array<{ idPedidoDetalle: bigint; cantidad: Pri
   } as never;
 }
 
+const CLAVE = "3f2b8a1e-5c4d-4e6f-9a7b-1c2d3e4f5a6b";
+
 const ambasLineas = [
   { idPedidoDetalle: 5n, cantidad: 2 },
   { idPedidoDetalle: 6n, cantidad: 1 }
@@ -92,11 +94,12 @@ describe("devolucionesService.registrar", () => {
   it("guarda la devolucion con el valor de cada linea, ingresa el stock en orden de item y recalcula el cobro", async () => {
     decide(true, false);
 
-    await devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "Llego rota" }, 7n);
+    await devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "Llego rota", claveIdempotencia: CLAVE }, 7n);
 
     expect(pagos.bloquearPedido).toHaveBeenCalledWith(tx, 1n);
     expect(repo.crear).toHaveBeenCalledWith(tx, {
       idPedido: 1n,
+      claveIdempotencia: CLAVE,
       motivo: "Llego rota",
       devuelveStock: true,
       idPagoReintegro: undefined,
@@ -127,7 +130,7 @@ describe("devolucionesService.registrar", () => {
   it("si no vuelve al stock no hay movimientos", async () => {
     decide(false, false);
 
-    await devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "No le gusto" });
+    await devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "No le gusto", claveIdempotencia: CLAVE });
 
     expect(repo.crear).toHaveBeenCalledWith(tx, expect.objectContaining({ devuelveStock: false }));
     expect(stock.registrarIngreso).not.toHaveBeenCalled();
@@ -136,7 +139,7 @@ describe("devolucionesService.registrar", () => {
   it("pasa la eleccion de quien la registra a la configuracion", async () => {
     decide(true, false);
 
-    await devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "x", devolverStock: true, reintegrar: false });
+    await devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "x", claveIdempotencia: CLAVE, devolverStock: true, reintegrar: false });
 
     expect(config.decidirDevolucion).toHaveBeenCalledWith("devolucionStock", true);
     expect(config.decidirDevolucion).toHaveBeenCalledWith("devolucionReintegro", false);
@@ -146,7 +149,7 @@ describe("devolucionesService.registrar", () => {
     decide(true, false);
     pedidos.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: "CONFIRMADO" }));
 
-    await expect(devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "x" })).rejects.toBeInstanceOf(ErrorConflicto);
+    await expect(devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "x", claveIdempotencia: CLAVE })).rejects.toBeInstanceOf(ErrorConflicto);
     expect(repo.crear).not.toHaveBeenCalled();
   });
 
@@ -155,7 +158,7 @@ describe("devolucionesService.registrar", () => {
     repo.cantidadesDevueltas.mockResolvedValue(new Map([[5n, dec(2)]]));
 
     const error = await devolucionesService
-      .registrar(1n, { lineas: [{ idPedidoDetalle: 5n, cantidad: 2 }], motivo: "x" })
+      .registrar(1n, { lineas: [{ idPedidoDetalle: 5n, cantidad: 2 }], motivo: "x", claveIdempotencia: CLAVE })
       .catch((e) => e);
 
     expect(error).toBeInstanceOf(ErrorConflicto);
@@ -168,8 +171,36 @@ describe("devolucionesService.registrar", () => {
     decide(true, false);
 
     await expect(
-      devolucionesService.registrar(1n, { lineas: [{ idPedidoDetalle: 99n, cantidad: 1 }], motivo: "x" })
+      devolucionesService.registrar(1n, { lineas: [{ idPedidoDetalle: 99n, cantidad: 1 }], motivo: "x", claveIdempotencia: CLAVE })
     ).rejects.toBeInstanceOf(ErrorNoEncontrado);
+  });
+});
+
+describe("devolucionesService.registrar: idempotencia", () => {
+  it("la misma clave dos veces deja una sola devolucion, sin volver a mover stock ni plata", async () => {
+    decide(true, true);
+    pagos.listarPorPedido.mockResolvedValue([{ monto: dec(1000), anulado: false }] as never);
+    const entrada = { lineas: ambasLineas, motivo: "Llego rota", claveIdempotencia: CLAVE, medioReintegro: "EFECTIVO" as const };
+
+    await devolucionesService.registrar(1n, entrada);
+    repo.obtenerPorClave.mockResolvedValue({ idDevolucion: 40n, idPedido: 1n } as never);
+    await devolucionesService.registrar(1n, entrada);
+
+    expect(repo.crear).toHaveBeenCalledTimes(1);
+    expect(stock.registrarIngreso).toHaveBeenCalledTimes(2);
+    expect(pagos.crear).toHaveBeenCalledTimes(1);
+    // El reintento se resuelve con el lock del pedido tomado.
+    expect(pagos.bloquearPedido).toHaveBeenCalledTimes(2);
+  });
+
+  it("la misma clave en otro pedido da 409", async () => {
+    decide(true, false);
+    repo.obtenerPorClave.mockResolvedValue({ idDevolucion: 40n, idPedido: 2n } as never);
+
+    await expect(
+      devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "x", claveIdempotencia: CLAVE })
+    ).rejects.toBeInstanceOf(ErrorConflicto);
+    expect(repo.crear).not.toHaveBeenCalled();
   });
 });
 
@@ -180,7 +211,7 @@ describe("devolucionesService.registrar: reintegro", () => {
 
     await devolucionesService.registrar(
       1n,
-      { lineas: ambasLineas, motivo: "Llego rota", medioReintegro: "TRANSFERENCIA" },
+      { lineas: ambasLineas, motivo: "Llego rota", claveIdempotencia: CLAVE, medioReintegro: "TRANSFERENCIA" },
       7n
     );
 
@@ -195,7 +226,7 @@ describe("devolucionesService.registrar: reintegro", () => {
     decide(false, true);
     pagos.listarPorPedido.mockResolvedValue([{ monto: dec(300), anulado: false }, { monto: dec(500), anulado: true }] as never);
 
-    await devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "x", medioReintegro: "EFECTIVO" });
+    await devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "x", claveIdempotencia: CLAVE, medioReintegro: "EFECTIVO" });
 
     expect(pagos.crear).toHaveBeenCalledWith(tx, expect.objectContaining({ monto: dec(-300) }));
   });
@@ -205,7 +236,7 @@ describe("devolucionesService.registrar: reintegro", () => {
     pagos.listarPorPedido.mockResolvedValue([{ monto: dec(300), anulado: false }] as never);
 
     await expect(
-      devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "x", montoReintegro: 301, medioReintegro: "EFECTIVO" })
+      devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "x", claveIdempotencia: CLAVE, montoReintegro: 301, medioReintegro: "EFECTIVO" })
     ).rejects.toBeInstanceOf(ErrorConflicto);
     expect(repo.crear).not.toHaveBeenCalled();
   });
@@ -214,7 +245,7 @@ describe("devolucionesService.registrar: reintegro", () => {
     decide(false, true);
     pagos.listarPorPedido.mockResolvedValue([{ monto: dec(300), anulado: false }] as never);
 
-    const error = await devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "x" }).catch((e) => e);
+    const error = await devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "x", claveIdempotencia: CLAVE }).catch((e) => e);
 
     expect(error).toBeInstanceOf(ErrorValidacion);
     expect(error.detalles).toEqual([{ path: "medioReintegro", message: "Elegi el medio del reintegro" }]);
@@ -223,7 +254,7 @@ describe("devolucionesService.registrar: reintegro", () => {
   it("si no se cobro nada no hay reintegro", async () => {
     decide(false, true);
 
-    await devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "x" });
+    await devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "x", claveIdempotencia: CLAVE });
 
     expect(pagos.crear).not.toHaveBeenCalled();
     expect(repo.crear).toHaveBeenCalledWith(tx, expect.objectContaining({ idPagoReintegro: undefined }));

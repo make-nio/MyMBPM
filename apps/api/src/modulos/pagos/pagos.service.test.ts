@@ -149,6 +149,25 @@ describe("pagosService con devoluciones (#96)", () => {
     expect(repo.crear).not.toHaveBeenCalled();
   });
 
+  it("un cobro que ya se reintegro no se anula: lo cobrado neto quedaria negativo (409)", async () => {
+    pedidos.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: "ENTREGADO" }));
+    repo.obtenerPorId.mockResolvedValue(pago(1000));
+    repo.listarPorPedido.mockResolvedValue([pago(1000), pago(-1000, { idPago: 10n })]);
+
+    await expect(pagosService.anular(1n, 9n, "x")).rejects.toThrow(/ya se reintegro/);
+    expect(repo.anular).not.toHaveBeenCalled();
+  });
+
+  it("con un reintegro parcial, un cobro que alcanza para cubrirlo se sigue pudiendo anular", async () => {
+    pedidos.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: "ENTREGADO" }));
+    repo.obtenerPorId.mockResolvedValue(pago(300, { idPago: 11n }));
+    repo.listarPorPedido.mockResolvedValue([pago(700), pago(300, { idPago: 11n }), pago(-200, { idPago: 10n })]);
+
+    await pagosService.anular(1n, 11n, "se cargo dos veces");
+
+    expect(repo.anular).toHaveBeenCalled();
+  });
+
   it("un reintegro (pago negativo) no se anula (409)", async () => {
     pedidos.obtenerPorId.mockResolvedValue(pedido());
     repo.obtenerPorId.mockResolvedValue(pago(-300));
