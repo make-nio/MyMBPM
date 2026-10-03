@@ -40,12 +40,13 @@ Cada modulo vive en `src/modulos/<modulo>/` con cinco archivos: `routes` → `co
 | `stock` | `stock` | Existencias, historial, bajo stock y ajustes manuales. **Unico que escribe stock** |
 | `pedidos` | `pedidos` | Pedidos, items con precio y costo congelados, estados, confirmar (descuenta stock), repetir |
 | `pagos` | `pedidos/:id/pagos` | Pagos de un pedido y su estado de cobro (abajo). Anular: administradores |
+| `devoluciones` | `pedidos/:id/devoluciones` | Devolucion de un pedido entregado: stock y reintegro configurables (abajo) |
 | `produccion` | `produccion` | Ordenes: iniciar (consume insumos) y finalizar (ingresa productos) |
 | `solicitudes-especiales` | `solicitudes-especiales` | Pedidos a medida; se convierten en pedido |
 | `panel` | `panel/resumen`, `panel/avisos` | Dashboard y avisos del encabezado. Solo lectura |
 | `busqueda` | `busqueda?q=` | Busqueda global de pedidos, clientes e items (desde 2 caracteres) |
-| `configuracion` | `configuracion` | Que hacer con el stock al cancelar (abajo). La lee cualquiera con sesion; la cambian administradores |
-| `reportes` | `reportes/ventas-mes`, `reportes/ventas-por-mes`, `reportes/cobros-mes` | Ventas del mes y de 12 meses, cobrado del mes por medio. Administradores |
+| `configuracion` | `configuracion` | Que hacer con el stock al cancelar y con el stock y la plata en una devolucion (abajo). La lee cualquiera con sesion; la cambian administradores |
+| `reportes` | `reportes/ventas-mes`, `reportes/ventas-por-mes`, `reportes/cobros-mes` | Ventas del mes (y lo devuelto) y de 12 meses, cobrado del mes por medio. Administradores |
 | `auditoria` | `auditoria`, `auditoria/precios` | Historial de cambios y de precio y costo. Administradores |
 
 Aparte de los modulos, `src/respaldo/` arma el respaldo logico diario ([respaldos.md](respaldos.md)).
@@ -141,6 +142,41 @@ estado de cobro (`ESTADO_COBRO`) ya no se elige: lo calcula `pagosService` con l
   no se les inventan pagos.
 - Reportes suma lo cobrado en el mes por medio segun la **fecha del pago**, que puede ser de otro
   mes que la confirmacion del pedido (lo vendido).
+
+## Devolucion de un pedido entregado
+
+Un cliente devuelve todo o una parte de un pedido `ENTREGADO` (#96). `devolucionesService.registrar`
+guarda una `DEVOLUCION` con sus lineas (`DEVOLUCION_DETALLE`: cantidad, precio unitario de la linea
+del pedido y subtotal, el valor devuelto). No se edita ni se borra, y el pedido sigue `ENTREGADO`.
+
+- Que pasa con lo devuelto lo decide `CONFIGURACION`, igual que al cancelar: `DEVOLUCION_STOCK` (si
+  vuelve al stock) y `DEVOLUCION_REINTEGRO` (si se reintegra la plata), cada una `PREGUNTAR`,
+  `DEVOLVER` o `NO_DEVOLVER`. Con `PREGUNTAR` el cuerpo trae `devolverStock` y `reintegrar` (400 si
+  falta). Se leen antes de la transaccion.
+- Corre en una transaccion con lock de la fila del pedido (el mismo de pagos): de cada linea no se
+  devuelve mas que lo entregado menos lo ya devuelto (409).
+- **Idempotente:** el cuerpo trae `claveIdempotencia` (un uuid que la web genera una vez por
+  formulario y reusa en cada reintento; `DEVOLUCION.CLAVE_IDEMPOTENCIA`, unica). Con el lock del
+  pedido tomado, si la clave ya esta en ese pedido se responde lo que hay sin mover stock ni plata;
+  en otro pedido, 409.
+- Si vuelve al stock, `stockService.registrarIngreso` registra un `INGRESO_DEVOLUCION` con origen
+  `DEVOLUCION` por linea (referencia: la devolucion y su linea), en orden de item e idempotente.
+- **Reintegrar es solo de administradores** (decision de Mariano, 3-oct), como anular un pago: un
+  operador registra la devolucion, pero si hay plata para reintegrar y no es administrador, 403.
+- El reintegro es un `PAGO` con **monto negativo**, enlazado desde `DEVOLUCION.ID_PAGO_REINTEGRO`:
+  lo cobrado neto baja solo, y Reportes lo resta del medio por el que se reintegro. Sin monto, se
+  reintegra lo devuelto; nunca mas de lo cobrado neto (409), y sin nada cobrado no hay reintegro.
+  Un reintegro no se anula (409), ni un cobro que ya se reintegro: si lo cobrado neto sin ese pago
+  queda negativo, anularlo da 409.
+- El saldo del pedido es `total - devuelto - cobrado neto`, y el estado de cobro compara lo cobrado
+  neto contra `total - devuelto`. Para no abortar transacciones en un deploy preview sin la tabla,
+  `devolucionesRepository.valorDevuelto` pregunta antes si existe (`to_regclass`).
+- Reportes informa lo devuelto en el mes (segun la fecha de la devolucion) al lado de lo vendido;
+  lo vendido, por item, por cliente y el grafico de 12 meses no lo descuentan, y la ganancia del
+  mes tampoco descuenta el costo de lo devuelto (limitacion aceptada para la v1).
+- Devolver sin reintegrar un pedido pagado deja el saldo negativo: la web lo muestra como "a favor
+  del cliente".
+- `DEVOLUCION` y `DEVOLUCION_DETALLE` entran en el respaldo.
 
 ## Historial de cambios (auditoria)
 

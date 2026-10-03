@@ -20,6 +20,8 @@ function fila(overrides: Record<string, unknown> = {}) {
     idConfiguracion: 1,
     cancelarPedido: "PREGUNTAR",
     cancelarOrden: "NO_DEVOLVER",
+    devolucionStock: "DEVOLVER",
+    devolucionReintegro: "PREGUNTAR",
     fechaModificacion: new Date(),
     ...overrides
   } as never;
@@ -36,7 +38,21 @@ describe("configuracionService.obtener", () => {
     expect(await configuracionService.obtener()).toEqual({
       cancelarPedido: "PREGUNTAR",
       cancelarOrden: "NO_DEVOLVER",
+      devolucionStock: "DEVOLVER",
+      devolucionReintegro: "PREGUNTAR",
       guardada: true
+    });
+  });
+
+  it("en un preview con la tabla pero sin las columnas de la devolucion (#96): usa las de cancelar y no se guarda", async () => {
+    repo.obtener.mockResolvedValue({ cancelarPedido: "DEVOLVER", cancelarOrden: "NO_DEVOLVER" } as never);
+
+    expect(await configuracionService.obtener()).toEqual({
+      cancelarPedido: "DEVOLVER",
+      cancelarOrden: "NO_DEVOLVER",
+      devolucionStock: "PREGUNTAR",
+      devolucionReintegro: "PREGUNTAR",
+      guardada: false
     });
   });
 
@@ -52,6 +68,8 @@ describe("configuracionService.obtener", () => {
     expect(await configuracionService.obtener()).toEqual({
       cancelarPedido: "NO_DEVOLVER",
       cancelarOrden: "NO_DEVOLVER",
+      devolucionStock: "PREGUNTAR",
+      devolucionReintegro: "PREGUNTAR",
       guardada: false
     });
   });
@@ -86,6 +104,15 @@ describe("configuracionService.decidirDevolucion", () => {
 
     expect(error).toBeInstanceOf(ErrorValidacion);
     expect(error.detalles).toEqual([{ path: "devolverStock", message: "Elegi si se devuelve el stock" }]);
+  });
+
+  it("en el reintegro de una devolucion, sin elegir, responde 400 en reintegrar", async () => {
+    repo.obtener.mockResolvedValue(fila({ devolucionReintegro: "PREGUNTAR" }));
+
+    const error = await configuracionService.decidirDevolucion("devolucionReintegro", undefined).catch((e) => e);
+
+    expect(error).toBeInstanceOf(ErrorValidacion);
+    expect(error.detalles).toEqual([{ path: "reintegrar", message: "Elegi si se reintegra la plata" }]);
   });
 
   it("sin la tabla no devuelve nada, como antes", async () => {

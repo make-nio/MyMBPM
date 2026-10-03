@@ -17,7 +17,7 @@ type PanelItemStockProps = {
   version: number;
 };
 
-const ORIGENES: Record<string, string> = { PEDIDO: "Pedido", PRODUCCION: "Orden" };
+const ORIGENES: Record<string, string> = { PEDIDO: "Pedido", PRODUCCION: "Orden", DEVOLUCION: "Devolucion" };
 
 function describirOrigen(movimiento: MovimientoStock) {
   const origen = ORIGENES[movimiento.origenMovimiento];

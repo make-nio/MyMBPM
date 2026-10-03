@@ -41,6 +41,16 @@ const guias: Paso[] = [
     ojo: "No se puede cobrar mas que el saldo. Un pedido cancelado no recibe pagos: si ya tenia pagos, el detalle te avisa cuanto se habia cobrado."
   },
   {
+    titulo: "Un cliente devuelve un pedido",
+    pasos: [
+      "Abri el pedido entregado y, en \"Devoluciones\", toca \"Registrar devolucion\".",
+      "Pone cuanto vuelve de cada item (puede ser una parte) y el motivo.",
+      "Segun la Configuracion, el sistema te pregunta si lo devuelto vuelve al stock y si se le reintegra la plata (o lo hace solo).",
+      "Si se reintegra, el monto arranca en lo devuelto (nunca mas de lo cobrado) y elegis el medio. El reintegro aparece en \"Pagos\" en negativo. Reintegrar plata es solo de administradores."
+    ],
+    ojo: "Una devolucion no se deshace. Lo devuelto baja lo que falta cobrar del pedido, y si vuelve al stock lo ves en Stock como \"Ingreso devolucion\". Un pago que ya se reintegro no se puede anular. En Reportes, la ganancia del mes no descuenta lo devuelto."
+  },
+  {
     titulo: "Darle un comprobante al cliente",
     pasos: [
       "En el detalle del pedido, toca \"Comprobante\" (aparece cuando el pedido tiene items).",
@@ -85,7 +95,8 @@ const guias: Paso[] = [
       "En Configuracion elegis, para cancelar un pedido confirmado y para cancelar una orden en proceso, que hace el sistema con lo que ya se desconto del stock.",
       "\"Preguntar en el momento\": al cancelar aparece la pregunta \"¿Devolver al stock...?\" y elegis ahi.",
       "\"Devolver al stock, sin preguntar\" o \"No devolver, sin preguntar\": no pregunta y hace siempre eso.",
-      "Lo devuelto queda en los movimientos de Stock como \"Reverso\", con tu usuario y la fecha."
+      "Lo devuelto queda en los movimientos de Stock como \"Reverso\", con tu usuario y la fecha.",
+      "Para la devolucion de un pedido entregado hay dos opciones mas: si lo devuelto vuelve al stock y si se reintegra la plata."
     ]
   },
   {

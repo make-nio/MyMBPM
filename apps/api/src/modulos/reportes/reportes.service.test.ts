@@ -6,7 +6,12 @@ import { reportesService } from "./reportes.service";
 
 vi.mock("../../lib/prisma", () => ({ prisma: { cliente: "prisma" } }));
 vi.mock("./reportes.repository", () => ({
-  reportesRepository: { listarPedidosVendidosEntre: vi.fn(), listarTotalesVendidosEntre: vi.fn(), cobradoPorMedioEntre: vi.fn() }
+  reportesRepository: {
+    listarPedidosVendidosEntre: vi.fn(),
+    listarTotalesVendidosEntre: vi.fn(),
+    cobradoPorMedioEntre: vi.fn(),
+    devueltoEntre: vi.fn()
+  }
 }));
 
 const repo = vi.mocked(reportesRepository);
@@ -37,6 +42,7 @@ beforeEach(() => {
     pedido(11n, bruno, [linea(100n, "Maceta", 1, 1000, 300)]),
     pedido(12n, ana, [linea(200n, "Vela", 3, 500, 100)])
   ] as never);
+  repo.devueltoEntre.mockResolvedValue({ valor: new Prisma.Decimal(0), devoluciones: 0 });
 });
 
 describe("reportesService.ventasDelMes", () => {
@@ -107,6 +113,16 @@ describe("reportesService.ventasDelMes", () => {
     expect(reporte.porItem).toEqual([]);
     expect(reporte.porCliente).toEqual([]);
     expect(reporte.totales.pedidos).toBe(0);
+  });
+
+  it("suma lo devuelto en el mismo rango del mes (#96)", async () => {
+    repo.listarPedidosVendidosEntre.mockResolvedValue([]);
+    repo.devueltoEntre.mockResolvedValue({ valor: new Prisma.Decimal(350), devoluciones: 2 });
+
+    const reporte = await reportesService.ventasDelMes({ mes: "2026-09" });
+
+    expect(repo.devueltoEntre).toHaveBeenCalledWith(expect.anything(), reporte.desde, reporte.hasta);
+    expect(reporte.devuelto).toEqual({ valor: new Prisma.Decimal(350), devoluciones: 2 });
   });
 });
 
