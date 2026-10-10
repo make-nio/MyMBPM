@@ -141,7 +141,20 @@ function ReporteVentas() {
                 <dt>Ganancia</dt>
                 <dd data-testid="reporte-ganancia">{formatearMoneda(reporte.totales.ganancia)}</dd>
               </div>
+              {reporte.devuelto.devoluciones > 0 ? (
+                <div>
+                  <dt>Devuelto</dt>
+                  <dd data-testid="reporte-devuelto">{formatearMoneda(reporte.devuelto.valor)}</dd>
+                </div>
+              ) : null}
             </dl>
+            {reporte.devuelto.devoluciones > 0 ? (
+              <p className="texto-secundario texto-secundario--compacto">
+                {reporte.devuelto.devoluciones} {reporte.devuelto.devoluciones === 1 ? "devolucion" : "devoluciones"} en el
+                mes. Lo vendido no las descuenta: vendido menos devuelto da{" "}
+                {formatearMoneda(Number(reporte.totales.vendido) - Number(reporte.devuelto.valor))}.
+              </p>
+            ) : null}
             {reporte.totales.lineasSinCosto > 0 ? (
               <p className="texto-secundario texto-secundario--compacto">
                 Hay {reporte.totales.lineasSinCosto}{" "}

@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import {
   EstadoCobro,
   EstadoPedido,
+  ESTADOS_ENTREGADOS,
   ESTADOS_PEDIDO,
   OrigenPedido
 } from "../../compartido/dominio/enums";
@@ -27,17 +28,20 @@ function aDecimal(value: number | string | Prisma.Decimal | null | undefined) {
 // Transiciones que admite PATCH /:id/estado. CONFIRMADO solo se alcanza con confirmar(), que es
 // la operacion que descuenta stock: por eso un pedido PENDIENTE no puede pasar a preparacion o
 // entrega sin confirmarse, y uno confirmado no puede volver a PENDIENTE (se podrian editar sus
-// items despues de descontado el stock). ENTREGADO y CANCELADO son finales.
+// items despues de descontado el stock). ENTREGADO y CANCELADO son finales a mano; un pedido
+// entregado solo pasa a DEVUELTO_PARCIAL o DEVUELTO registrando una devolucion (#96).
 const TRANSICIONES_ESTADO_PEDIDO: Record<EstadoPedido, readonly EstadoPedido[]> = {
   PENDIENTE: ["CANCELADO"],
   CONFIRMADO: ["EN_PREPARACION", "LISTO", "ENTREGADO", "CANCELADO"],
   EN_PREPARACION: ["LISTO", "ENTREGADO", "CANCELADO"],
   LISTO: ["EN_PREPARACION", "ENTREGADO", "CANCELADO"],
   ENTREGADO: [],
-  CANCELADO: []
+  CANCELADO: [],
+  DEVUELTO_PARCIAL: [],
+  DEVUELTO: []
 };
 
-const ESTADOS_CERRADOS: readonly EstadoPedido[] = ["ENTREGADO", "CANCELADO"];
+const ESTADOS_CERRADOS: readonly EstadoPedido[] = [...ESTADOS_ENTREGADOS, "CANCELADO"];
 
 // Estados en los que el pedido ya desconto su stock (al confirmarse) y todavia se puede cancelar.
 const ESTADOS_CON_STOCK_DESCONTADO: readonly EstadoPedido[] = ["CONFIRMADO", "EN_PREPARACION", "LISTO"];

@@ -24,9 +24,11 @@ const pagoSchema = objeto({
   usuarioAnulacion: usuarioResumido.nullable()
 }).openapi("Pago");
 
-// pagosService: los pagos del pedido con lo cobrado (vigentes) y el saldo.
-const pagosDelPedidoSchema = objeto({
+// pagosService: los pagos del pedido con lo devuelto, lo cobrado neto (vigentes menos
+// reintegros) y el saldo (total - devuelto - cobrado). Un reintegro es un pago con monto negativo.
+export const pagosDelPedidoSchema = objeto({
   total: decimal,
+  devuelto: decimal,
   cobrado: decimal,
   saldo: decimal,
   estadoCobro: z.enum(ESTADOS_COBRO),

@@ -9,6 +9,8 @@ const etiqueta = "configuracion";
 const configuracionSchema = objeto({
   cancelarPedido: z.enum(OPCIONES_DEVOLUCION_STOCK),
   cancelarOrden: z.enum(OPCIONES_DEVOLUCION_STOCK),
+  devolucionStock: z.enum(OPCIONES_DEVOLUCION_STOCK),
+  devolucionReintegro: z.enum(OPCIONES_DEVOLUCION_STOCK),
   guardada: z.boolean()
 }).openapi("Configuracion");
 
@@ -17,7 +19,7 @@ export const endpoints = [
     metodo: "get",
     ruta: "/api/configuracion",
     acceso: "autenticado",
-    resumen: "Que hacer con el stock al cancelar un pedido que lo desconto o una orden en proceso",
+    resumen: "Que hacer con el stock al cancelar, y con el stock y la plata al registrar una devolucion",
     etiqueta,
     respuesta: configuracionSchema
   },

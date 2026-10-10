@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { asyncHandler } from "../../compartido/http/async-handler";
 
+import { registrarRutasDevoluciones } from "../devoluciones/devoluciones.routes";
 import { registrarRutasPagos } from "../pagos/pagos.routes";
 
 import { pedidosController } from "./pedidos.controller";
@@ -20,3 +21,4 @@ pedidosRouter.get("/:id/repeticion", asyncHandler(pedidosController.prepararRepe
 pedidosRouter.post("/:id/repetir", asyncHandler(pedidosController.repetir));
 
 registrarRutasPagos(pedidosRouter);
+registrarRutasDevoluciones(pedidosRouter);

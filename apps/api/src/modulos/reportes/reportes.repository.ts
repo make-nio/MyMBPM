@@ -42,6 +42,25 @@ export const reportesRepository = {
     });
   },
 
+  // Valor de lo devuelto en el rango (segun la fecha de la devolucion) y cuantas devoluciones.
+  // En un deploy preview sin la migracion de #96 la tabla no existe: cero, y el reporte sigue.
+  async devueltoEntre(prismaOrTx: PrismaOrTx, desde: Date, hasta: Date) {
+    const [tabla] = await prismaOrTx.$queryRaw<Array<{ existe: boolean }>>`
+      SELECT to_regclass('"DEVOLUCION"') IS NOT NULL AS existe`;
+
+    if (!tabla?.existe) {
+      return { valor: new Prisma.Decimal(0), devoluciones: 0 };
+    }
+
+    const rango = { fecha: { gte: desde, lt: hasta } };
+    const [suma, devoluciones] = await Promise.all([
+      prismaOrTx.devolucionDetalle.aggregate({ where: { devolucion: rango }, _sum: { subtotal: true } }),
+      prismaOrTx.devolucion.count({ where: rango })
+    ]);
+
+    return { valor: suma._sum.subtotal ?? new Prisma.Decimal(0), devoluciones };
+  },
+
   // Lo cobrado en el rango por medio de pago: pagos vigentes (sin anulados) segun su fecha.
   cobradoPorMedioEntre(prismaOrTx: PrismaOrTx, desde: Date, hasta: Date) {
     return prismaOrTx.pago.groupBy({

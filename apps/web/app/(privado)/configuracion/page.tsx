@@ -27,19 +27,23 @@ export default function ConfiguracionPage() {
 
 type Valores = Omit<Configuracion, "guardada">;
 
-// Una accion de cancelacion: preguntar en el momento, devolver siempre o no devolver nunca.
+// Una accion configurable: preguntar en el momento, hacerlo siempre o no hacerlo nunca.
 function Accion({
   id,
   titulo,
   explicacion,
   opcion,
-  onCambiar
+  onCambiar,
+  textoSi = "Devolver al stock, sin preguntar",
+  textoNo = "No devolver, sin preguntar"
 }: {
   id: string;
   titulo: string;
   explicacion: string;
   opcion: OpcionDevolucionStock;
   onCambiar: (opcion: OpcionDevolucionStock) => void;
+  textoSi?: string;
+  textoNo?: string;
 }) {
   return (
     <section aria-labelledby={`${id}-titulo`} className="tarjeta-seccion">
@@ -53,8 +57,8 @@ function Accion({
           value={opcion}
         >
           <option value="PREGUNTAR">Preguntar en el momento</option>
-          <option value="DEVOLVER">Devolver al stock, sin preguntar</option>
-          <option value="NO_DEVOLVER">No devolver, sin preguntar</option>
+          <option value="DEVOLVER">{textoSi}</option>
+          <option value="NO_DEVOLVER">{textoNo}</option>
         </select>
       </label>
     </section>
@@ -106,7 +110,7 @@ function FormularioConfiguracion() {
   return (
     <section className="modulo-panel">
       <EncabezadoModulo
-        descripcion="Que hacer con el stock al cancelar algo que ya lo desconto: preguntar en el momento, o devolverlo o no devolverlo siempre, sin preguntar."
+        descripcion="Que hacer con el stock al cancelar algo que ya lo desconto, y con el stock y la plata cuando un cliente devuelve un pedido entregado: preguntar en el momento, o hacerlo o no hacerlo siempre, sin preguntar."
         titulo="Configuracion"
       />
       {error ? <MensajeError mensaje={error} /> : null}
@@ -133,6 +137,24 @@ function FormularioConfiguracion() {
             onCambiar={(opcion) => cambiar({ cancelarOrden: opcion })}
             opcion={valores.cancelarOrden}
             titulo="Cancelar una orden en proceso"
+          />
+          <Accion
+            explicacion="Un cliente devuelve todo o una parte de un pedido entregado: si lo devuelto vuelve al stock."
+            id="config-devolucion-stock"
+            onCambiar={(opcion) => cambiar({ devolucionStock: opcion })}
+            opcion={valores.devolucionStock}
+            textoSi="Vuelve al stock, sin preguntar"
+            textoNo="No vuelve al stock, sin preguntar"
+            titulo="Devolucion de un pedido entregado: stock"
+          />
+          <Accion
+            explicacion="Si el pedido tenia algo cobrado: si se le reintegra la plata al cliente."
+            id="config-devolucion-reintegro"
+            onCambiar={(opcion) => cambiar({ devolucionReintegro: opcion })}
+            opcion={valores.devolucionReintegro}
+            textoSi="Reintegrar, sin preguntar"
+            textoNo="No reintegrar, sin preguntar"
+            titulo="Devolucion de un pedido entregado: reintegro"
           />
           <div className="acciones-formulario">
             <button className="boton-primario" disabled={guardando || !guardada} onClick={() => void guardar()} type="button">

@@ -55,8 +55,14 @@ export function diaArgentina(valor: string | Date | null | undefined) {
   return valor ? diaIso.format(new Date(valor)) : "";
 }
 
+// Estados cuyo nombre armado de la clave no se entiende solo.
+const NOMBRES_ESTADO: Record<string, string> = { DEVUELTO_PARCIAL: "Devuelto en parte" };
+
 // Los estados vienen en MAYUSCULAS_CON_GUION ("EN_PREPARACION"); para mostrar: "En preparacion".
 export function formatearEstado(valor: string) {
+  if (NOMBRES_ESTADO[valor]) {
+    return NOMBRES_ESTADO[valor];
+  }
   const texto = valor.replaceAll("_", " ").toLowerCase();
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }

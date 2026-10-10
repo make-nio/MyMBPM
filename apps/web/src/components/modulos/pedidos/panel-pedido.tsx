@@ -31,6 +31,7 @@ import {
 import { listarMovimientosStock, obtenerStockActual } from "../../../lib/modulos/stock";
 import { calcularImpactoStock, hayStockInsuficiente, ImpactoStockItem } from "../../../lib/stock/impacto-stock";
 import {
+  ESTADOS_ENTREGADOS,
   TRANSICIONES_ESTADO_PEDIDO,
   EstadoPedido,
   PedidoCompleto,
@@ -40,6 +41,7 @@ import { MovimientoStock } from "../../../types/stock";
 import { TablaImpactoStock } from "../stock/tabla-impacto-stock";
 import { EleccionDevolverStock } from "../configuracion/eleccion-devolver-stock";
 import { FormularioLineaPedido } from "./formulario-linea-pedido";
+import { DevolucionesPedido } from "./devoluciones-pedido";
 import { PagosPedido } from "./pagos-pedido";
 import { RepetirPedido } from "./repetir-pedido";
 
@@ -69,6 +71,8 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
   const [confirmando, setConfirmando] = useState(false);
   const [estadoPedido, setEstadoPedido] = useState<EstadoPedido>("PENDIENTE");
   const [fechaEntrega, setFechaEntrega] = useState("");
+  // Una devolucion cambia lo que falta cobrar sin tocar el total: vuelve a pedir los pagos.
+  const [devoluciones, setDevoluciones] = useState(0);
   // Cancelar un pedido que ya desconto stock: se devuelve o no segun la configuracion (#89).
   const cancelaConStock =
     estadoPedido === "CANCELADO" &&
@@ -174,8 +178,9 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
   const margen = calcularMargenPedido(pedido.total, detalles);
   const pendiente = pedido.estadoPedido === "PENDIENTE";
   const insuficiente = hayStockInsuficiente(impacto);
-  // La fecha prometida se puede cambiar mientras el pedido no se entrego ni se cancelo.
-  const abierto = pedido.estadoPedido !== "ENTREGADO" && pedido.estadoPedido !== "CANCELADO";
+  // La fecha prometida se puede cambiar mientras el pedido no se entrego (con o sin devolucion)
+  // ni se cancelo.
+  const abierto = !ESTADOS_ENTREGADOS.includes(pedido.estadoPedido) && pedido.estadoPedido !== "CANCELADO";
   const atrasado = abierto && pedido.fechaEntrega !== null && diaArgentina(pedido.fechaEntrega) < diaArgentina(new Date());
   const opcionesEstado: EstadoPedido[] = [pedido.estadoPedido, ...TRANSICIONES_ESTADO_PEDIDO[pedido.estadoPedido]];
 
@@ -299,7 +304,20 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
           await cargar();
           onCambio();
         }}
-        version={`${pedido.total}-${pedido.fechaModificacion}`}
+        version={`${pedido.total}-${pedido.fechaModificacion}-${devoluciones}`}
+      />
+
+      <DevolucionesPedido
+        detalles={pedido.detalles ?? []}
+        entregado={pedido.estadoPedido === "ENTREGADO" || pedido.estadoPedido === "DEVUELTO_PARCIAL"}
+        esAdministrador={esAdministrador}
+        idPedido={idPedido}
+        key={idPedido}
+        onCambio={async () => {
+          setDevoluciones((actual) => actual + 1);
+          await cargar();
+          onCambio();
+        }}
       />
 
       {!pendiente ? (

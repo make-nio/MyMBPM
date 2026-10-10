@@ -41,6 +41,9 @@ const ventasDelMesSchema = objeto({
   desde: fecha,
   hasta: fecha,
   totales: totalesVentasSchema,
+  // Devoluciones registradas en el mes (#96): su valor y cuantas. Lo vendido no lo descuenta:
+  // se muestra al lado (vendido - devuelto).
+  devuelto: objeto({ valor: decimal, devoluciones: z.number().int() }),
   porItem: lista(ventaPorItemSchema),
   porCliente: lista(ventaPorClienteSchema)
 }).openapi("VentasDelMes");
@@ -58,7 +61,8 @@ const ventasPorMesSchema = objeto({
   )
 }).openapi("VentasPorMes");
 
-// reportesService.cobrosDelMes: pagos vigentes del mes, por medio.
+// reportesService.cobrosDelMes: pagos vigentes del mes, por medio. Los reintegros de una
+// devolucion son pagos negativos: restan del medio por el que se reintegraron.
 const cobrosDelMesSchema = objeto({
   desde: fecha,
   hasta: fecha,

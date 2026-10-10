@@ -7,6 +7,8 @@ const ID_CONFIGURACION = 1;
 type ActualizarConfiguracionInput = {
   cancelarPedido?: string;
   cancelarOrden?: string;
+  devolucionStock?: string;
+  devolucionReintegro?: string;
 };
 
 // P2021: la tabla no existe. Pasa en un deploy preview (usa la base de produccion y no migra)
@@ -16,11 +18,23 @@ function faltaLaTabla(error: unknown) {
   return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2021";
 }
 
+// P2022: falta una columna. Pasa en un preview cuando la tabla ya esta en produccion pero sin las
+// columnas de una migracion posterior (las de la devolucion, #96): se leen las que hay.
+function faltaUnaColumna(error: unknown) {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2022";
+}
+
 export const configuracionRepository = {
   async obtener() {
     try {
       return await prisma.configuracion.findUnique({ where: { idConfiguracion: ID_CONFIGURACION } });
     } catch (error) {
+      if (faltaUnaColumna(error)) {
+        return prisma.configuracion.findUnique({
+          where: { idConfiguracion: ID_CONFIGURACION },
+          select: { cancelarPedido: true, cancelarOrden: true }
+        });
+      }
       if (faltaLaTabla(error)) {
         return null;
       }
@@ -38,7 +52,7 @@ export const configuracionRepository = {
         update: data
       });
     } catch (error) {
-      if (faltaLaTabla(error)) {
+      if (faltaLaTabla(error) || faltaUnaColumna(error)) {
         return null;
       }
       throw error;
