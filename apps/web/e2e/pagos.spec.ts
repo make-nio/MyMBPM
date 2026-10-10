@@ -94,8 +94,8 @@ test("la API: el cobro no se elige a mano, un pago ajeno no se anula y un operad
   // Sin motivo, no.
   await expect(api("POST", `/api/pedidos/${pedido.idPedido}/pagos/${idPago}/anular`, { motivo: " " })).rejects.toThrow(/400/);
   // Un pedido cancelado no recibe pagos.
-  await api("PATCH", `/api/pedidos/${otro.pedido.idPedido}/estado`, { estadoPedido: "CANCELADO", devolverStock: false }).catch(() =>
-    api("PATCH", `/api/pedidos/${otro.pedido.idPedido}/estado`, { estadoPedido: "CANCELADO" })
+  await api("PATCH", `/api/pedidos/${otro.pedido.idPedido}/estado`, { estadoPedido: "CANCELADO", devolverStock: false, motivoCancelacion: "PRUEBA cancelado" }).catch(() =>
+    api("PATCH", `/api/pedidos/${otro.pedido.idPedido}/estado`, { estadoPedido: "CANCELADO", motivoCancelacion: "PRUEBA cancelado" })
   );
   await expect(
     api("POST", `/api/pedidos/${otro.pedido.idPedido}/pagos`, { fecha: hoy, monto: 1, medioPago: "EFECTIVO" })

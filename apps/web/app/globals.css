@@ -900,6 +900,23 @@ textarea {
   color: #8e2c18;
 }
 
+/* Historial de estados del pedido (#99): una linea por cambio. */
+.linea-tiempo {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 1rem;
+  border-left: 2px solid #d9cfc0;
+}
+
+.linea-tiempo__paso {
+  margin: 0 0 0.6rem;
+}
+
+.linea-tiempo__observacion {
+  display: block;
+  font-size: 0.9rem;
+}
+
 /* Comprobante no fiscal del pedido (/pedidos/comprobante). En pantalla, una hoja; al imprimir,
    solo la hoja: sin menu, encabezado, franja de vista previa ni botones. */
 .pagina-comprobante {

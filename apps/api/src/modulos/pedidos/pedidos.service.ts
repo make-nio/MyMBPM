@@ -7,11 +7,14 @@ import {
   ESTADOS_PEDIDO,
   OrigenPedido
 } from "../../compartido/dominio/enums";
+import { inicioDelDiaArgentina, OFFSET_ARGENTINA_MS } from "../../compartido/dominio/fecha-argentina";
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { LIMITES } from "../../compartido/validaciones/esquemas-comunes";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
+import { ErrorValidacion } from "../../compartido/errores/error-validacion";
 import { prisma } from "../../lib/prisma";
 import { configuracionService } from "../configuracion/configuracion.service";
+import { pagosRepository } from "../pagos/pagos.repository";
 import { pagosService } from "../pagos/pagos.service";
 import { ordenarPorItem, stockService } from "../stock/stock.service";
 
@@ -45,6 +48,33 @@ const ESTADOS_CERRADOS: readonly EstadoPedido[] = [...ESTADOS_ENTREGADOS, "CANCE
 
 // Estados en los que el pedido ya desconto su stock (al confirmarse) y todavia se puede cancelar.
 const ESTADOS_CON_STOCK_DESCONTADO: readonly EstadoPedido[] = ["CONFIRMADO", "EN_PREPARACION", "LISTO"];
+
+// "09/10/2026" para un dia guardado a las 00:00 de Argentina.
+function diaArgentinaTexto(fecha: Date) {
+  const [anio, mes, dia] = new Date(fecha.getTime() - OFFSET_ARGENTINA_MS).toISOString().slice(0, 10).split("-");
+  return `${dia}/${mes}/${anio}`;
+}
+
+// Fecha real de entrega (#99): la que indica quien lo marca (lo marca dias despues) o, si no
+// indica ninguna, hoy en Argentina. No puede ser futura ni anterior al dia de la confirmacion.
+function fechaEntregaRealValida(indicada: Date | undefined, fechaConfirmacion: Date | null, ahora: Date) {
+  const hoy = inicioDelDiaArgentina(ahora);
+  const fecha = indicada ?? hoy;
+
+  if (fecha.getTime() > hoy.getTime()) {
+    throw new ErrorValidacion("La fecha de entrega no puede ser futura", [
+      { path: "fechaEntregaReal", message: "Elegi hoy o un dia anterior" }
+    ]);
+  }
+
+  if (fechaConfirmacion && fecha.getTime() < inicioDelDiaArgentina(fechaConfirmacion).getTime()) {
+    throw new ErrorValidacion("La fecha de entrega no puede ser anterior a la confirmacion del pedido", [
+      { path: "fechaEntregaReal", message: `Elegi el ${diaArgentinaTexto(inicioDelDiaArgentina(fechaConfirmacion))} o despues` }
+    ]);
+  }
+
+  return fecha;
+}
 
 function construirNumeroPedido(idPedido: bigint) {
   return `PED-${idPedido.toString().padStart(6, "0")}`;
@@ -165,24 +195,40 @@ export const pedidosService = {
     return pedido;
   },
 
-  crear(data: DatosAltaPedido) {
-    return prisma.$transaction((tx) => this.crearEnTransaccion(tx, data));
+  crear(data: DatosAltaPedido, idUsuario?: bigint) {
+    return prisma.$transaction((tx) => this.crearEnTransaccion(tx, data, idUsuario));
   },
 
   // Alta con su numero de pedido, dentro de una transaccion ajena (por ejemplo, al convertir una
-  // solicitud especial: el pedido y la solicitud se guardan juntos o no se guarda nada).
-  async crearEnTransaccion(tx: Prisma.TransactionClient, data: DatosAltaPedido) {
+  // solicitud especial: el pedido y la solicitud se guardan juntos o no se guarda nada). Guarda
+  // quien lo cargo y el primer evento del historial (sin estado anterior, a PENDIENTE). Lo usan
+  // el alta, "Repetir" y "Convertir solicitud en pedido".
+  async crearEnTransaccion(tx: Prisma.TransactionClient, data: DatosAltaPedido, idUsuario?: bigint) {
     const cliente = await pedidosRepository.obtenerCliente(tx, data.idCliente);
 
     if (!cliente) {
       throw new ErrorNoEncontrado("Cliente no encontrado");
     }
 
-    const pedido = await pedidosRepository.crear(tx, data);
+    const pedido = await pedidosRepository.crear(tx, { ...data, idUsuarioAlta: idUsuario });
+
+    await pedidosRepository.registrarCambioEstado(tx, {
+      idPedido: pedido.idPedido,
+      estadoAnterior: null,
+      estadoNuevo: "PENDIENTE",
+      idUsuario,
+      origen: "PANTALLA"
+    });
 
     return pedidosRepository.actualizar(tx, pedido.idPedido, {
       numeroPedido: construirNumeroPedido(pedido.idPedido)
     });
+  },
+
+  // Linea de tiempo del pedido (#99): cada cambio de estado con quien lo hizo.
+  async listarHistorial(idPedido: bigint) {
+    await this.obtenerPorId(idPedido);
+    return pedidosRepository.listarHistorial(prisma, idPedido);
   },
 
   async agregarDetalle(idPedido: bigint, data: { idItemCatalogo: bigint; cantidad: number }) {
@@ -251,7 +297,7 @@ export const pedidosService = {
   // Crea el pedido repetido en una sola transaccion: pendiente, mismo cliente y origen, y las
   // lineas que se pueden repetir con el precio y el costo de hoy. No toca stock (eso es al
   // confirmarlo, como cualquier pedido).
-  async repetir(idPedido: bigint) {
+  async repetir(idPedido: bigint, idUsuario?: bigint) {
     return prisma.$transaction(async (tx) => {
       const original = await pedidosRepository.obtenerPorId(tx, idPedido);
 
@@ -265,11 +311,15 @@ export const pedidosService = {
         throw new ErrorConflicto("Ninguna linea del pedido se puede repetir: sus items estan inactivos o sin precio");
       }
 
-      const nuevo = await pedidosService.crearEnTransaccion(tx, {
-        idCliente: original.idCliente,
-        origenPedido: original.origenPedido as OrigenPedido,
-        observacionesInternas: `Repetido de ${original.numeroPedido ?? original.idPedido.toString()}`
-      });
+      const nuevo = await pedidosService.crearEnTransaccion(
+        tx,
+        {
+          idCliente: original.idCliente,
+          origenPedido: original.origenPedido as OrigenPedido,
+          observacionesInternas: `Repetido de ${original.numeroPedido ?? original.idPedido.toString()}`
+        },
+        idUsuario
+      );
 
       for (const linea of lineas) {
         await pedidosRepository.agregarDetalle(tx, lineaDesdeItem(nuevo.idPedido, linea.item as ItemCatalogo, linea.cantidad));
@@ -357,6 +407,9 @@ export const pedidosService = {
     });
   },
 
+  // Cambio de estado (y de cobro, observaciones o fecha prometida). Todo en una transaccion: si
+  // el evento del historial (#99) no se puede escribir, el pedido no cambia. Un evento por cada
+  // cambio real de estado; editar solo la fecha prometida o las observaciones no escribe ninguno.
   async actualizarEstado(
     idPedido: bigint,
     cambios: {
@@ -365,10 +418,13 @@ export const pedidosService = {
       observacionesInternas?: string;
       fechaEntrega?: Date | null;
       devolverStock?: boolean;
+      motivoCancelacion?: string;
+      fechaEntregaReal?: Date;
     },
-    idUsuario?: bigint
+    idUsuario?: bigint,
+    ahora = new Date()
   ) {
-    const { devolverStock, ...data } = cambios;
+    const { devolverStock, motivoCancelacion, fechaEntregaReal, ...data } = cambios;
     const pedido = await this.obtenerPorId(idPedido);
 
     // La fecha prometida sirve mientras el pedido esta abierto: entregado o cancelado ya no se
@@ -401,28 +457,74 @@ export const pedidosService = {
       );
     }
 
+    const estadoNuevo = data.estadoPedido !== undefined && data.estadoPedido !== estadoActual ? data.estadoPedido : null;
+    const extra: { motivoCancelacion?: string; fechaEntregaReal?: Date } = {};
+    let observacion: string | undefined;
+
+    // Cancelar pide el motivo, tambien a un pedido pendiente. Queda en el pedido y en el evento.
+    if (estadoNuevo === "CANCELADO") {
+      const motivo = motivoCancelacion?.trim();
+
+      if (!motivo) {
+        throw new ErrorValidacion("Indica por que se cancela el pedido", [
+          { path: "motivoCancelacion", message: "Escribi el motivo de la cancelacion" }
+        ]);
+      }
+
+      extra.motivoCancelacion = motivo;
+      observacion = motivo;
+    }
+
+    if (estadoNuevo === "ENTREGADO") {
+      extra.fechaEntregaReal = fechaEntregaRealValida(fechaEntregaReal, pedido.fechaConfirmacion, ahora);
+      observacion = `Entregado el ${diaArgentinaTexto(extra.fechaEntregaReal)}`;
+    }
+
     // Cancelar un pedido que ya desconto stock: se devuelve o no segun la configuracion (o lo que
     // elija quien cancela), en la misma transaccion que el cambio de estado. La configuracion se
     // lee antes: sin la tabla (preview sin migrar) la consulta abortaria la transaccion.
-    if (data.estadoPedido === "CANCELADO" && ESTADOS_CON_STOCK_DESCONTADO.includes(estadoActual)) {
-      const devolver = await configuracionService.decidirDevolucion("cancelarPedido", devolverStock);
+    const devolver =
+      estadoNuevo === "CANCELADO" && ESTADOS_CON_STOCK_DESCONTADO.includes(estadoActual)
+        ? await configuracionService.decidirDevolucion("cancelarPedido", devolverStock)
+        : false;
 
-      return prisma.$transaction(async (tx) => {
-        if (devolver) {
-          await stockService.revertirMovimientos(tx, {
-            origenMovimiento: "PEDIDO",
-            idReferenciaOrigen: pedido.idPedido,
-            tipoMovimiento: "EGRESO_PEDIDO",
-            idUsuario,
-            observaciones: `Cancelacion del pedido ${pedido.numeroPedido ?? pedido.idPedido.toString()}`
-          });
+    return prisma.$transaction(async (tx) => {
+      if (estadoNuevo) {
+        // Con el pedido bloqueado, el estado tiene que seguir siendo el que se valido: dos cambios
+        // a la vez no dejan dos eventos desde el mismo estado.
+        await pagosRepository.bloquearPedido(tx, pedido.idPedido);
+        const vigente = await pedidosRepository.obtenerPorId(tx, pedido.idPedido);
+
+        if (vigente?.estadoPedido !== estadoActual) {
+          throw new ErrorConflicto("El pedido cambio mientras se guardaba: volve a abrirlo y proba de nuevo");
         }
+      }
 
-        return pedidosRepository.actualizar(tx, pedido.idPedido, data);
-      });
-    }
+      if (devolver) {
+        await stockService.revertirMovimientos(tx, {
+          origenMovimiento: "PEDIDO",
+          idReferenciaOrigen: pedido.idPedido,
+          tipoMovimiento: "EGRESO_PEDIDO",
+          idUsuario,
+          observaciones: `Cancelacion del pedido ${pedido.numeroPedido ?? pedido.idPedido.toString()}`
+        });
+      }
 
-    return pedidosRepository.actualizar(prisma, pedido.idPedido, data);
+      const actualizado = await pedidosRepository.actualizar(tx, pedido.idPedido, { ...data, ...extra });
+
+      if (estadoNuevo) {
+        await pedidosRepository.registrarCambioEstado(tx, {
+          idPedido: pedido.idPedido,
+          estadoAnterior: estadoActual,
+          estadoNuevo,
+          idUsuario,
+          origen: "PANTALLA",
+          observacion
+        });
+      }
+
+      return actualizado;
+    });
   },
 
   async confirmar(idPedido: bigint, idUsuario?: bigint) {
@@ -458,6 +560,13 @@ export const pedidosService = {
       await pedidosRepository.actualizar(tx, pedido.idPedido, {
         estadoPedido: "CONFIRMADO",
         fechaConfirmacion: new Date()
+      });
+      await pedidosRepository.registrarCambioEstado(tx, {
+        idPedido: pedido.idPedido,
+        estadoAnterior: "PENDIENTE",
+        estadoNuevo: "CONFIRMADO",
+        idUsuario,
+        origen: "PANTALLA"
       });
 
       return pedidosRepository.obtenerPorId(tx, pedido.idPedido);

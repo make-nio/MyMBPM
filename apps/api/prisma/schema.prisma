@@ -9,22 +9,24 @@ datasource db {
 }
 
 model Usuario {
-  idUsuario         BigInt            @id @default(autoincrement()) @map("ID_USUARIO") @db.BigInt
-  nombre            String            @map("NOMBRE") @db.VarChar(100)
-  apellido          String            @map("APELLIDO") @db.VarChar(100)
-  email             String            @map("EMAIL") @db.VarChar(150)
-  usuario           String            @map("USUARIO") @db.VarChar(100)
-  claveHash         String            @map("CLAVE_HASH") @db.VarChar(255)
-  activo            Boolean           @default(true) @map("ACTIVO")
-  esAdministrador   Boolean           @default(false) @map("ES_ADMINISTRADOR")
-  fechaAlta         DateTime          @default(now()) @map("FECHA_ALTA") @db.Timestamptz(3)
-  fechaModificacion DateTime          @updatedAt @map("FECHA_MODIFICACION") @db.Timestamptz(3)
-  estadosStock      EstadoStock[]
-  auditoriasCambio  AuditoriaCambio[]
-  sesion            SesionUsuario?
-  pagosRegistrados  Pago[]            @relation("PagoRegistradoPor")
-  pagosAnulados     Pago[]            @relation("PagoAnuladoPor")
-  devoluciones      Devolucion[]
+  idUsuario              BigInt                  @id @default(autoincrement()) @map("ID_USUARIO") @db.BigInt
+  nombre                 String                  @map("NOMBRE") @db.VarChar(100)
+  apellido               String                  @map("APELLIDO") @db.VarChar(100)
+  email                  String                  @map("EMAIL") @db.VarChar(150)
+  usuario                String                  @map("USUARIO") @db.VarChar(100)
+  claveHash              String                  @map("CLAVE_HASH") @db.VarChar(255)
+  activo                 Boolean                 @default(true) @map("ACTIVO")
+  esAdministrador        Boolean                 @default(false) @map("ES_ADMINISTRADOR")
+  fechaAlta              DateTime                @default(now()) @map("FECHA_ALTA") @db.Timestamptz(3)
+  fechaModificacion      DateTime                @updatedAt @map("FECHA_MODIFICACION") @db.Timestamptz(3)
+  estadosStock           EstadoStock[]
+  auditoriasCambio       AuditoriaCambio[]
+  sesion                 SesionUsuario?
+  pagosRegistrados       Pago[]                  @relation("PagoRegistradoPor")
+  pagosAnulados          Pago[]                  @relation("PagoAnuladoPor")
+  devoluciones           Devolucion[]
+  pedidosCargados        Pedido[]                @relation("PedidoCargadoPor")
+  historialEstadosPedido HistorialEstadoPedido[]
 
   // Ademas de estos unicos, la migracion inicial crea UQ_USUARIO_EMAIL_LOWER y
   // UQ_USUARIO_USUARIO_LOWER sobre lower(...) (SQL crudo: Prisma no modela indices por expresion).
@@ -173,25 +175,32 @@ model Cliente {
 }
 
 model Pedido {
-  idPedido              BigInt          @id @default(autoincrement()) @map("ID_PEDIDO") @db.BigInt
-  idCliente             BigInt          @map("ID_CLIENTE") @db.BigInt
-  numeroPedido          String?         @map("NUMERO_PEDIDO") @db.VarChar(32)
-  origenPedido          String          @map("ORIGEN_PEDIDO") @db.VarChar(30)
-  estadoPedido          String          @default("PENDIENTE") @map("ESTADO_PEDIDO") @db.VarChar(30)
-  estadoCobro           String          @default("PENDIENTE") @map("ESTADO_COBRO") @db.VarChar(30)
-  observacionesCliente  String?         @map("OBSERVACIONES_CLIENTE") @db.VarChar(2000)
-  observacionesInternas String?         @map("OBSERVACIONES_INTERNAS") @db.VarChar(2000)
-  subtotal              Decimal         @default(0) @map("SUBTOTAL") @db.Decimal(18, 2)
-  total                 Decimal         @map("TOTAL") @db.Decimal(18, 2)
-  fechaAlta             DateTime        @default(now()) @map("FECHA_ALTA") @db.Timestamptz(3)
-  fechaConfirmacion     DateTime?       @map("FECHA_CONFIRMACION") @db.Timestamptz(3)
-  fechaEntrega          DateTime?       @map("FECHA_ENTREGA") @db.Timestamptz(3)
-  activo                Boolean         @default(true) @map("ACTIVO")
-  fechaModificacion     DateTime        @updatedAt @map("FECHA_MODIFICACION") @db.Timestamptz(3)
-  cliente               Cliente         @relation(fields: [idCliente], references: [idCliente], onDelete: NoAction, onUpdate: NoAction)
+  idPedido              BigInt                  @id @default(autoincrement()) @map("ID_PEDIDO") @db.BigInt
+  idCliente             BigInt                  @map("ID_CLIENTE") @db.BigInt
+  numeroPedido          String?                 @map("NUMERO_PEDIDO") @db.VarChar(32)
+  origenPedido          String                  @map("ORIGEN_PEDIDO") @db.VarChar(30)
+  estadoPedido          String                  @default("PENDIENTE") @map("ESTADO_PEDIDO") @db.VarChar(30)
+  estadoCobro           String                  @default("PENDIENTE") @map("ESTADO_COBRO") @db.VarChar(30)
+  observacionesCliente  String?                 @map("OBSERVACIONES_CLIENTE") @db.VarChar(2000)
+  observacionesInternas String?                 @map("OBSERVACIONES_INTERNAS") @db.VarChar(2000)
+  subtotal              Decimal                 @default(0) @map("SUBTOTAL") @db.Decimal(18, 2)
+  total                 Decimal                 @map("TOTAL") @db.Decimal(18, 2)
+  fechaAlta             DateTime                @default(now()) @map("FECHA_ALTA") @db.Timestamptz(3)
+  fechaConfirmacion     DateTime?               @map("FECHA_CONFIRMACION") @db.Timestamptz(3)
+  // Fecha PROMETIDA de entrega (no se renombra: ver #99). La real es FECHA_ENTREGA_REAL.
+  fechaEntrega          DateTime?               @map("FECHA_ENTREGA") @db.Timestamptz(3)
+  // Dia en que se entrego de verdad (00:00 de Argentina), al pasar a ENTREGADO (#99).
+  fechaEntregaReal      DateTime?               @map("FECHA_ENTREGA_REAL") @db.Timestamptz(3)
+  motivoCancelacion     String?                 @map("MOTIVO_CANCELACION") @db.VarChar(500)
+  idUsuarioAlta         BigInt?                 @map("ID_USUARIO_ALTA") @db.BigInt
+  activo                Boolean                 @default(true) @map("ACTIVO")
+  fechaModificacion     DateTime                @updatedAt @map("FECHA_MODIFICACION") @db.Timestamptz(3)
+  cliente               Cliente                 @relation(fields: [idCliente], references: [idCliente], onDelete: NoAction, onUpdate: NoAction)
+  usuarioAlta           Usuario?                @relation("PedidoCargadoPor", fields: [idUsuarioAlta], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction)
   detalles              PedidoDetalle[]
   pagos                 Pago[]
   devoluciones          Devolucion[]
+  historialEstados      HistorialEstadoPedido[]
 
   solicitudEspecial SolicitudEspecial?
 
@@ -202,6 +211,24 @@ model Pedido {
   @@index([fechaAlta], map: "IX_PEDIDO_FECHA_ALTA")
   @@index([fechaConfirmacion], map: "IX_PEDIDO_FECHA_CONFIRMACION")
   @@map("PEDIDO")
+}
+
+// Un cambio de estado de un pedido (#99): de donde a donde, cuando, quien y por que. Se escribe en
+// la misma transaccion que el cambio; no se edita ni se borra. ESTADO_ANTERIOR vacio es el alta.
+model HistorialEstadoPedido {
+  idHistorialEstadoPedido BigInt   @id @default(autoincrement()) @map("ID_HISTORIAL_ESTADO_PEDIDO") @db.BigInt
+  idPedido                BigInt   @map("ID_PEDIDO") @db.BigInt
+  estadoAnterior          String?  @map("ESTADO_ANTERIOR") @db.VarChar(30)
+  estadoNuevo             String   @map("ESTADO_NUEVO") @db.VarChar(30)
+  fecha                   DateTime @default(now()) @map("FECHA") @db.Timestamptz(3)
+  idUsuario               BigInt?  @map("ID_USUARIO") @db.BigInt
+  origen                  String   @default("PANTALLA") @map("ORIGEN") @db.VarChar(20)
+  observacion             String?  @map("OBSERVACION") @db.VarChar(500)
+  pedido                  Pedido   @relation(fields: [idPedido], references: [idPedido], onDelete: NoAction, onUpdate: NoAction)
+  usuario                 Usuario? @relation(fields: [idUsuario], references: [idUsuario], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([idPedido, fecha], map: "IX_HISTORIAL_ESTADO_PEDIDO_PEDIDO_FECHA")
+  @@map("HISTORIAL_ESTADO_PEDIDO")
 }
 
 // Cobros de un pedido. No se borran ni se editan: se anulan con motivo. La suma de los pagos

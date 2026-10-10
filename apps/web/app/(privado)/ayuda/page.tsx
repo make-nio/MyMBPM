@@ -26,9 +26,11 @@ const guias: Paso[] = [
       "Antes de confirmar, mira \"Impacto en stock al confirmar\": te dice cuanto hay y cuanto queda de cada producto.",
       "Si falta stock de algo, no te deja confirmar: produci o ajusta el stock primero.",
       "Toca \"Confirmar pedido\" y despues \"Confirmar y descontar stock\". Ahi se descuentan los productos.",
-      "Despues vas cambiando el estado (En preparacion, Listo, Entregado) con \"Guardar estado\". El cobro se registra en \"Pagos\" (ver \"Cobrar un pedido\")."
+      "Despues vas cambiando el estado (En preparacion, Listo, Entregado) con \"Guardar estado\". El cobro se registra en \"Pagos\" (ver \"Cobrar un pedido\").",
+      "Al marcarlo Entregado te propone la fecha de hoy: si lo entregaste otro dia, cambiala (no puede ser futura ni antes de la confirmacion).",
+      "En \"Historial\" ves cada cambio de estado: cuando, quien lo hizo y, si se cancelo, por que."
     ],
-    ojo: "Al cancelar un pedido ya confirmado, el sistema te pregunta si los productos vuelven al stock (o lo hace solo, segun la Configuracion). Si vuelven, lo ves en sus movimientos como \"Reverso\"."
+    ojo: "Para cancelar un pedido tenes que escribir el motivo. Si ya estaba confirmado, el sistema te pregunta si los productos vuelven al stock (o lo hace solo, segun la Configuracion). Si vuelven, lo ves en sus movimientos como \"Reverso\"."
   },
   {
     titulo: "Cobrar un pedido",

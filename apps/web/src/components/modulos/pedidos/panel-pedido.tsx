@@ -42,6 +42,7 @@ import { TablaImpactoStock } from "../stock/tabla-impacto-stock";
 import { EleccionDevolverStock } from "../configuracion/eleccion-devolver-stock";
 import { FormularioLineaPedido } from "./formulario-linea-pedido";
 import { DevolucionesPedido } from "./devoluciones-pedido";
+import { HistorialPedido } from "./historial-pedido";
 import { PagosPedido } from "./pagos-pedido";
 import { RepetirPedido } from "./repetir-pedido";
 
@@ -71,6 +72,9 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
   const [confirmando, setConfirmando] = useState(false);
   const [estadoPedido, setEstadoPedido] = useState<EstadoPedido>("PENDIENTE");
   const [fechaEntrega, setFechaEntrega] = useState("");
+  // Al cancelar, por que (obligatorio); al entregar, que dia (hoy si no se cambia). #99.
+  const [motivoCancelacion, setMotivoCancelacion] = useState("");
+  const [fechaEntregaReal, setFechaEntregaReal] = useState("");
   // Una devolucion cambia lo que falta cobrar sin tocar el total: vuelve a pedir los pagos.
   const [devoluciones, setDevoluciones] = useState(0);
   // Cancelar un pedido que ya desconto stock: se devuelve o no segun la configuracion (#89).
@@ -86,6 +90,8 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
     setPedido(actual);
     setEstadoPedido(actual.estadoPedido);
     setFechaEntrega(diaArgentina(actual.fechaEntrega));
+    setMotivoCancelacion("");
+    setFechaEntregaReal(diaArgentina(new Date()));
 
     if (actual.estadoPedido === "PENDIENTE") {
       // Antes de confirmar: cuanto stock hay y cuanto quedaria.
@@ -183,6 +189,9 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
   const abierto = !ESTADOS_ENTREGADOS.includes(pedido.estadoPedido) && pedido.estadoPedido !== "CANCELADO";
   const atrasado = abierto && pedido.fechaEntrega !== null && diaArgentina(pedido.fechaEntrega) < diaArgentina(new Date());
   const opcionesEstado: EstadoPedido[] = [pedido.estadoPedido, ...TRANSICIONES_ESTADO_PEDIDO[pedido.estadoPedido]];
+  const cancela = estadoPedido === "CANCELADO" && pedido.estadoPedido !== "CANCELADO";
+  const entrega = estadoPedido === "ENTREGADO" && pedido.estadoPedido !== "ENTREGADO";
+  const hoy = diaArgentina(new Date());
 
   return (
     <section aria-label={`Pedido ${pedido.numeroPedido ?? pedido.idPedido}`} className="tarjeta-seccion">
@@ -201,7 +210,18 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
               {pedido.fechaEntrega ? formatearDia(pedido.fechaEntrega) : "sin fecha"}
             </strong>
             {atrasado ? <strong className="texto-alerta" data-testid="pedido-atrasado"> · Atrasado</strong> : null}
+            {pedido.fechaEntregaReal ? (
+              <>
+                {" "}
+                · Entregado el <strong data-testid="entrega-real">{formatearDia(pedido.fechaEntregaReal)}</strong>
+              </>
+            ) : null}
           </p>
+          {pedido.motivoCancelacion ? (
+            <p className="texto-secundario texto-secundario--compacto">
+              Motivo de la cancelacion: <strong data-testid="motivo-cancelacion">{pedido.motivoCancelacion}</strong>
+            </p>
+          ) : null}
           <p className="texto-secundario texto-secundario--compacto">
             Estado: <strong data-testid="estado-pedido">{formatearEstado(pedido.estadoPedido)}</strong> · Cobro:{" "}
             <strong data-testid="estado-cobro">{formatearEstado(pedido.estadoCobro)}</strong> · Total:{" "}
@@ -352,6 +372,8 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
         </div>
       ) : null}
 
+      <HistorialPedido idPedido={idPedido} version={`${pedido.estadoPedido}-${pedido.fechaModificacion}`} />
+
       <div className="filtros-inline">
         <label className="campo-formulario" htmlFor="pedido-estado">
           <span>Estado del pedido</span>
@@ -368,14 +390,41 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
             ))}
           </select>
         </label>
+        {cancela ? (
+          <label className="campo-formulario" htmlFor="pedido-motivo-cancelacion">
+            <span>Motivo de la cancelacion</span>
+            <input
+              id="pedido-motivo-cancelacion"
+              maxLength={500}
+              onChange={(event) => setMotivoCancelacion(event.target.value)}
+              required
+              type="text"
+              value={motivoCancelacion}
+            />
+          </label>
+        ) : null}
+        {entrega ? (
+          <label className="campo-formulario" htmlFor="pedido-fecha-entrega-real">
+            <span>Fecha de entrega</span>
+            <input
+              id="pedido-fecha-entrega-real"
+              max={hoy}
+              onChange={(event) => setFechaEntregaReal(event.target.value)}
+              type="date"
+              value={fechaEntregaReal}
+            />
+          </label>
+        ) : null}
         <button
           className="boton-secundario"
-          disabled={estadoPedido === pedido.estadoPedido}
+          disabled={estadoPedido === pedido.estadoPedido || (cancela && motivoCancelacion.trim() === "")}
           onClick={() =>
             void ejecutar(() =>
               actualizarEstadoPedido(idPedido, {
                 estadoPedido,
-                ...(cancelaConStock && devolucion.eleccion !== undefined ? { devolverStock: devolucion.eleccion } : {})
+                ...(cancelaConStock && devolucion.eleccion !== undefined ? { devolverStock: devolucion.eleccion } : {}),
+                ...(cancela ? { motivoCancelacion: motivoCancelacion.trim() } : {}),
+                ...(entrega && fechaEntregaReal ? { fechaEntregaReal } : {})
               })
             )
           }

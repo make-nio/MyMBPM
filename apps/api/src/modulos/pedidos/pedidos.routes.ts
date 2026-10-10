@@ -16,6 +16,7 @@ pedidosRouter.post("/:id/detalles", asyncHandler(pedidosController.agregarDetall
 pedidosRouter.patch("/:id/detalles/:detalleId", asyncHandler(pedidosController.actualizarDetalle));
 pedidosRouter.delete("/:id/detalles/:detalleId", asyncHandler(pedidosController.eliminarDetalle));
 pedidosRouter.patch("/:id/estado", asyncHandler(pedidosController.actualizarEstado));
+pedidosRouter.get("/:id/historial", asyncHandler(pedidosController.listarHistorial));
 pedidosRouter.post("/:id/confirmar", asyncHandler(pedidosController.confirmar));
 pedidosRouter.get("/:id/repeticion", asyncHandler(pedidosController.prepararRepeticion));
 pedidosRouter.post("/:id/repetir", asyncHandler(pedidosController.repetir));
