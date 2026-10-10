@@ -92,3 +92,70 @@ test("los indicadores llevan a la pantalla de cada modulo", async ({ page }) => 
   await page.getByRole("link", { name: /^Stock bajo: \d+$/ }).click();
   await expect(page).toHaveURL(/\/stock$/);
 });
+
+// Franja "Hoy" (#101): el resumen del dia lo arma el servidor; la pantalla muestra sus frases.
+test("la franja Hoy muestra el resumen del dia, coincide con el panel y la campanita, y cada frase lleva a su lista", async ({ page }) => {
+  // Algo seguro para confirmar y para reponer.
+  const cliente = await crearCliente(unico("PRUEBA-ClienteHoy"));
+  const { idCategoria } = await crearCategoria(unico("PRUEBA-CatHoy"));
+  const faltante = await crearItem({ idCategoria, nombre: unico("PRUEBA-FaltaHoy"), tipoItem: "INSUMO", stockMinimo: 2 });
+  await ajustarStock(faltante.idItemCatalogo, 1, "INSUMO");
+  await api("POST", "/api/pedidos", { idCliente: cliente.idCliente, origenPedido: "MANUAL" });
+
+  type Hoy = {
+    frases: string[];
+    pedidosParaConfirmar: { cantidad: number };
+    entregasAtrasadas: { cantidad: number };
+    entregasDeHoy: { cantidad: number };
+    paraReponer: { cantidad: number };
+  };
+  const [hoy, avisos, resumen] = await Promise.all([
+    api<Hoy>("GET", "/api/panel/hoy"),
+    api<{ stockBajo: number; entregasAtrasadas: number; entregasHoy: number }>("GET", "/api/panel/avisos"),
+    api<{ pedidos: { pendientes: { total: number } }; stockBajo: { total: number } }>("GET", "/api/panel/resumen?limite=5")
+  ]);
+  // Los mismos numeros que el panel y la campanita.
+  expect(hoy.pedidosParaConfirmar.cantidad).toBe(resumen.pedidos.pendientes.total);
+  expect(hoy.paraReponer.cantidad).toBe(resumen.stockBajo.total);
+  expect(hoy.paraReponer.cantidad).toBe(avisos.stockBajo);
+  expect(hoy.entregasAtrasadas.cantidad).toBe(avisos.entregasAtrasadas);
+  expect(hoy.entregasDeHoy.cantidad).toBe(avisos.entregasHoy);
+  // Sin plata ni costos.
+  expect(JSON.stringify(hoy)).not.toMatch(/costo|ganancia|monto|precio|total/i);
+
+  await page.goto("/panel");
+  const franja = page.getByRole("region", { name: "Hoy" });
+  for (const frase of hoy.frases) {
+    await expect(franja.getByRole("link", { name: frase })).toBeVisible();
+  }
+
+  await franja.getByRole("link", { name: /pedidos? para confirmar$/ }).click();
+  await expect(page).toHaveURL(/\/pedidos\?estado=PENDIENTE$/);
+  await expect(page.getByLabel("Filtrar por estado")).toHaveValue("PENDIENTE");
+
+  await page.goto("/panel");
+  await franja.getByRole("link", { name: /para reponer$/ }).click();
+  await expect(page).toHaveURL(/\/stock\?bajoMinimo=1$/);
+});
+
+test("la franja Hoy sin pendientes dice que no hay nada", async ({ page }) => {
+  await page.route("**/api/panel/hoy", (ruta) =>
+    ruta.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        ok: true,
+        data: {
+          fecha: "2026-10-10",
+          pedidosParaConfirmar: { cantidad: 0, primeros: [] },
+          entregasAtrasadas: { cantidad: 0, primeros: [] },
+          entregasDeHoy: { cantidad: 0, primeros: [] },
+          paraReponer: { cantidad: 0, primeros: [] },
+          frases: []
+        }
+      })
+    })
+  );
+
+  await page.goto("/panel");
+  await expect(page.getByRole("region", { name: "Hoy" })).toContainText("Nada pendiente para hoy");
+});

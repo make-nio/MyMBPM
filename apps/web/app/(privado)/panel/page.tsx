@@ -7,8 +7,8 @@ import { useUsuarioAutenticado } from "../../../src/components/auth/contexto-ses
 import { EstadoCargando } from "../../../src/components/ui/estado-cargando";
 import { MensajeError } from "../../../src/components/ui/mensaje-error";
 import { formatearCantidad, formatearDia, formatearEstado, formatearFecha, formatearMoneda } from "../../../src/lib/formato";
-import { obtenerResumenPanel } from "../../../src/lib/modulos/panel";
-import { ResumenPanel } from "../../../src/types/panel";
+import { obtenerResumenDelDia, obtenerResumenPanel } from "../../../src/lib/modulos/panel";
+import { ResumenDelDia, ResumenPanel } from "../../../src/types/panel";
 
 type PedidoResumen = ResumenPanel["entregas"]["atrasados"]["pedidos"][number];
 
@@ -68,6 +68,50 @@ function PedidoConEntrega({ pedido }: { pedido: PedidoResumen }) {
   );
 }
 
+// Cada frase del resumen del dia lleva a su lista, como la campanita.
+const DESTINOS_DEL_DIA: Array<{ lista: keyof Omit<ResumenDelDia, "fecha" | "frases">; href: string }> = [
+  { lista: "pedidosParaConfirmar", href: "/pedidos?estado=PENDIENTE" },
+  { lista: "entregasAtrasadas", href: "#entregas" },
+  { lista: "entregasDeHoy", href: "#entregas" },
+  { lista: "paraReponer", href: "/stock?bajoMinimo=1" }
+];
+
+// Franja "Hoy" (#101): el resumen del dia que arma el servidor, en una linea.
+function FranjaHoy() {
+  const [hoy, setHoy] = useState<ResumenDelDia | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    obtenerResumenDelDia()
+      .then(setHoy)
+      .catch(() => setError(true));
+  }, []);
+
+  if (error || !hoy) {
+    return null;
+  }
+
+  // Las frases vienen en el mismo orden que las listas, sin las que dan cero.
+  const destinos = DESTINOS_DEL_DIA.filter(({ lista }) => hoy[lista].cantidad > 0);
+
+  return (
+    <section aria-label="Hoy" className="franja-hoy">
+      <strong className="franja-hoy__titulo">Hoy</strong>
+      {hoy.frases.length === 0 ? (
+        <span>Nada pendiente para hoy</span>
+      ) : (
+        <ul className="franja-hoy__frases">
+          {hoy.frases.map((frase, indice) => (
+            <li key={frase}>
+              <Link href={destinos[indice]?.href ?? "/panel"}>{frase}</Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 export default function PanelPage() {
   const usuario = useUsuarioAutenticado();
   const [resumen, setResumen] = useState<ResumenPanel | null>(null);
@@ -90,6 +134,8 @@ export default function PanelPage() {
           <p>Lo que hay para hacer hoy.</p>
         </div>
       </header>
+
+      <FranjaHoy />
 
       {error ? <MensajeError mensaje={error} /> : null}
       {!resumen && !error ? <EstadoCargando titulo="Cargando el panel" /> : null}
@@ -152,7 +198,7 @@ export default function PanelPage() {
           </section>
           ) : null}
 
-          <div className="panel-secciones">
+          <div className="panel-secciones" id="entregas">
             <Seccion
               href="/pedidos"
               titulo="Entregas atrasadas"

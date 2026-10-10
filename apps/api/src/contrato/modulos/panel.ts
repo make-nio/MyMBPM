@@ -114,6 +114,39 @@ const avisosSchema = objeto({
   entregasHoy: z.number().int()
 }).openapi("AvisosPanel");
 
+// Resumen del dia (#101): la franja "Hoy" del panel y, despues, el asistente de Maxi. La forma solo
+// crece (se le agregan listas); no trae costos ni plata para nadie. `primeros`: hasta 3, los mas
+// urgentes primero.
+const pedidoDelDiaSchema = objeto({ idPedido: id, numeroPedido: z.string().nullable(), cliente: z.string() });
+const resumenDelDiaSchema = objeto({
+  // Dia de Argentina, AAAA-MM-DD.
+  fecha: z.string(),
+  pedidosParaConfirmar: objeto({ cantidad: z.number().int(), primeros: lista(pedidoDelDiaSchema) }),
+  entregasAtrasadas: objeto({
+    cantidad: z.number().int(),
+    primeros: lista(objeto({ ...pedidoDelDiaSchema.shape, fechaEntrega: fecha, diasDeAtraso: z.number().int() }))
+  }),
+  entregasDeHoy: objeto({
+    cantidad: z.number().int(),
+    primeros: lista(objeto({ ...pedidoDelDiaSchema.shape, fechaEntrega: fecha }))
+  }),
+  paraReponer: objeto({
+    cantidad: z.number().int(),
+    primeros: lista(
+      objeto({
+        idItemCatalogo: id,
+        nombre: z.string(),
+        tipo: z.enum(TIPOS_ITEM),
+        stockActual: decimal,
+        stockMinimo: z.number().int(),
+        faltan: decimal
+      })
+    )
+  }),
+  // Ya armadas en espanol, singular o plural; las que dan cero no van.
+  frases: lista(z.string())
+}).openapi("ResumenDelDia");
+
 export const endpoints = [
   {
     metodo: "get",
@@ -131,5 +164,13 @@ export const endpoints = [
     resumen: "Cuantos avisos hay para el encabezado: stock bajo, entregas atrasadas y entregas de hoy",
     etiqueta,
     respuesta: avisosSchema
+  },
+  {
+    metodo: "get",
+    ruta: "/api/panel/hoy",
+    acceso: "autenticado",
+    resumen: "Resumen del dia: pedidos para confirmar, entregas atrasadas y de hoy, items para reponer y las frases para mostrar. Sin costos ni plata; la forma solo crece",
+    etiqueta,
+    respuesta: resumenDelDiaSchema
   }
 ] as const satisfies readonly Endpoint[];
