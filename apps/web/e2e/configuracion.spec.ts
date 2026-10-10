@@ -57,13 +57,13 @@ test("en PREGUNTAR la API exige elegir y devuelve el stock solo si se pide", asy
   const conDevolucion = await pedidoConfirmado(10, 4);
   expect(await stockActual(conDevolucion.producto.idItemCatalogo, "PRODUCTO")).toBe(6);
   await expect(
-    api("PATCH", `/api/pedidos/${conDevolucion.pedido.idPedido}/estado`, { estadoPedido: "CANCELADO" })
+    api("PATCH", `/api/pedidos/${conDevolucion.pedido.idPedido}/estado`, { estadoPedido: "CANCELADO", motivoCancelacion: "PRUEBA cancelado" })
   ).rejects.toThrow(/400/);
-  await api("PATCH", `/api/pedidos/${conDevolucion.pedido.idPedido}/estado`, { estadoPedido: "CANCELADO", devolverStock: true });
+  await api("PATCH", `/api/pedidos/${conDevolucion.pedido.idPedido}/estado`, { estadoPedido: "CANCELADO", devolverStock: true, motivoCancelacion: "PRUEBA cancelado" });
   expect(await stockActual(conDevolucion.producto.idItemCatalogo, "PRODUCTO")).toBe(10);
 
   const sinDevolucion = await pedidoConfirmado(10, 4);
-  await api("PATCH", `/api/pedidos/${sinDevolucion.pedido.idPedido}/estado`, { estadoPedido: "CANCELADO", devolverStock: false });
+  await api("PATCH", `/api/pedidos/${sinDevolucion.pedido.idPedido}/estado`, { estadoPedido: "CANCELADO", devolverStock: false, motivoCancelacion: "PRUEBA cancelado" });
   expect(await stockActual(sinDevolucion.producto.idItemCatalogo, "PRODUCTO")).toBe(6);
 });
 
@@ -72,7 +72,7 @@ test("con DEVOLVER o NO_DEVOLVER manda la configuracion, sin preguntar", async (
 
   // Aunque se pida no devolver, sin preguntar decide la configuracion.
   const { pedido, producto } = await pedidoConfirmado(8, 3);
-  await api("PATCH", `/api/pedidos/${pedido.idPedido}/estado`, { estadoPedido: "CANCELADO", devolverStock: false });
+  await api("PATCH", `/api/pedidos/${pedido.idPedido}/estado`, { estadoPedido: "CANCELADO", devolverStock: false, motivoCancelacion: "PRUEBA cancelado" });
   expect(await stockActual(producto.idItemCatalogo, "PRODUCTO")).toBe(8);
 
   // Y en la orden en proceso, con NO_DEVOLVER, el modal solo lo avisa.

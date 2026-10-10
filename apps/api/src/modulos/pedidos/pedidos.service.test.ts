@@ -6,6 +6,7 @@ import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado"
 import { prisma } from "../../lib/prisma";
 import { ErrorValidacion } from "../../compartido/errores/error-validacion";
 import { configuracionService } from "../configuracion/configuracion.service";
+import { pagosRepository } from "../pagos/pagos.repository";
 import { stockService } from "../stock/stock.service";
 
 import { pedidosRepository } from "./pedidos.repository";
@@ -51,7 +52,15 @@ vi.mock("./pedidos.repository", () => ({
     eliminarDetalle: vi.fn(),
     obtenerItemCatalogo: vi.fn(),
     obtenerItemsCatalogo: vi.fn(),
-    obtenerCliente: vi.fn()
+    obtenerCliente: vi.fn(),
+    registrarCambioEstado: vi.fn(),
+    listarHistorial: vi.fn()
+  }
+}));
+
+vi.mock("../pagos/pagos.repository", () => ({
+  pagosRepository: {
+    bloquearPedido: vi.fn()
   }
 }));
 
@@ -114,7 +123,7 @@ describe("pedidosService.crear", () => {
 
     await pedidosService.crear({ idCliente: 7n, origenPedido: "WEB", fechaEntrega });
 
-    expect(repo.crear).toHaveBeenCalledWith(tx, { idCliente: 7n, origenPedido: "WEB", fechaEntrega });
+    expect(repo.crear).toHaveBeenCalledWith(tx, { idCliente: 7n, origenPedido: "WEB", fechaEntrega, idUsuarioAlta: undefined });
   });
 });
 
@@ -212,9 +221,9 @@ describe("pedidosService.actualizarEstado (transiciones)", () => {
   ] as const)("permite %s -> %s", async (actual, nuevo) => {
     repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: actual }));
 
-    await pedidosService.actualizarEstado(1n, { estadoPedido: nuevo });
+    await pedidosService.actualizarEstado(1n, { estadoPedido: nuevo, ...(nuevo === "CANCELADO" ? { motivoCancelacion: "x" } : {}) });
 
-    expect(repo.actualizar).toHaveBeenCalledWith(prisma, 1n, { estadoPedido: nuevo });
+    expect(repo.actualizar).toHaveBeenCalledWith(tx, 1n, expect.objectContaining({ estadoPedido: nuevo }));
   });
 
   it("permite cambiar solo el cobro de un pedido entregado", async () => {
@@ -222,7 +231,7 @@ describe("pedidosService.actualizarEstado (transiciones)", () => {
 
     await pedidosService.actualizarEstado(1n, { estadoPedido: "ENTREGADO", estadoCobro: "PAGADO" });
 
-    expect(repo.actualizar).toHaveBeenCalledWith(prisma, 1n, { estadoPedido: "ENTREGADO", estadoCobro: "PAGADO" });
+    expect(repo.actualizar).toHaveBeenCalledWith(tx, 1n, { estadoPedido: "ENTREGADO", estadoCobro: "PAGADO" });
   });
 });
 
@@ -235,7 +244,7 @@ describe("pedidosService.actualizarEstado (cancelar un pedido que desconto stock
       repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: actual }));
       configuracion.decidirDevolucion.mockResolvedValue(true);
 
-      await pedidosService.actualizarEstado(1n, { estadoPedido: "CANCELADO", devolverStock: true }, 7n);
+      await pedidosService.actualizarEstado(1n, { estadoPedido: "CANCELADO", devolverStock: true, motivoCancelacion: "Se arrepintio" }, 7n);
 
       expect(configuracion.decidirDevolucion).toHaveBeenCalledWith("cancelarPedido", true);
       expect(stock.revertirMovimientos).toHaveBeenCalledWith(tx, {
@@ -246,7 +255,7 @@ describe("pedidosService.actualizarEstado (cancelar un pedido que desconto stock
         observaciones: "Cancelacion del pedido PED-000001"
       });
       // devolverStock no se guarda en el pedido.
-      expect(repo.actualizar).toHaveBeenCalledWith(tx, 1n, { estadoPedido: "CANCELADO" });
+      expect(repo.actualizar).toHaveBeenCalledWith(tx, 1n, { estadoPedido: "CANCELADO", motivoCancelacion: "Se arrepintio" });
     }
   );
 
@@ -254,19 +263,19 @@ describe("pedidosService.actualizarEstado (cancelar un pedido que desconto stock
     repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: "CONFIRMADO" }));
     configuracion.decidirDevolucion.mockResolvedValue(false);
 
-    await pedidosService.actualizarEstado(1n, { estadoPedido: "CANCELADO", devolverStock: false });
+    await pedidosService.actualizarEstado(1n, { estadoPedido: "CANCELADO", devolverStock: false, motivoCancelacion: "Se arrepintio" });
 
     expect(stock.revertirMovimientos).not.toHaveBeenCalled();
-    expect(repo.actualizar).toHaveBeenCalledWith(tx, 1n, { estadoPedido: "CANCELADO" });
+    expect(repo.actualizar).toHaveBeenCalledWith(tx, 1n, { estadoPedido: "CANCELADO", motivoCancelacion: "Se arrepintio" });
   });
 
   it("si hay que preguntar y no se eligio, no cancela", async () => {
     repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: "CONFIRMADO" }));
     configuracion.decidirDevolucion.mockRejectedValue(new ErrorValidacion("Indica si se devuelve"));
 
-    await expect(pedidosService.actualizarEstado(1n, { estadoPedido: "CANCELADO" })).rejects.toBeInstanceOf(
-      ErrorValidacion
-    );
+    await expect(
+      pedidosService.actualizarEstado(1n, { estadoPedido: "CANCELADO", motivoCancelacion: "Se arrepintio" })
+    ).rejects.toBeInstanceOf(ErrorValidacion);
     expect(repo.actualizar).not.toHaveBeenCalled();
     expect(stock.revertirMovimientos).not.toHaveBeenCalled();
   });
@@ -274,11 +283,11 @@ describe("pedidosService.actualizarEstado (cancelar un pedido que desconto stock
   it("un pedido PENDIENTE no desconto nada: se cancela sin consultar la configuracion", async () => {
     repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: "PENDIENTE" }));
 
-    await pedidosService.actualizarEstado(1n, { estadoPedido: "CANCELADO" });
+    await pedidosService.actualizarEstado(1n, { estadoPedido: "CANCELADO", motivoCancelacion: "Se arrepintio" });
 
     expect(configuracion.decidirDevolucion).not.toHaveBeenCalled();
     expect(stock.revertirMovimientos).not.toHaveBeenCalled();
-    expect(repo.actualizar).toHaveBeenCalledWith(prisma, 1n, { estadoPedido: "CANCELADO" });
+    expect(repo.actualizar).toHaveBeenCalledWith(tx, 1n, { estadoPedido: "CANCELADO", motivoCancelacion: "Se arrepintio" });
   });
 
   it("si la devolucion falla, el pedido no queda cancelado (misma transaccion)", async () => {
@@ -286,7 +295,7 @@ describe("pedidosService.actualizarEstado (cancelar un pedido que desconto stock
     configuracion.decidirDevolucion.mockResolvedValue(true);
     stock.revertirMovimientos.mockRejectedValue(new Error("lock"));
 
-    await expect(pedidosService.actualizarEstado(1n, { estadoPedido: "CANCELADO", devolverStock: true })).rejects.toThrow(
+    await expect(pedidosService.actualizarEstado(1n, { estadoPedido: "CANCELADO", devolverStock: true, motivoCancelacion: "Se arrepintio" })).rejects.toThrow(
       "lock"
     );
     expect(repo.actualizar).not.toHaveBeenCalled();
@@ -313,8 +322,8 @@ describe("pedidosService.actualizarEstado (fecha de entrega prometida)", () => {
     await pedidosService.actualizarEstado(1n, { fechaEntrega: fecha });
     await pedidosService.actualizarEstado(1n, { fechaEntrega: null });
 
-    expect(repo.actualizar).toHaveBeenCalledWith(prisma, 1n, { fechaEntrega: fecha });
-    expect(repo.actualizar).toHaveBeenCalledWith(prisma, 1n, { fechaEntrega: null });
+    expect(repo.actualizar).toHaveBeenCalledWith(tx, 1n, { fechaEntrega: fecha });
+    expect(repo.actualizar).toHaveBeenCalledWith(tx, 1n, { fechaEntrega: null });
   });
 
   it.each(["ENTREGADO", "CANCELADO"] as const)("no la cambia en un pedido %s", async (estado) => {
@@ -501,5 +510,199 @@ describe("pedidosService: repetir un pedido", () => {
 
     await expect(pedidosService.prepararRepeticion(99n)).rejects.toThrow("Pedido no encontrado");
     await expect(pedidosService.repetir(99n)).rejects.toThrow("Pedido no encontrado");
+  });
+});
+
+// Historial de estados (#99): un evento por cambio real, en la misma transaccion.
+describe("pedidosService: historial de estados", () => {
+  const configuracion = vi.mocked(configuracionService);
+
+  it("el alta guarda quien lo cargo y escribe un evento sin estado anterior hacia PENDIENTE", async () => {
+    repo.obtenerCliente.mockResolvedValue({ idCliente: 7n } as never);
+    repo.crear.mockResolvedValue({ idPedido: 42n } as never);
+
+    await pedidosService.crear({ idCliente: 7n, origenPedido: "WEB" }, 9n);
+
+    expect(repo.crear).toHaveBeenCalledWith(tx, expect.objectContaining({ idUsuarioAlta: 9n }));
+    expect(repo.registrarCambioEstado).toHaveBeenCalledTimes(1);
+    expect(repo.registrarCambioEstado).toHaveBeenCalledWith(tx, {
+      idPedido: 42n,
+      estadoAnterior: null,
+      estadoNuevo: "PENDIENTE",
+      idUsuario: 9n,
+      origen: "PANTALLA"
+    });
+  });
+
+  it("confirmar escribe un evento PENDIENTE -> CONFIRMADO con el usuario", async () => {
+    repo.obtenerPorId.mockResolvedValue(pedido({ detalles: [detalle(10n, 3n, 1)] }));
+
+    await pedidosService.confirmar(1n, 9n);
+
+    expect(repo.registrarCambioEstado).toHaveBeenCalledTimes(1);
+    expect(repo.registrarCambioEstado).toHaveBeenCalledWith(tx, {
+      idPedido: 1n,
+      estadoAnterior: "PENDIENTE",
+      estadoNuevo: "CONFIRMADO",
+      idUsuario: 9n,
+      origen: "PANTALLA"
+    });
+  });
+
+  it.each([
+    ["CONFIRMADO", "EN_PREPARACION"],
+    ["CONFIRMADO", "LISTO"],
+    ["EN_PREPARACION", "LISTO"],
+    ["LISTO", "EN_PREPARACION"]
+  ] as const)("%s -> %s escribe exactamente un evento, con el pedido bloqueado", async (actual, nuevo) => {
+    repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: actual }));
+
+    await pedidosService.actualizarEstado(1n, { estadoPedido: nuevo }, 9n);
+
+    expect(vi.mocked(pagosRepository.bloquearPedido)).toHaveBeenCalledWith(tx, 1n);
+    expect(repo.registrarCambioEstado).toHaveBeenCalledTimes(1);
+    expect(repo.registrarCambioEstado).toHaveBeenCalledWith(tx, {
+      idPedido: 1n,
+      estadoAnterior: actual,
+      estadoNuevo: nuevo,
+      idUsuario: 9n,
+      origen: "PANTALLA",
+      observacion: undefined
+    });
+  });
+
+  it("un cambio que no mueve el estado no escribe evento", async () => {
+    repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: "LISTO" }));
+
+    await pedidosService.actualizarEstado(1n, { estadoPedido: "LISTO", observacionesInternas: "Avisar antes" }, 9n);
+    await pedidosService.actualizarEstado(1n, { fechaEntrega: new Date("2026-10-20T03:00:00Z") }, 9n);
+
+    expect(repo.actualizar).toHaveBeenCalledTimes(2);
+    expect(repo.registrarCambioEstado).not.toHaveBeenCalled();
+  });
+
+  it("si el evento no se puede escribir, el error corta la transaccion del cambio", async () => {
+    repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: "CONFIRMADO" }));
+    repo.registrarCambioEstado.mockRejectedValue(new Error("historial"));
+
+    await expect(pedidosService.actualizarEstado(1n, { estadoPedido: "LISTO" }, 9n)).rejects.toThrow("historial");
+    // El estado y el evento van en la misma transaccion (tx): Postgres revierte el cambio.
+    expect(repo.actualizar).toHaveBeenCalledWith(tx, 1n, { estadoPedido: "LISTO" });
+    expect(vi.mocked(prisma.$transaction)).toHaveBeenCalledTimes(1);
+  });
+
+  it("si el estado cambio mientras tanto, 409 y no escribe nada", async () => {
+    repo.obtenerPorId
+      .mockResolvedValueOnce(pedido({ estadoPedido: "CONFIRMADO" }))
+      .mockResolvedValueOnce(pedido({ estadoPedido: "CANCELADO" }));
+
+    await expect(pedidosService.actualizarEstado(1n, { estadoPedido: "LISTO" })).rejects.toBeInstanceOf(ErrorConflicto);
+    expect(repo.actualizar).not.toHaveBeenCalled();
+    expect(repo.registrarCambioEstado).not.toHaveBeenCalled();
+  });
+
+  describe("cancelar", () => {
+    it.each(["PENDIENTE", "CONFIRMADO"] as const)("sin motivo da 400 en motivoCancelacion y no cambia nada (%s)", async (actual) => {
+      repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: actual }));
+
+      for (const motivoCancelacion of [undefined, "   "]) {
+        const error = await pedidosService
+          .actualizarEstado(1n, { estadoPedido: "CANCELADO", devolverStock: false, motivoCancelacion })
+          .catch((e) => e);
+
+        expect(error).toBeInstanceOf(ErrorValidacion);
+        expect(error.detalles).toEqual([expect.objectContaining({ path: "motivoCancelacion" })]);
+      }
+      expect(configuracion.decidirDevolucion).not.toHaveBeenCalled();
+      expect(vi.mocked(prisma.$transaction)).not.toHaveBeenCalled();
+      expect(repo.actualizar).not.toHaveBeenCalled();
+    });
+
+    it("guarda el motivo en el pedido y en la observacion del evento", async () => {
+      repo.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: "PENDIENTE" }));
+
+      await pedidosService.actualizarEstado(1n, { estadoPedido: "CANCELADO", motivoCancelacion: "  No llego a pagar  " }, 9n);
+
+      expect(repo.actualizar).toHaveBeenCalledWith(tx, 1n, { estadoPedido: "CANCELADO", motivoCancelacion: "No llego a pagar" });
+      expect(repo.registrarCambioEstado).toHaveBeenCalledWith(
+        tx,
+        expect.objectContaining({ estadoAnterior: "PENDIENTE", estadoNuevo: "CANCELADO", observacion: "No llego a pagar" })
+      );
+    });
+  });
+
+  describe("entregar", () => {
+    const confirmado = (fechaConfirmacion: Date) => pedido({ estadoPedido: "LISTO", fechaConfirmacion } as never);
+
+    it("sin fecha guarda hoy en hora de Argentina, tambien a las 23:30 de Argentina", async () => {
+      repo.obtenerPorId.mockResolvedValue(confirmado(new Date("2026-10-01T15:00:00Z")));
+      // 9-oct 23:30 en Argentina = 10-oct 02:30 UTC: el dia es el 9.
+      const ahora = new Date("2026-10-10T02:30:00Z");
+
+      await pedidosService.actualizarEstado(1n, { estadoPedido: "ENTREGADO" }, 9n, ahora);
+
+      const nueveDeOctubre = new Date("2026-10-09T03:00:00Z");
+      expect(repo.actualizar).toHaveBeenCalledWith(tx, 1n, { estadoPedido: "ENTREGADO", fechaEntregaReal: nueveDeOctubre });
+      expect(repo.registrarCambioEstado).toHaveBeenCalledWith(
+        tx,
+        expect.objectContaining({ estadoAnterior: "LISTO", estadoNuevo: "ENTREGADO", observacion: "Entregado el 09/10/2026" })
+      );
+    });
+
+    it("guarda la fecha que indica quien lo marca", async () => {
+      repo.obtenerPorId.mockResolvedValue(confirmado(new Date("2026-10-01T15:00:00Z")));
+      const fechaEntregaReal = new Date("2026-10-05T03:00:00Z");
+
+      await pedidosService.actualizarEstado(1n, { estadoPedido: "ENTREGADO", fechaEntregaReal }, 9n, new Date("2026-10-10T15:00:00Z"));
+
+      expect(repo.actualizar).toHaveBeenCalledWith(tx, 1n, { estadoPedido: "ENTREGADO", fechaEntregaReal });
+    });
+
+    it.each([
+      ["futura", "2026-10-11T03:00:00Z"],
+      ["anterior a la confirmacion", "2026-09-30T03:00:00Z"]
+    ])("una fecha %s da 400 en fechaEntregaReal", async (_caso, dia) => {
+      repo.obtenerPorId.mockResolvedValue(confirmado(new Date("2026-10-01T15:00:00Z")));
+
+      const error = await pedidosService
+        .actualizarEstado(1n, { estadoPedido: "ENTREGADO", fechaEntregaReal: new Date(dia) }, 9n, new Date("2026-10-10T15:00:00Z"))
+        .catch((e) => e);
+
+      expect(error).toBeInstanceOf(ErrorValidacion);
+      expect(error.detalles).toEqual([expect.objectContaining({ path: "fechaEntregaReal" })]);
+      expect(repo.actualizar).not.toHaveBeenCalled();
+    });
+
+    it("el mismo dia de la confirmacion vale", async () => {
+      repo.obtenerPorId.mockResolvedValue(confirmado(new Date("2026-10-01T22:00:00Z")));
+      const fechaEntregaReal = new Date("2026-10-01T03:00:00Z");
+
+      await pedidosService.actualizarEstado(1n, { estadoPedido: "ENTREGADO", fechaEntregaReal }, 9n, new Date("2026-10-10T15:00:00Z"));
+
+      expect(repo.actualizar).toHaveBeenCalledWith(tx, 1n, { estadoPedido: "ENTREGADO", fechaEntregaReal });
+    });
+  });
+
+  it("repetir guarda quien cargo el pedido nuevo", async () => {
+    repo.obtenerPorId.mockResolvedValue(
+      pedido({ idCliente: 7n, origenPedido: "WEB", detalles: [detalle(10n, 3n, 1)] } as never)
+    );
+    repo.obtenerItemsCatalogo.mockResolvedValue([
+      { idItemCatalogo: 3n, nombre: "Vela", activo: true, precio: dec(100), costo: dec(40) }
+    ] as never);
+    repo.obtenerCliente.mockResolvedValue({ idCliente: 7n } as never);
+    repo.crear.mockResolvedValue({ idPedido: 50n } as never);
+    repo.actualizar.mockResolvedValue({ idPedido: 50n } as never);
+
+    await pedidosService.repetir(1n, 9n);
+
+    expect(repo.crear).toHaveBeenCalledWith(tx, expect.objectContaining({ idUsuarioAlta: 9n }));
+    expect(repo.registrarCambioEstado).toHaveBeenCalledWith(tx, expect.objectContaining({ idPedido: 50n, estadoNuevo: "PENDIENTE", idUsuario: 9n }));
+  });
+
+  it("listarHistorial: 404 si el pedido no existe", async () => {
+    repo.obtenerPorId.mockResolvedValue(null);
+
+    await expect(pedidosService.listarHistorial(1n)).rejects.toBeInstanceOf(ErrorNoEncontrado);
   });
 });

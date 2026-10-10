@@ -100,6 +100,8 @@ test("pedido completo desde el celular: el detalle queda a la vista", async ({ p
   await confirmacion.getByRole("button", { name: "Confirmar y descontar stock" }).click();
   await expect(confirmacion).toBeHidden();
   await expect(panel.getByTestId("estado-pedido")).toHaveText("Confirmado");
+  // La linea de tiempo del pedido (#99) tambien entra en el celular.
+  await expect(panel.getByRole("region", { name: "Historial del pedido" }).getByRole("listitem")).toHaveCount(2);
 
   const { contenido, pantalla } = await anchoDePagina(page);
   expect(contenido).toBeLessThanOrEqual(pantalla);

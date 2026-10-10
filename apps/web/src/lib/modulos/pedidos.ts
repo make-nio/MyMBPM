@@ -55,6 +55,11 @@ export function actualizarEstadoPedido(idPedido: string, payload: PedidoEstadoPa
   return pedirApi("patch /api/pedidos/{id}/estado", { params: { id: idPedido }, cuerpo: payload });
 }
 
+// Linea de tiempo del pedido (#99): cada cambio de estado, del primero al ultimo.
+export function listarHistorialPedido(idPedido: string) {
+  return pedirApi("get /api/pedidos/{id}/historial", { params: { id: idPedido } });
+}
+
 export function confirmarPedido(idPedido: string) {
   return pedirApi("post /api/pedidos/{id}/confirmar", { params: { id: idPedido } });
 }

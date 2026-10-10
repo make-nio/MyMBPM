@@ -98,7 +98,7 @@ export const solicitudesEspecialesService = {
 
   // Crea un pedido pendiente para el cliente de la solicitud y la deja "Convertida a pedido",
   // vinculada. Los items y precios se cargan despues en el pedido.
-  async convertirEnPedido(idSolicitudEspecial: bigint) {
+  async convertirEnPedido(idSolicitudEspecial: bigint, idUsuario?: bigint) {
     const solicitud = await this.obtenerPorId(idSolicitudEspecial);
 
     if (solicitud.idPedido) {
@@ -121,7 +121,7 @@ export const solicitudesEspecialesService = {
         origenPedido: "MANUAL",
         observacionesCliente: recortar(solicitud.descripcion, 2000),
         observacionesInternas: `Desde la solicitud especial #${solicitud.idSolicitudEspecial.toString()} (${solicitud.nombreSolicitante})`
-      });
+      }, idUsuario);
 
       if (!(await solicitudesEspecialesRepository.marcarConvertida(tx, idSolicitudEspecial, pedido.idPedido))) {
         throw new ErrorConflicto("La solicitud cambio mientras se convertia: volve a intentarlo");

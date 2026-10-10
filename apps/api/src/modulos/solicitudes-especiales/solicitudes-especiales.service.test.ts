@@ -53,14 +53,15 @@ beforeEach(() => {
 
 describe("solicitudesEspecialesService.convertirEnPedido", () => {
   it("crea un pedido para el cliente y marca la solicitud en la misma transaccion", async () => {
-    const pedido = await solicitudesEspecialesService.convertirEnPedido(9n);
+    // El usuario que convierte queda como quien cargo el pedido (#99).
+    const pedido = await solicitudesEspecialesService.convertirEnPedido(9n, 4n);
 
     expect(pedidos.crearEnTransaccion).toHaveBeenCalledWith(tx, {
       idCliente: 3n,
       origenPedido: "MANUAL",
       observacionesCliente: "Figura de 20 cm",
       observacionesInternas: "Desde la solicitud especial #9 (Ana)"
-    });
+    }, 4n);
     expect(repo.marcarConvertida).toHaveBeenCalledWith(tx, 9n, 50n);
     expect(pedido).toEqual({ idPedido: 50n, numeroPedido: "PED-000050" });
   });

@@ -38,7 +38,7 @@ Cada modulo vive en `src/modulos/<modulo>/` con cinco archivos: `routes` → `co
 | `clientes` | `clientes` | Clientes y `/:id/resumen` (compras confirmadas, sin canceladas). Auditado |
 | `importacion-clientes` | `clientes/importacion` | Importacion de clientes desde CSV (abajo) |
 | `stock` | `stock` | Existencias, historial, bajo stock y ajustes manuales. **Unico que escribe stock** |
-| `pedidos` | `pedidos` | Pedidos, items con precio y costo congelados, estados, confirmar (descuenta stock), repetir |
+| `pedidos` | `pedidos` | Pedidos, items con precio y costo congelados, estados con su historial (abajo), confirmar (descuenta stock), repetir |
 | `pagos` | `pedidos/:id/pagos` | Pagos de un pedido y su estado de cobro (abajo). Anular: administradores |
 | `devoluciones` | `pedidos/:id/devoluciones` | Devolucion de un pedido entregado: stock y reintegro configurables (abajo) |
 | `produccion` | `produccion` | Ordenes: iniciar (consume insumos) y finalizar (ingresa productos) |
@@ -158,6 +158,34 @@ dan cero. La franja "Hoy" del panel solo muestra lo que llega: no recalcula nada
 - Usa las mismas reglas que el panel y la campanita (`panel/reglas-panel.ts`): estados abiertos,
   el dia en hora de Argentina y bajo minimo ordenado por urgencia. Una prueba compara las
   cantidades de los tres con los mismos datos.
+
+## Historial de estados del pedido
+
+Cada cambio de estado de un pedido deja una fila en `HISTORIAL_ESTADO_PEDIDO` (#99): estado anterior
+y nuevo, fecha y hora, usuario, `ORIGEN` (`PANTALLA`; `AGENTE` queda para mas adelante) y una
+observacion. Se escribe en la **misma transaccion** que el cambio: si no se puede escribir, el pedido
+no cambia de estado. No se edita ni se borra.
+
+- **Alta** (`crearEnTransaccion`: alta, repetir y convertir una solicitud): evento sin estado anterior
+  hacia `PENDIENTE`, y `PEDIDO.ID_USUARIO_ALTA` con el usuario de la sesion.
+- **Confirmar:** `PENDIENTE -> CONFIRMADO`.
+- **Cambio de estado** (`actualizarEstado`, ahora todo en una transaccion con el pedido bloqueado):
+  un evento por cada cambio real. Editar solo la fecha prometida, el cobro o las observaciones no
+  escribe evento. Si el estado cambio entre la validacion y el bloqueo, 409.
+- **Entregar:** `PEDIDO.FECHA_ENTREGA_REAL` es el dia que indica quien lo marca (`fechaEntregaReal`)
+  o hoy en Argentina. No puede ser futura ni anterior al dia de la confirmacion (400). Va tambien en la
+  observacion del evento.
+- **Cancelar:** `motivoCancelacion` es obligatorio (400), tambien para un pedido pendiente. Queda en
+  `PEDIDO.MOTIVO_CANCELACION` y en la observacion del evento.
+- **Devolucion:** el paso a `DEVUELTO_PARCIAL` o `DEVUELTO` tambien es un cambio de estado y va al
+  historial, con el motivo de la devolucion (las lineas devueltas siguen en `DEVOLUCION`).
+- `PEDIDO.FECHA_ENTREGA` es la fecha **prometida**; no se renombro para no tocar contrato, web,
+  respaldo ni reportes.
+- `GET /api/pedidos/{id}/historial` devuelve la linea de tiempo con el nombre de quien hizo cada
+  cambio (nunca el email).
+- Pedidos anteriores a la migracion: un evento de alta (`FECHA_ALTA`) y, si se confirmaron, uno de
+  confirmacion (`FECHA_CONFIRMACION`), sin usuario. `FECHA_ENTREGA_REAL` es una aproximacion: la
+  `FECHA_MODIFICACION` de los entregados y la primera devolucion de los devueltos.
 
 ## Devolucion de un pedido entregado
 

@@ -19,6 +19,11 @@ export type EstadoPedido = (typeof ESTADOS_PEDIDO)[number];
 // "entregados", cuentan los tres.
 export const ESTADOS_ENTREGADOS: readonly EstadoPedido[] = ["ENTREGADO", "DEVUELTO_PARCIAL", "DEVUELTO"];
 
+// Quien hizo un cambio de estado de un pedido (#99). Hoy siempre PANTALLA; AGENTE queda para
+// cuando un agente cambie estados.
+export const ORIGENES_CAMBIO_ESTADO = ["PANTALLA", "AGENTE"] as const;
+export type OrigenCambioEstado = (typeof ORIGENES_CAMBIO_ESTADO)[number];
+
 export const ORIGENES_PEDIDO = ["WEB", "INSTAGRAM", "WHATSAPP", "MANUAL"] as const;
 export type OrigenPedido = (typeof ORIGENES_PEDIDO)[number];
 

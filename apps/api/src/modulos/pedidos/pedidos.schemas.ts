@@ -13,7 +13,8 @@ const decimalPositivoSchema = cantidadSchema;
 
 // Fecha de entrega prometida al cliente: un dia ("2026-09-30"), sin hora. Se guarda como las
 // 00:00 de ese dia en Argentina. null la borra.
-const fechaEntregaSchema = z
+// Un dia "AAAA-MM-DD" -> 00:00 de Argentina.
+const diaSchema = z
   .string()
   .max(10)
   .transform((dia, ctx) => {
@@ -25,8 +26,9 @@ const fechaEntregaSchema = z
     }
 
     return fecha;
-  })
-  .nullable();
+  });
+
+const fechaEntregaSchema = diaSchema.nullable();
 
 export const pedidoParamsSchema = z.object({
   id: idSchema
@@ -76,10 +78,21 @@ export const actualizarEstadoPedidoSchema = z
     observacionesInternas: z.string().max(2000).optional(),
     fechaEntrega: fechaEntregaSchema.optional(),
     // Al cancelar un pedido que ya desconto stock, si se devuelve (ver configuracion.service).
-    devolverStock: z.boolean().optional()
+    devolverStock: z.boolean().optional(),
+    // Al cancelar: por que (obligatorio, lo exige el service). Al entregar: que dia (#99).
+    motivoCancelacion: z.string().max(500).optional(),
+    fechaEntregaReal: diaSchema.optional()
   })
   .refine((data) => Object.keys(data).length > 0, "Debe enviar al menos un campo para actualizar")
   .refine((data) => data.devolverStock === undefined || data.estadoPedido === "CANCELADO", {
     message: "devolverStock solo se envia al cancelar",
     path: ["devolverStock"]
+  })
+  .refine((data) => data.motivoCancelacion === undefined || data.estadoPedido === "CANCELADO", {
+    message: "motivoCancelacion solo se envia al cancelar",
+    path: ["motivoCancelacion"]
+  })
+  .refine((data) => data.fechaEntregaReal === undefined || data.estadoPedido === "ENTREGADO", {
+    message: "fechaEntregaReal solo se envia al entregar",
+    path: ["fechaEntregaReal"]
   });
