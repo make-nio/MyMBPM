@@ -5,3 +5,5 @@ import type { RespuestaDe } from "@contrato";
 export type ResumenPanel = RespuestaDe<"get /api/panel/resumen">;
 
 export type AvisosPanel = RespuestaDe<"get /api/panel/avisos">;
+
+export type ResumenDelDia = RespuestaDe<"get /api/panel/hoy">;

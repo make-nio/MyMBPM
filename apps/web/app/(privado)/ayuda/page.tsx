@@ -130,6 +130,7 @@ const guias: Paso[] = [
   {
     titulo: "Ver que hay pendiente",
     pasos: [
+      "Arriba del Dashboard, la franja \"Hoy\" te dice en una linea lo que hay para hoy: pedidos para confirmar, entregas atrasadas o para hoy e items para reponer. Toca una frase para ir a esa lista. Si no hay nada, dice \"Nada pendiente para hoy\".",
       "La campanita de arriba (\"Avisos\") muestra un numero cuando hay items bajo el minimo o entregas atrasadas o para hoy.",
       "Tocala para ver el detalle y toca un aviso: el de stock abre Stock con \"Solo bajo minimo\" y el de entregas abre el Dashboard.",
       "Se actualiza cada vez que cambias de pantalla. No manda mails ni notificaciones al celular."

@@ -17,5 +17,10 @@ export const panelController = {
 
   async obtenerAvisos(_request: Request, response: Response) {
     responderExito(response, await panelService.obtenerAvisos());
+  },
+
+  // Resumen del dia (#101): igual para todos, sin costos ni plata.
+  async obtenerHoy(_request: Request, response: Response) {
+    responderExito(response, await panelService.resumenDelDia());
   }
 };

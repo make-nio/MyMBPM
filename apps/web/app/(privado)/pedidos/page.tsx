@@ -53,13 +53,20 @@ export default function PedidosPage() {
   const [idPedidoSeleccionado, setIdPedidoSeleccionado] = useState<string | null>(null);
   const refDetalle = useDesplazarAlDetalle(idPedidoSeleccionado);
 
-  // /pedidos?pedido=ID abre ese pedido (por ejemplo, desde una solicitud convertida). Se lee al
+  // /pedidos?pedido=ID abre ese pedido (por ejemplo, desde una solicitud convertida) y
+  // /pedidos?estado=PENDIENTE arranca filtrado (desde la franja "Hoy" del panel). Se lee al
   // montar: la web es un export estatico y la pagina es de cliente.
   useEffect(() => {
-    const idPedido = new URLSearchParams(window.location.search).get("pedido");
+    const parametros = new URLSearchParams(window.location.search);
+    const idPedido = parametros.get("pedido");
+    const estado = parametros.get("estado");
 
     if (idPedido && /^\d+$/.test(idPedido)) {
       setIdPedidoSeleccionado(idPedido);
+    }
+
+    if (estado && (ESTADOS_PEDIDO as readonly string[]).includes(estado)) {
+      setFiltroEstado(estado as EstadoPedido);
     }
   }, []);
 

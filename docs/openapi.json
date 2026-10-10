@@ -1441,6 +1441,218 @@
         ],
         "additionalProperties": false
       },
+      "ResumenDelDia": {
+        "type": "object",
+        "properties": {
+          "fecha": {
+            "type": "string"
+          },
+          "pedidosParaConfirmar": {
+            "type": "object",
+            "properties": {
+              "cantidad": {
+                "type": "integer"
+              },
+              "primeros": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "idPedido": {
+                      "type": "string",
+                      "pattern": "^\\d+$"
+                    },
+                    "numeroPedido": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "cliente": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "idPedido",
+                    "numeroPedido",
+                    "cliente"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "cantidad",
+              "primeros"
+            ],
+            "additionalProperties": false
+          },
+          "entregasAtrasadas": {
+            "type": "object",
+            "properties": {
+              "cantidad": {
+                "type": "integer"
+              },
+              "primeros": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "idPedido": {
+                      "type": "string",
+                      "pattern": "^\\d+$"
+                    },
+                    "numeroPedido": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "cliente": {
+                      "type": "string"
+                    },
+                    "fechaEntrega": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "diasDeAtraso": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "idPedido",
+                    "numeroPedido",
+                    "cliente",
+                    "fechaEntrega",
+                    "diasDeAtraso"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "cantidad",
+              "primeros"
+            ],
+            "additionalProperties": false
+          },
+          "entregasDeHoy": {
+            "type": "object",
+            "properties": {
+              "cantidad": {
+                "type": "integer"
+              },
+              "primeros": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "idPedido": {
+                      "type": "string",
+                      "pattern": "^\\d+$"
+                    },
+                    "numeroPedido": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "cliente": {
+                      "type": "string"
+                    },
+                    "fechaEntrega": {
+                      "type": "string",
+                      "format": "date-time"
+                    }
+                  },
+                  "required": [
+                    "idPedido",
+                    "numeroPedido",
+                    "cliente",
+                    "fechaEntrega"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "cantidad",
+              "primeros"
+            ],
+            "additionalProperties": false
+          },
+          "paraReponer": {
+            "type": "object",
+            "properties": {
+              "cantidad": {
+                "type": "integer"
+              },
+              "primeros": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "idItemCatalogo": {
+                      "type": "string",
+                      "pattern": "^\\d+$"
+                    },
+                    "nombre": {
+                      "type": "string"
+                    },
+                    "tipo": {
+                      "type": "string",
+                      "enum": [
+                        "PRODUCTO",
+                        "INSUMO"
+                      ]
+                    },
+                    "stockActual": {
+                      "type": "string",
+                      "pattern": "^-?\\d+(\\.\\d+)?$"
+                    },
+                    "stockMinimo": {
+                      "type": "integer"
+                    },
+                    "faltan": {
+                      "type": "string",
+                      "pattern": "^-?\\d+(\\.\\d+)?$"
+                    }
+                  },
+                  "required": [
+                    "idItemCatalogo",
+                    "nombre",
+                    "tipo",
+                    "stockActual",
+                    "stockMinimo",
+                    "faltan"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "cantidad",
+              "primeros"
+            ],
+            "additionalProperties": false
+          },
+          "frases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "fecha",
+          "pedidosParaConfirmar",
+          "entregasAtrasadas",
+          "entregasDeHoy",
+          "paraReponer",
+          "frases"
+        ],
+        "additionalProperties": false
+      },
       "PedidoConCliente": {
         "type": "object",
         "properties": {
@@ -8062,6 +8274,58 @@
                     },
                     "data": {
                       "$ref": "#/components/schemas/AvisosPanel"
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/panel/hoy": {
+      "get": {
+        "summary": "Resumen del dia: pedidos para confirmar, entregas atrasadas y de hoy, items para reponer y las frases para mostrar. Sin costos ni plata; la forma solo crece",
+        "description": "Acceso: autenticado.",
+        "tags": [
+          "panel"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ResumenDelDia"
                     }
                   },
                   "required": [
