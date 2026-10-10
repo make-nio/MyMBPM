@@ -86,7 +86,7 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
 
   const cargar = useCallback(async () => {
     const actual = await obtenerPedido(idPedido);
-    const detalles = actual.detalles ?? [];
+    const detalles = actual.detalles;
     setPedido(actual);
     setEstadoPedido(actual.estadoPedido);
     setFechaEntrega(diaArgentina(actual.fechaEntrega));
@@ -180,7 +180,7 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
     return <EstadoCargando titulo="Cargando pedido" />;
   }
 
-  const detalles = pedido.detalles ?? [];
+  const detalles = pedido.detalles;
   const margen = calcularMargenPedido(pedido.total, detalles);
   const pendiente = pedido.estadoPedido === "PENDIENTE";
   const insuficiente = hayStockInsuficiente(impacto);
@@ -328,7 +328,7 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
       />
 
       <DevolucionesPedido
-        detalles={pedido.detalles ?? []}
+        detalles={pedido.detalles}
         entregado={pedido.estadoPedido === "ENTREGADO" || pedido.estadoPedido === "DEVUELTO_PARCIAL"}
         esAdministrador={esAdministrador}
         idPedido={idPedido}

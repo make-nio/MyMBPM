@@ -21,7 +21,7 @@ export function ComprobantePedido({
   const cliente = pedido.cliente;
   const nombreCliente = `${cliente?.nombre ?? ""} ${cliente?.apellido ?? ""}`.trim() || "-";
   const domicilio = [cliente?.domicilio, cliente?.localidad, cliente?.provincia].filter(Boolean).join(", ");
-  const detalles = pedido.detalles ?? [];
+  const detalles = pedido.detalles;
   const numero = pedido.numeroPedido ?? `Pedido ${pedido.idPedido}`;
   const devueltas = cantidadesDevueltas(devoluciones?.devoluciones ?? []);
   const huboDevolucion = devueltas.size > 0;

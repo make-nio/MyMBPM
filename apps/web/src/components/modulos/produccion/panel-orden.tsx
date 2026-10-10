@@ -42,7 +42,7 @@ type PanelOrdenProps = {
 
 function accionValida(accion: AccionOrden, orden: OrdenProduccionCompleta) {
   if (accion === "iniciar") {
-    return orden.estadoProduccion === "PENDIENTE" && (orden.detalles ?? []).length > 0;
+    return orden.estadoProduccion === "PENDIENTE" && orden.detalles.length > 0;
   }
   if (accion === "finalizar") {
     return orden.estadoProduccion === "EN_PROCESO";
@@ -92,7 +92,7 @@ export function PanelOrden({ idOrdenProduccion, onCambio, accionInicial = null }
 
   const cargar = useCallback(async () => {
     const actual = await obtenerOrdenProduccion(idOrdenProduccion);
-    const detalles = actual.detalles ?? [];
+    const detalles = actual.detalles;
     const nombresProductos = new Map(
       detalles.map((detalle) => [detalle.idItemCatalogoProducto, detalle.itemCatalogoProducto?.nombre ?? "-"])
     );
@@ -231,7 +231,7 @@ export function PanelOrden({ idOrdenProduccion, onCambio, accionInicial = null }
     return <EstadoCargando titulo="Cargando orden de produccion" />;
   }
 
-  const detalles = orden.detalles ?? [];
+  const detalles = orden.detalles;
   const pendiente = orden.estadoProduccion === "PENDIENTE";
   const enProceso = orden.estadoProduccion === "EN_PROCESO";
   const bloqueoInicio = sinReceta.length > 0 || hayStockInsuficiente(consumoPrevisto);

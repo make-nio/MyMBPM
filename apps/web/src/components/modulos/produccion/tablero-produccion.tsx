@@ -21,7 +21,7 @@ const COLUMNAS: Array<{ estado: EstadoProduccion; titulo: string; vacio: string 
 // abren el detalle; iniciar, finalizar y cancelar abren ademas su confirmacion con el impacto en
 // stock, asi no hay dos caminos distintos para mover stock.
 function acciones(orden: OrdenProduccion): Array<{ accion: AccionOrden | null; etiqueta: string; primaria?: boolean }> {
-  const tieneProductos = (orden.detalles ?? []).length > 0;
+  const tieneProductos = orden.detalles.length > 0;
 
   switch (orden.estadoProduccion) {
     case "PENDIENTE":
@@ -42,7 +42,7 @@ function acciones(orden: OrdenProduccion): Array<{ accion: AccionOrden | null; e
 }
 
 function TarjetaOrden({ orden, onElegir }: { orden: OrdenProduccion; onElegir: ElegirOrden }) {
-  const detalles = orden.detalles ?? [];
+  const detalles = orden.detalles;
   const fecha =
     orden.estadoProduccion === "EN_PROCESO" && orden.fechaInicio
       ? `Inicio: ${formatearFecha(orden.fechaInicio)}`
