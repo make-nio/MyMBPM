@@ -302,6 +302,19 @@ Para generar migraciones versionadas:
 npm run prisma:migrate --workspace @myfirstproject/api -- --name <nombre>
 ```
 
+### `npm audit`: avisos aceptados
+
+`npm audit` deja estos avisos a proposito (aceptados por el SRE el 10-oct, #87). El resto tiene que
+quedar en cero:
+
+| Paquete | Por qué se acepta | Cuándo se revisa |
+|---|---|---|
+| `prisma` → `deepmerge-ts`, `mysql2` (altos) | Los trae el CLI de Prisma, que solo corre en el build (generate, migrate) y no va en la function. `npm audit fix` propone bajar a Prisma 6. | Cuando salga una version de Prisma 7 que los resuelva |
+| `next` 15.5.26 (moderado) | Es cache poisoning de paginas SSG/ISR servidas por Next (self-hosted). La web es un export estatico en Netlify: no hay servidor de Next. Subir a 15.5.27 hoy instala `next` anidado y deja afuera el override de `postcss`. | Con la proxima actualizacion de Next |
+
+Las versiones corregidas de `postcss`, `sharp` y `source-map-js` se fijan con `overrides` en el
+`package.json` de la raiz.
+
 ## Backend actual
 
 ### Modulos disponibles
