@@ -12,21 +12,28 @@ export const panelRepository = {
     });
   },
 
-  listarPedidosPorEstados(prismaOrTx: PrismaOrTx, estados: string[], limit: number) {
+  contarPedidosPorEstados(prismaOrTx: PrismaOrTx, estados: string[]) {
+    return prismaOrTx.pedido.count({ where: { activo: true, estadoPedido: { in: estados } } });
+  },
+
+  // Los ultimos primero (el panel) o los mas viejos primero (lo mas urgente, el resumen del dia).
+  listarPedidosPorEstados(prismaOrTx: PrismaOrTx, estados: string[], limit: number, orden: "recientes" | "antiguos" = "recientes") {
     return prismaOrTx.pedido.findMany({
       where: { activo: true, estadoPedido: { in: estados } },
       include: { cliente: { select: { idCliente: true, nombre: true, apellido: true } } },
-      orderBy: { idPedido: "desc" },
+      orderBy: { idPedido: orden === "recientes" ? "desc" : "asc" },
       take: limit
     });
   },
 
-  // Pedidos abiertos con fecha de entrega prometida antes de `hasta`, los mas urgentes primero.
-  listarPedidosConEntregaAntesDe(prismaOrTx: PrismaOrTx, estados: string[], hasta: Date) {
+  // Pedidos abiertos con fecha de entrega prometida en [desde, hasta), los mas urgentes primero.
+  // Sin desde: todo lo anterior a hasta. Sin limit: todos.
+  listarPedidosConEntregaEntre(prismaOrTx: PrismaOrTx, estados: string[], hasta: Date, desde?: Date, limit?: number) {
     return prismaOrTx.pedido.findMany({
-      where: { activo: true, estadoPedido: { in: estados }, fechaEntrega: { lt: hasta } },
+      where: { activo: true, estadoPedido: { in: estados }, fechaEntrega: { gte: desde, lt: hasta } },
       include: { cliente: { select: { idCliente: true, nombre: true, apellido: true } } },
-      orderBy: [{ fechaEntrega: "asc" }, { idPedido: "asc" }]
+      orderBy: [{ fechaEntrega: "asc" }, { idPedido: "asc" }],
+      take: limit
     });
   },
 

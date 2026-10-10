@@ -43,7 +43,7 @@ Cada modulo vive en `src/modulos/<modulo>/` con cinco archivos: `routes` → `co
 | `devoluciones` | `pedidos/:id/devoluciones` | Devolucion de un pedido entregado: stock y reintegro configurables (abajo) |
 | `produccion` | `produccion` | Ordenes: iniciar (consume insumos) y finalizar (ingresa productos) |
 | `solicitudes-especiales` | `solicitudes-especiales` | Pedidos a medida; se convierten en pedido |
-| `panel` | `panel/resumen`, `panel/avisos` | Dashboard y avisos del encabezado. Solo lectura |
+| `panel` | `panel/resumen`, `panel/avisos`, `panel/hoy` | Dashboard, avisos del encabezado y resumen del dia (abajo). Solo lectura |
 | `busqueda` | `busqueda?q=` | Busqueda global de pedidos, clientes e items (desde 2 caracteres) |
 | `configuracion` | `configuracion` | Que hacer con el stock al cancelar y con el stock y la plata en una devolucion (abajo). La lee cualquiera con sesion; la cambian administradores |
 | `reportes` | `reportes/ventas-mes`, `reportes/ventas-por-mes`, `reportes/cobros-mes` | Ventas del mes (y lo devuelto) y de 12 meses, cobrado del mes por medio. Administradores |
@@ -142,6 +142,22 @@ estado de cobro (`ESTADO_COBRO`) ya no se elige: lo calcula `pagosService` con l
   no se les inventan pagos.
 - Reportes suma lo cobrado en el mes por medio segun la **fecha del pago**, que puede ser de otro
   mes que la confirmacion del pedido (lo vendido).
+
+## Resumen del dia
+
+`GET /api/panel/hoy` (`panelService.resumenDelDia`, #101) dice que hay para hacer hoy: pedidos para
+confirmar, entregas atrasadas, entregas de hoy e items para reponer. Cada lista trae `cantidad` y
+`primeros`, hasta 3, los mas urgentes primero; ademas trae `frases` ya armadas en espanol, sin las que
+dan cero. La franja "Hoy" del panel solo muestra lo que llega: no recalcula nada.
+
+- **Es el calculo que va a consumir el asistente de Maxi** (Tool Provider del homelab). Por eso la
+  pantalla y el asistente no pueden dar numeros distintos, y **la forma solo crece**: se le agregan
+  listas (por ejemplo, prospectos), no se cambian ni se quitan las que hay.
+- **Sin costos ni plata para nadie**, ni para administradores: sirve igual para cualquier usuario con
+  sesion y para el asistente.
+- Usa las mismas reglas que el panel y la campanita (`panel/reglas-panel.ts`): estados abiertos,
+  el dia en hora de Argentina y bajo minimo ordenado por urgencia. Una prueba compara las
+  cantidades de los tres con los mismos datos.
 
 ## Historial de estados del pedido
 

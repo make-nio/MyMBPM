@@ -458,6 +458,32 @@ textarea {
   line-height: 1.6;
 }
 
+/* Franja "Hoy" del panel (#101): el resumen del dia en una linea. */
+.franja-hoy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: #f4ede2;
+}
+
+.franja-hoy__frases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.franja-hoy__frases li + li::before {
+  content: "·";
+  margin-right: 1rem;
+}
+
 .panel-dashboard__grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
