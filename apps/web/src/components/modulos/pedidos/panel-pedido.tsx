@@ -31,6 +31,7 @@ import {
 import { listarMovimientosStock, obtenerStockActual } from "../../../lib/modulos/stock";
 import { calcularImpactoStock, hayStockInsuficiente, ImpactoStockItem } from "../../../lib/stock/impacto-stock";
 import {
+  ESTADOS_ENTREGADOS,
   TRANSICIONES_ESTADO_PEDIDO,
   EstadoPedido,
   PedidoCompleto,
@@ -177,8 +178,9 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
   const margen = calcularMargenPedido(pedido.total, detalles);
   const pendiente = pedido.estadoPedido === "PENDIENTE";
   const insuficiente = hayStockInsuficiente(impacto);
-  // La fecha prometida se puede cambiar mientras el pedido no se entrego ni se cancelo.
-  const abierto = pedido.estadoPedido !== "ENTREGADO" && pedido.estadoPedido !== "CANCELADO";
+  // La fecha prometida se puede cambiar mientras el pedido no se entrego (con o sin devolucion)
+  // ni se cancelo.
+  const abierto = !ESTADOS_ENTREGADOS.includes(pedido.estadoPedido) && pedido.estadoPedido !== "CANCELADO";
   const atrasado = abierto && pedido.fechaEntrega !== null && diaArgentina(pedido.fechaEntrega) < diaArgentina(new Date());
   const opcionesEstado: EstadoPedido[] = [pedido.estadoPedido, ...TRANSICIONES_ESTADO_PEDIDO[pedido.estadoPedido]];
 
@@ -307,7 +309,7 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
 
       <DevolucionesPedido
         detalles={pedido.detalles ?? []}
-        entregado={pedido.estadoPedido === "ENTREGADO"}
+        entregado={pedido.estadoPedido === "ENTREGADO" || pedido.estadoPedido === "DEVUELTO_PARCIAL"}
         esAdministrador={esAdministrador}
         idPedido={idPedido}
         key={idPedido}

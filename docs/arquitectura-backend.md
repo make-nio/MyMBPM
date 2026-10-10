@@ -147,7 +147,15 @@ estado de cobro (`ESTADO_COBRO`) ya no se elige: lo calcula `pagosService` con l
 
 Un cliente devuelve todo o una parte de un pedido `ENTREGADO` (#96). `devolucionesService.registrar`
 guarda una `DEVOLUCION` con sus lineas (`DEVOLUCION_DETALLE`: cantidad, precio unitario de la linea
-del pedido y subtotal, el valor devuelto). No se edita ni se borra, y el pedido sigue `ENTREGADO`.
+del pedido y subtotal, el valor devuelto). No se edita ni se borra.
+
+- **El pedido cambia de estado** (decision de Mariano, 10-oct), en la misma transaccion:
+  `DEVUELTO_PARCIAL` si todavia queda algo entregado sin devolver, `DEVUELTO` cuando ya volvio
+  todo (en una o varias devoluciones). Se registran devoluciones sobre `ENTREGADO` o
+  `DEVUELTO_PARCIAL`; sobre `DEVUELTO`, 409. Los dos estados no se eligen a mano (no estan en las
+  transiciones de `PATCH /:id/estado`). Donde se cuenta lo entregado (reportes, ficha del cliente)
+  cuentan igual: esas consultas solo excluyen `CANCELADO`. `ESTADO_PEDIDO` es `VARCHAR(30)` sin
+  `CHECK`, asi que los estados nuevos no necesitan SQL.
 
 - Que pasa con lo devuelto lo decide `CONFIGURACION`, igual que al cancelar: `DEVOLUCION_STOCK` (si
   vuelve al stock) y `DEVOLUCION_REINTEGRO` (si se reintegra la plata), cada una `PREGUNTAR`,

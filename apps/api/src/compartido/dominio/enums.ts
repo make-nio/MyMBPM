@@ -7,9 +7,17 @@ export const ESTADOS_PEDIDO = [
   "EN_PREPARACION",
   "LISTO",
   "ENTREGADO",
-  "CANCELADO"
+  "CANCELADO",
+  // Despues de una devolucion (#96): queda algo entregado sin devolver, o ya volvio todo.
+  // No se eligen a mano: los pone el registro de la devolucion.
+  "DEVUELTO_PARCIAL",
+  "DEVUELTO"
 ] as const;
 export type EstadoPedido = (typeof ESTADOS_PEDIDO)[number];
+
+// Pedidos que llegaron al cliente: entregados, con o sin devolucion. Donde se cuentan
+// "entregados", cuentan los tres.
+export const ESTADOS_ENTREGADOS: readonly EstadoPedido[] = ["ENTREGADO", "DEVUELTO_PARCIAL", "DEVUELTO"];
 
 export const ORIGENES_PEDIDO = ["WEB", "INSTAGRAM", "WHATSAPP", "MANUAL"] as const;
 export type OrigenPedido = (typeof ORIGENES_PEDIDO)[number];

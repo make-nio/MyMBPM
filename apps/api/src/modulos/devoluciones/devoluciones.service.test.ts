@@ -23,7 +23,7 @@ vi.mock("../pagos/pagos.repository", () => ({
   pagosRepository: { bloquearPedido: vi.fn(), listarPorPedido: vi.fn(), crear: vi.fn() }
 }));
 vi.mock("../pagos/pagos.service", () => ({ pagosService: { recalcularEstadoCobro: vi.fn() } }));
-vi.mock("../pedidos/pedidos.repository", () => ({ pedidosRepository: { obtenerPorId: vi.fn() } }));
+vi.mock("../pedidos/pedidos.repository", () => ({ pedidosRepository: { obtenerPorId: vi.fn(), actualizar: vi.fn() } }));
 vi.mock("../stock/stock.service", async (original) => {
   const modulo = await original<typeof import("../stock/stock.service")>();
   return { ...modulo, stockService: { registrarIngreso: vi.fn() } };
@@ -174,6 +174,78 @@ describe("devolucionesService.registrar", () => {
     await expect(
       devolucionesService.registrar(1n, { lineas: [{ idPedidoDetalle: 99n, cantidad: 1 }], motivo: "x", claveIdempotencia: CLAVE })
     ).rejects.toBeInstanceOf(ErrorNoEncontrado);
+  });
+});
+
+// Decision de Mariano (10-oct): el pedido cambia de estado con cada devolucion.
+describe("devolucionesService.registrar: estado del pedido", () => {
+  it("una devolucion parcial deja el pedido DEVUELTO_PARCIAL, en la misma transaccion", async () => {
+    decide(false, false);
+
+    await devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "x", claveIdempotencia: CLAVE });
+
+    expect(pedidos.actualizar).toHaveBeenCalledWith(tx, 1n, { estadoPedido: "DEVUELTO_PARCIAL" });
+  });
+
+  it("devolver todo de una vez deja el pedido DEVUELTO", async () => {
+    decide(false, false);
+
+    await devolucionesService.registrar(
+      1n,
+      { lineas: [{ idPedidoDetalle: 5n, cantidad: 3 }, { idPedidoDetalle: 6n, cantidad: 2 }], motivo: "x", claveIdempotencia: CLAVE }
+    );
+
+    expect(pedidos.actualizar).toHaveBeenCalledWith(tx, 1n, { estadoPedido: "DEVUELTO" });
+  });
+
+  it("completar lo que faltaba sobre un DEVUELTO_PARCIAL lo deja DEVUELTO: varias devoluciones suman el total", async () => {
+    decide(false, false);
+    // Ya volvieron 2 velas y 1 maceta; ahora vuelven la vela y la maceta que faltaban.
+    pedidos.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: "DEVUELTO_PARCIAL" }));
+    repo.cantidadesDevueltas.mockResolvedValue(new Map([[5n, dec(2)], [6n, dec(1)]]));
+
+    await devolucionesService.registrar(
+      1n,
+      { lineas: [{ idPedidoDetalle: 5n, cantidad: 1 }, { idPedidoDetalle: 6n, cantidad: 1 }], motivo: "x", claveIdempotencia: CLAVE }
+    );
+
+    expect(repo.crear).toHaveBeenCalled();
+    expect(pedidos.actualizar).toHaveBeenCalledWith(tx, 1n, { estadoPedido: "DEVUELTO" });
+  });
+
+  it("si con lo ya devuelto todavia queda algo, sigue DEVUELTO_PARCIAL", async () => {
+    decide(false, false);
+    pedidos.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: "DEVUELTO_PARCIAL" }));
+    repo.cantidadesDevueltas.mockResolvedValue(new Map([[5n, dec(3)]]));
+
+    await devolucionesService.registrar(1n, { lineas: [{ idPedidoDetalle: 6n, cantidad: 1 }], motivo: "x", claveIdempotencia: CLAVE });
+
+    expect(pedidos.actualizar).toHaveBeenCalledWith(tx, 1n, { estadoPedido: "DEVUELTO_PARCIAL" });
+  });
+
+  it("sobre un pedido DEVUELTO no queda nada por devolver (409) y no se toca nada", async () => {
+    decide(true, false);
+    pedidos.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: "DEVUELTO" }));
+
+    const error = await devolucionesService
+      .registrar(1n, { lineas: [{ idPedidoDetalle: 5n, cantidad: 1 }], motivo: "x", claveIdempotencia: CLAVE })
+      .catch((e) => e);
+
+    expect(error).toBeInstanceOf(ErrorConflicto);
+    expect(error.message).toMatch(/ya se devolvio entero/);
+    expect(repo.crear).not.toHaveBeenCalled();
+    expect(pedidos.actualizar).not.toHaveBeenCalled();
+    expect(stock.registrarIngreso).not.toHaveBeenCalled();
+  });
+
+  it("un reintento con la misma clave no vuelve a cambiar el estado", async () => {
+    decide(true, false);
+    pedidos.obtenerPorId.mockResolvedValue(pedido({ estadoPedido: "DEVUELTO" }));
+    repo.obtenerPorClave.mockResolvedValue({ idDevolucion: 40n, idPedido: 1n } as never);
+
+    await devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "x", claveIdempotencia: CLAVE });
+
+    expect(pedidos.actualizar).not.toHaveBeenCalled();
   });
 });
 

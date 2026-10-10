@@ -73,6 +73,8 @@ test("registrar una devolucion parcial: vuelve al stock, se reintegra y baja lo 
   await expect(fila).toContainText("Volvio al stock");
   await expect(fila).toContainText(/200,00 \(Transferencia\)/);
   expect(await stockActual(vela.idItemCatalogo)).toBe(9);
+  // Queda algo sin devolver: el pedido pasa a "Devuelto en parte".
+  await expect(panel.getByTestId("estado-pedido")).toHaveText("Devuelto en parte");
 
   // En pagos: lo devuelto, el reintegro en negativo y el saldo en cero (sigue Pagado).
   const pagos = panel.getByRole("region", { name: "Pagos del pedido" });
@@ -129,6 +131,37 @@ test("con la configuracion en automatico no pregunta, y la API cuida lo que se p
     devolverStock: false
   });
   expect(await stockActual(vela.idItemCatalogo)).toBe(8);
+});
+
+test("varias devoluciones que suman todo dejan el pedido Devuelto; despues no se devuelve mas", async ({ page }) => {
+  await api("PATCH", "/api/configuracion", { devolucionStock: "NO_DEVOLVER", devolucionReintegro: "NO_DEVOLVER" });
+  const { pedido, vela, maceta } = await pedidoEntregado();
+  const devolver = (lineas: Array<{ idPedidoDetalle: string; cantidad: number }>) =>
+    api("POST", `/api/pedidos/${pedido.idPedido}/devoluciones`, { lineas, motivo: "PRUEBA por partes", claveIdempotencia: randomUUID() });
+  const estado = async () => (await api<{ estadoPedido: string }>("GET", `/api/pedidos/${pedido.idPedido}`)).estadoPedido;
+
+  await devolver([{ idPedidoDetalle: vela.linea, cantidad: 2 }]);
+  expect(await estado()).toBe("DEVUELTO_PARCIAL");
+  // Sobre uno devuelto en parte se puede seguir devolviendo; el estado no se elige a mano.
+  await expect(api("PATCH", `/api/pedidos/${pedido.idPedido}/estado`, { estadoPedido: "DEVUELTO" })).rejects.toThrow(/409/);
+  await devolver([{ idPedidoDetalle: maceta.linea, cantidad: 1 }]);
+  expect(await estado()).toBe("DEVUELTO_PARCIAL");
+  await devolver([{ idPedidoDetalle: vela.linea, cantidad: 1 }]);
+  expect(await estado()).toBe("DEVUELTO");
+
+  // Devuelto: 409 y en la pantalla ya no se ofrece registrar otra.
+  await expect(devolver([{ idPedidoDetalle: vela.linea, cantidad: 1 }])).rejects.toThrow(/409/);
+  await page.goto(`/pedidos?pedido=${pedido.idPedido}`);
+  const panel = page.getByRole("region", { name: `Pedido ${pedido.numeroPedido}` });
+  await expect(panel.getByTestId("estado-pedido")).toHaveText("Devuelto");
+  const devoluciones = panel.getByRole("region", { name: "Devoluciones del pedido" });
+  await expect(devoluciones.getByRole("row").filter({ hasText: "PRUEBA por partes" })).toHaveCount(3);
+  await expect(devoluciones.getByRole("button", { name: "Registrar devolucion" })).toHaveCount(0);
+
+  // El filtro de la lista tiene los estados nuevos.
+  await page.goto("/pedidos");
+  await page.getByLabel("Filtrar por estado").selectOption("DEVUELTO");
+  await expect(page.getByRole("row").filter({ hasText: pedido.numeroPedido })).toBeVisible();
 });
 
 test("un reintento con la misma clave no registra otra devolucion ni vuelve a mover stock y plata", async () => {

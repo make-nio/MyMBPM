@@ -739,7 +739,9 @@
               "EN_PREPARACION",
               "LISTO",
               "ENTREGADO",
-              "CANCELADO"
+              "CANCELADO",
+              "DEVUELTO_PARCIAL",
+              "DEVUELTO"
             ]
           },
           "estadoCobro": {
@@ -1473,7 +1475,9 @@
               "EN_PREPARACION",
               "LISTO",
               "ENTREGADO",
-              "CANCELADO"
+              "CANCELADO",
+              "DEVUELTO_PARCIAL",
+              "DEVUELTO"
             ]
           },
           "estadoCobro": {
@@ -1767,7 +1771,9 @@
               "EN_PREPARACION",
               "LISTO",
               "ENTREGADO",
-              "CANCELADO"
+              "CANCELADO",
+              "DEVUELTO_PARCIAL",
+              "DEVUELTO"
             ]
           },
           "estadoCobro": {
@@ -8136,7 +8142,9 @@
                 "EN_PREPARACION",
                 "LISTO",
                 "ENTREGADO",
-                "CANCELADO"
+                "CANCELADO",
+                "DEVUELTO_PARCIAL",
+                "DEVUELTO"
               ]
             },
             "required": false,
@@ -8322,7 +8330,9 @@
                             "EN_PREPARACION",
                             "LISTO",
                             "ENTREGADO",
-                            "CANCELADO"
+                            "CANCELADO",
+                            "DEVUELTO_PARCIAL",
+                            "DEVUELTO"
                           ]
                         },
                         "estadoCobro": {
@@ -8769,7 +8779,9 @@
                       "EN_PREPARACION",
                       "LISTO",
                       "ENTREGADO",
-                      "CANCELADO"
+                      "CANCELADO",
+                      "DEVUELTO_PARCIAL",
+                      "DEVUELTO"
                     ]
                   },
                   "observacionesInternas": {
@@ -8839,7 +8851,9 @@
                             "EN_PREPARACION",
                             "LISTO",
                             "ENTREGADO",
-                            "CANCELADO"
+                            "CANCELADO",
+                            "DEVUELTO_PARCIAL",
+                            "DEVUELTO"
                           ]
                         },
                         "estadoCobro": {
@@ -11369,7 +11383,9 @@
                                   "EN_PREPARACION",
                                   "LISTO",
                                   "ENTREGADO",
-                                  "CANCELADO"
+                                  "CANCELADO",
+                                  "DEVUELTO_PARCIAL",
+                                  "DEVUELTO"
                                 ]
                               },
                               "total": {

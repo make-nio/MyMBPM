@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 
-import { MedioPago } from "../../compartido/dominio/enums";
+import { EstadoPedido, MedioPago } from "../../compartido/dominio/enums";
 import { ErrorConflicto } from "../../compartido/errores/error-conflicto";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 import { ErrorProhibido } from "../../compartido/errores/error-prohibido";
@@ -25,6 +25,10 @@ type RegistrarDevolucionInput = {
 };
 
 const cero = () => new Prisma.Decimal(0);
+
+// Se puede devolver lo que queda de un pedido entregado o devuelto en parte (decision de Mariano,
+// 10-oct). Uno DEVUELTO ya no tiene nada por devolver.
+const ESTADOS_QUE_ACEPTAN_DEVOLUCION: readonly EstadoPedido[] = ["ENTREGADO", "DEVUELTO_PARCIAL"];
 
 function nombrePedido(pedido: { idPedido: bigint; numeroPedido: string | null }) {
   return pedido.numeroPedido ?? pedido.idPedido.toString();
@@ -79,7 +83,11 @@ export const devolucionesService = {
         return;
       }
 
-      if (pedido.estadoPedido !== "ENTREGADO") {
+      if (pedido.estadoPedido === "DEVUELTO") {
+        throw new ErrorConflicto("Ese pedido ya se devolvio entero: no queda nada por devolver");
+      }
+
+      if (!ESTADOS_QUE_ACEPTAN_DEVOLUCION.includes(pedido.estadoPedido as EstadoPedido)) {
         throw new ErrorConflicto("Solo se registra una devolucion de un pedido entregado");
       }
 
@@ -157,6 +165,16 @@ export const devolucionesService = {
           });
         }
       }
+
+      // El pedido pasa a DEVUELTO si con esta devolucion volvio todo lo entregado, y si no a
+      // DEVUELTO_PARCIAL. En la misma transaccion, con el lock del pedido tomado.
+      const devueltoAhora = new Map(detalles.map((detalle) => [detalle.idPedidoDetalle, detalle.cantidad]));
+      const volvioTodo = pedido.detalles.every((detalle) =>
+        (yaDevueltas.get(detalle.idPedidoDetalle) ?? cero())
+          .add(devueltoAhora.get(detalle.idPedidoDetalle) ?? cero())
+          .greaterThanOrEqualTo(detalle.cantidad)
+      );
+      await pedidosRepository.actualizar(tx, idPedido, { estadoPedido: volvioTodo ? "DEVUELTO" : "DEVUELTO_PARCIAL" });
 
       await pagosService.recalcularEstadoCobro(tx, idPedido);
     });

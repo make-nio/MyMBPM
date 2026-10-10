@@ -18,7 +18,9 @@ export const ESTADOS_PEDIDO = [
   "EN_PREPARACION",
   "LISTO",
   "ENTREGADO",
-  "CANCELADO"
+  "CANCELADO",
+  "DEVUELTO_PARCIAL",
+  "DEVUELTO"
 ] as const;
 export const ESTADOS_COBRO = ["PENDIENTE", "SEÑADO", "PAGADO"] as const;
 export const ORIGENES_PEDIDO = ["WEB", "INSTAGRAM", "WHATSAPP", "MANUAL"] as const;
@@ -35,8 +37,14 @@ export const TRANSICIONES_ESTADO_PEDIDO: Record<EstadoPedido, readonly EstadoPed
   EN_PREPARACION: ["LISTO", "ENTREGADO", "CANCELADO"],
   LISTO: ["EN_PREPARACION", "ENTREGADO", "CANCELADO"],
   ENTREGADO: [],
-  CANCELADO: []
+  CANCELADO: [],
+  // Los pone el registro de una devolucion (#96), no se eligen a mano.
+  DEVUELTO_PARCIAL: [],
+  DEVUELTO: []
 };
+
+// Pedidos que llegaron al cliente, con o sin devolucion (espejo de ESTADOS_ENTREGADOS de la API).
+export const ESTADOS_ENTREGADOS: readonly EstadoPedido[] = ["ENTREGADO", "DEVUELTO_PARCIAL", "DEVUELTO"];
 
 export type PedidoAltaPayload = CuerpoDe<"post /api/pedidos">;
 export type PedidoEstadoPayload = CuerpoDe<"patch /api/pedidos/{id}/estado">;
