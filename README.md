@@ -35,7 +35,7 @@ Pantallas (`apps/web/app/(privado)/`), todas usables desde el celular (375 px):
 | Pantalla | Que se hace |
 | --- | --- |
 | Dashboard (`/panel`) | Franja "Hoy" con el resumen del dia (cada frase lleva a su lista), pedidos para confirmar y para entregar, entregas atrasadas y de la semana, ordenes en proceso, stock para reponer, ultimos movimientos y, para administradores, lo vendido y ganado en el mes |
-| Pedidos | Alta, items con precio y costo congelados al agregarlos, impacto en stock antes de confirmar, estados con su historial (linea de tiempo, fecha real de entrega, motivo de cancelacion), pagos con su medio (el cobro se calcula solo), devolucion de un pedido entregado (stock y reintegro configurables), fecha de entrega prometida, comprobante imprimible (no fiscal), repetir un pedido, exportar CSV |
+| Pedidos | Alta, items con precio y costo congelados al agregarlos, impacto en stock antes de confirmar, estados con su historial (linea de tiempo, fecha real de entrega, motivo de cancelacion), pagos con su medio (el cobro se calcula solo), devolucion de un pedido entregado (stock y reintegro configurables), fecha de entrega prometida, remito imprimible (no fiscal, con firma de quien recibe), repetir un pedido, exportar CSV |
 | Produccion | Ordenes con sus productos, impacto en insumos antes de iniciar y en productos al finalizar; vista de lista o **tablero** por estado |
 | Stock | Existencias por tipo, "Solo bajo minimo", ajustes con motivo, movimientos con su origen, crear una orden para reponer, exportar CSV |
 | Items catalogo | Items con su receta, costo de la receta, historial de cambios y de precio y costo (administradores), importacion desde CSV (administradores) |

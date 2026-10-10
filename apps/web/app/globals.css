@@ -943,7 +943,7 @@ textarea {
   font-size: 0.9rem;
 }
 
-/* Comprobante no fiscal del pedido (/pedidos/comprobante). En pantalla, una hoja; al imprimir,
+/* Remito no fiscal del pedido (/pedidos/comprobante; las clases conservan el nombre). En pantalla, una hoja; al imprimir,
    solo la hoja: sin menu, encabezado, franja de vista previa ni botones. */
 .pagina-comprobante {
   display: grid;
@@ -1049,6 +1049,31 @@ textarea {
   font-size: 1.1rem;
   font-weight: 700;
   border-bottom: 2px solid #1c1611;
+}
+
+/* "Recibí conforme": renglones para que quien recibe complete a mano. */
+.comprobante__firma {
+  display: grid;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  break-inside: avoid;
+}
+
+.comprobante__firma-titulo {
+  font-weight: 700;
+}
+
+.comprobante__firma-campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 2rem 1.5rem;
+}
+
+.comprobante__firma-campo {
+  margin-top: 2.25rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid #1c1611;
+  font-size: 0.85rem;
 }
 
 @media (max-width: 640px) {

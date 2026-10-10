@@ -63,7 +63,7 @@ for (const pantalla of pantallas) {
   });
 }
 
-test("detalles: pedido y su comprobante, orden de produccion, stock y receta", async ({ page }) => {
+test("detalles: pedido y su remito, orden de produccion, stock y receta", async ({ page }) => {
   const cliente = unico("PRUEBA-ClienteA11y");
   await crearCliente(cliente);
   const producto = await crearProductoConStock(unico("PRUEBA-ProdA11y"), 100, 5);
@@ -84,7 +84,7 @@ test("detalles: pedido y su comprobante, orden de produccion, stock y receta", a
   await expect(detallePedido).toBeVisible();
   await revisarAccesibilidad(page, "detalle de pedido");
 
-  // Con una linea aparece el comprobante imprimible.
+  // Con una linea aparece el remito imprimible.
   await detallePedido.getByRole("button", { name: "Agregar item" }).click();
   const linea = page.getByRole("dialog", { name: "Agregar item" });
   const opcion = linea.getByRole("option", { name: new RegExp(`^${producto.nombre} `) });
@@ -92,9 +92,9 @@ test("detalles: pedido y su comprobante, orden de produccion, stock y receta", a
   await linea.getByLabel("Cantidad").fill("1");
   await linea.getByRole("button", { name: "Guardar item" }).click();
   await expect(linea).toBeHidden();
-  await detallePedido.getByRole("link", { name: "Comprobante" }).click();
-  await expect(page.getByRole("article", { name: /^Comprobante del pedido/ })).toBeVisible();
-  await revisarAccesibilidad(page, "comprobante de pedido");
+  await detallePedido.getByRole("link", { name: "Remito" }).click();
+  await expect(page.getByRole("article", { name: /^Remito del pedido/ })).toBeVisible();
+  await revisarAccesibilidad(page, "remito del pedido");
 
   await page.goto("/produccion");
   await page.getByRole("button", { name: "Nueva orden" }).click();
