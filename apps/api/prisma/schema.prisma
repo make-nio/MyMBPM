@@ -163,6 +163,8 @@ model Cliente {
   localidad             String?             @map("LOCALIDAD") @db.VarChar(120)
   provincia             String?             @map("PROVINCIA") @db.VarChar(120)
   observaciones         String?             @map("OBSERVACIONES") @db.VarChar(2000)
+  // Tipo de cliente (#100): CONSUMIDOR, COMERCIO o REVENDEDOR (SEGMENTOS_CLIENTE en enums.ts).
+  segmento              String              @default("CONSUMIDOR") @map("SEGMENTO") @db.VarChar(20)
   fechaAlta             DateTime            @default(now()) @map("FECHA_ALTA") @db.Timestamptz(3)
   activo                Boolean             @default(true) @map("ACTIVO")
   fechaModificacion     DateTime            @updatedAt @map("FECHA_MODIFICACION") @db.Timestamptz(3)
@@ -171,6 +173,7 @@ model Cliente {
 
   @@index([telefono], map: "IX_CLIENTE_TELEFONO")
   @@index([instagram], map: "IX_CLIENTE_INSTAGRAM")
+  @@index([segmento], map: "IX_CLIENTE_SEGMENTO")
   @@map("CLIENTE")
 }
 

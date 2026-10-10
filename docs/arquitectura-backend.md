@@ -35,7 +35,7 @@ Cada modulo vive en `src/modulos/<modulo>/` con cinco archivos: `routes` → `co
 | `usuarios` | `usuarios` | Alta inicial sin sesion; gestion solo administradores (incluido cerrar sesiones); cada uno cambia solo su clave |
 | `categorias`, `items-catalogo` | `categorias`, `items-catalogo` | Catalogo, receta (componentes) e imagenes. Auditado |
 | `importacion-catalogo` | `items-catalogo/importacion` | Importacion de items desde CSV (abajo) |
-| `clientes` | `clientes` | Clientes y `/:id/resumen` (compras confirmadas, sin canceladas). Auditado |
+| `clientes` | `clientes` | Clientes, con su tipo (`SEGMENTO`: `CONSUMIDOR`, `COMERCIO` o `REVENDEDOR`, lista fija en `enums.ts`; filtro `?segmento=`) y `/:id/resumen` (compras confirmadas, sin canceladas). Auditado, el segmento incluido. Sin precio por segmento |
 | `importacion-clientes` | `clientes/importacion` | Importacion de clientes desde CSV (abajo) |
 | `stock` | `stock` | Existencias, historial, bajo stock y ajustes manuales. **Unico que escribe stock** |
 | `pedidos` | `pedidos` | Pedidos, items con precio y costo congelados, estados con su historial (abajo), confirmar (descuenta stock), repetir |

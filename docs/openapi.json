@@ -417,6 +417,14 @@
               "null"
             ]
           },
+          "segmento": {
+            "type": "string",
+            "enum": [
+              "CONSUMIDOR",
+              "COMERCIO",
+              "REVENDEDOR"
+            ]
+          },
           "fechaAlta": {
             "type": "string",
             "format": "date-time"
@@ -441,6 +449,7 @@
           "localidad",
           "provincia",
           "observaciones",
+          "segmento",
           "fechaAlta",
           "activo",
           "fechaModificacion"
@@ -6553,6 +6562,19 @@
             "schema": {
               "type": "string",
               "enum": [
+                "CONSUMIDOR",
+                "COMERCIO",
+                "REVENDEDOR"
+              ]
+            },
+            "required": false,
+            "name": "segmento",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
                 "true",
                 "false"
               ]
@@ -6662,6 +6684,14 @@
                   "observaciones": {
                     "type": "string",
                     "maxLength": 2000
+                  },
+                  "segmento": {
+                    "type": "string",
+                    "enum": [
+                      "CONSUMIDOR",
+                      "COMERCIO",
+                      "REVENDEDOR"
+                    ]
                   },
                   "activo": {
                     "type": "boolean"
@@ -6845,6 +6875,14 @@
                   "observaciones": {
                     "type": "string",
                     "maxLength": 2000
+                  },
+                  "segmento": {
+                    "type": "string",
+                    "enum": [
+                      "CONSUMIDOR",
+                      "COMERCIO",
+                      "REVENDEDOR"
+                    ]
                   },
                   "activo": {
                     "type": "boolean"
@@ -7100,6 +7138,10 @@
                           "type": "string",
                           "maxLength": 5000
                         },
+                        "segmento": {
+                          "type": "string",
+                          "maxLength": 5000
+                        },
                         "activo": {
                           "type": "string",
                           "maxLength": 5000
@@ -7184,12 +7226,21 @@
                                   "observaciones": {
                                     "type": "string"
                                   },
+                                  "segmento": {
+                                    "type": "string",
+                                    "enum": [
+                                      "CONSUMIDOR",
+                                      "COMERCIO",
+                                      "REVENDEDOR"
+                                    ]
+                                  },
                                   "activo": {
                                     "type": "boolean"
                                   }
                                 },
                                 "required": [
                                   "nombre",
+                                  "segmento",
                                   "activo"
                                 ],
                                 "additionalProperties": false
@@ -7313,6 +7364,10 @@
                           "maxLength": 5000
                         },
                         "observaciones": {
+                          "type": "string",
+                          "maxLength": 5000
+                        },
+                        "segmento": {
                           "type": "string",
                           "maxLength": 5000
                         },

@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 
+import { SegmentoCliente } from "../../compartido/dominio/enums";
 import { ErrorNoEncontrado } from "../../compartido/errores/error-no-encontrado";
 
 import { prisma } from "../../lib/prisma";
@@ -18,6 +19,7 @@ export const CAMPOS_AUDITADOS_CLIENTE = [
   "localidad",
   "provincia",
   "observaciones",
+  "segmento",
   "activo"
 ] as const;
 
@@ -26,7 +28,7 @@ function auditoriaCliente(idCliente: bigint, idUsuario?: bigint) {
 }
 
 export const clientesService = {
-  listar(filtros: { busqueda?: string; activo?: boolean; limit: number; offset: number }) {
+  listar(filtros: { busqueda?: string; segmento?: SegmentoCliente; activo?: boolean; limit: number; offset: number }) {
     return clientesRepository.listar(filtros);
   },
 
@@ -62,6 +64,7 @@ export const clientesService = {
     localidad?: string;
     provincia?: string;
     observaciones?: string;
+    segmento?: SegmentoCliente;
     activo?: boolean;
   }, idUsuario?: bigint) {
     return prisma.$transaction(async (tx) => {
@@ -84,6 +87,7 @@ export const clientesService = {
       localidad?: string;
       provincia?: string;
       observaciones?: string;
+      segmento: SegmentoCliente;
       activo: boolean;
     }>,
     idUsuario?: bigint

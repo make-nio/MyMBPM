@@ -71,3 +71,38 @@ test("ficha del cliente: total comprado (solo confirmados, sin cancelados) e his
   await expect(page).toHaveURL(new RegExp(`/pedidos/?\\?pedido=${pendiente.idPedido}$`));
   await expect(page.getByRole("region", { name: `Pedido ${pendiente.numeroPedido}` })).toBeVisible();
 });
+
+// Tipo de cliente (#100): se elige en el alta, se ve en la ficha y filtra la lista.
+test("un cliente Comercio: se ve en la lista y en la ficha, y el filtro por tipo lo encuentra", async ({ page }) => {
+  const nombre = unico("PRUEBA-Comercio");
+
+  await page.goto("/clientes");
+  await page.getByRole("button", { name: "Nuevo cliente" }).click();
+  const modal = page.getByRole("dialog");
+  await modal.getByLabel("Nombre").fill(nombre);
+  // Sin elegir, queda Consumidor.
+  await expect(modal.getByLabel("Tipo de cliente")).toHaveValue("CONSUMIDOR");
+  await modal.getByLabel("Tipo de cliente").selectOption("COMERCIO");
+  await revisarAccesibilidad(page, "alta de cliente con tipo");
+  await modal.getByRole("button", { name: /guardar/i }).click();
+  await expect(modal).toBeHidden();
+
+  await page.getByPlaceholder(/buscar por nombre/i).fill(nombre);
+  await page.getByRole("button", { name: "Buscar", exact: true }).click();
+  const fila = page.getByRole("row").filter({ hasText: nombre });
+  await expect(fila).toContainText("Comercio");
+
+  // El filtro por tipo: con Revendedor no aparece, con Comercio si.
+  await page.getByLabel("Filtrar por tipo de cliente").selectOption("REVENDEDOR");
+  await expect(page.getByRole("row").filter({ hasText: nombre })).toHaveCount(0);
+  await page.getByLabel("Filtrar por tipo de cliente").selectOption("COMERCIO");
+  await expect(fila).toBeVisible();
+
+  await fila.getByRole("button", { name: "Ficha" }).click();
+  await expect(page.getByTestId("segmento-cliente")).toHaveText("Comercio");
+
+  // Por la API: un tipo fuera de la lista da 400 y sin tipo queda Consumidor.
+  await expect(api("POST", "/api/clientes", { nombre: unico("PRUEBA-Mayorista"), segmento: "MAYORISTA" })).rejects.toThrow(/400/);
+  const comun = await api<{ segmento: string }>("POST", "/api/clientes", { nombre: unico("PRUEBA-Comun") });
+  expect(comun.segmento).toBe("CONSUMIDOR");
+});

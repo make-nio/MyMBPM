@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { SegmentoCliente, SEGMENTOS_CLIENTE } from "../../compartido/dominio/enums";
 import { leerSiNo, texto } from "../importacion-catalogo/validar-filas";
 
 import { FilaImportacionCliente } from "./importacion-clientes.schemas";
@@ -15,6 +16,7 @@ export type ClienteImportable = {
   localidad?: string;
   provincia?: string;
   observaciones?: string;
+  segmento: SegmentoCliente;
   activo: boolean;
 };
 
@@ -34,6 +36,16 @@ export type ClientesExistentes = {
 };
 
 const esEmail = z.string().email();
+
+// "Comercio", "COMERCIO" y "comércio" son el mismo segmento: sin mayusculas ni tildes. Vacio es
+// CONSUMIDOR; cualquier otro valor, null (error de la fila).
+export function leerSegmento(valor: string | undefined): SegmentoCliente | null {
+  const limpio = texto(valor)?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+  if (limpio === undefined) {
+    return "CONSUMIDOR";
+  }
+  return (SEGMENTOS_CLIENTE as readonly string[]).includes(limpio) ? (limpio as SegmentoCliente) : null;
+}
 
 export const claveEmail = (email: string) => email.trim().toLowerCase();
 // "20.123.456" y "20123456" son el mismo documento.
@@ -84,6 +96,11 @@ export function validarFilasClientes(filas: FilaImportacionCliente[], existentes
       errores.push(`Email: "${valores.email}" no es un email valido`);
     }
 
+    const segmento = leerSegmento(fila.segmento);
+    if (segmento === null) {
+      errores.push(`Segmento: "${fila.segmento?.trim()}" tiene que ser Consumidor, Comercio o Revendedor`);
+    }
+
     const activo = leerSiNo(fila.activo);
     if (activo === null) {
       errores.push(`Activo: "${fila.activo?.trim()}" tiene que ser Si o No`);
@@ -128,6 +145,7 @@ export function validarFilasClientes(filas: FilaImportacionCliente[], existentes
             localidad: valores.localidad,
             provincia: valores.provincia,
             observaciones: valores.observaciones,
+            segmento: segmento ?? "CONSUMIDOR",
             activo: activo ?? true
           }
         : null;

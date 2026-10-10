@@ -57,7 +57,8 @@ const NOMBRES_CAMPO: Record<string, string> = {
   instagram: "Instagram",
   domicilio: "Domicilio",
   localidad: "Localidad",
-  provincia: "Provincia"
+  provincia: "Provincia",
+  segmento: "Tipo de cliente"
 };
 
 const CAMPOS_MONEDA = new Set(["precio", "costo"]);

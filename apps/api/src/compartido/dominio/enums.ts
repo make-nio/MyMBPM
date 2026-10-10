@@ -24,6 +24,11 @@ export const ESTADOS_ENTREGADOS: readonly EstadoPedido[] = ["ENTREGADO", "DEVUEL
 export const ORIGENES_CAMBIO_ESTADO = ["PANTALLA", "AGENTE"] as const;
 export type OrigenCambioEstado = (typeof ORIGENES_CAMBIO_ESTADO)[number];
 
+// Tipo de cliente (#100). Lista fija; que separa un comercio de un revendedor lo deciden Mariano
+// y Maxi (todavia no esta decidido). No hay precio por segmento.
+export const SEGMENTOS_CLIENTE = ["CONSUMIDOR", "COMERCIO", "REVENDEDOR"] as const;
+export type SegmentoCliente = (typeof SEGMENTOS_CLIENTE)[number];
+
 export const ORIGENES_PEDIDO = ["WEB", "INSTAGRAM", "WHATSAPP", "MANUAL"] as const;
 export type OrigenPedido = (typeof ORIGENES_PEDIDO)[number];
 

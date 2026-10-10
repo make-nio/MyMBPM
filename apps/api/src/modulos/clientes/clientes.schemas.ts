@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { SEGMENTOS_CLIENTE } from "../../compartido/dominio/enums";
 import { idSchema, paginacionSchema } from "../../compartido/validaciones/esquemas-comunes";
 
 export const clienteParamsSchema = z.object({
@@ -17,6 +18,8 @@ export const crearClienteSchema = z.object({
   localidad: z.string().max(120).optional(),
   provincia: z.string().max(120).optional(),
   observaciones: z.string().max(2000).optional(),
+  // Tipo de cliente (#100). Sin segmento, CONSUMIDOR (el default de la base).
+  segmento: z.enum(SEGMENTOS_CLIENTE).optional(),
   activo: z.boolean().optional()
 });
 
@@ -31,6 +34,7 @@ export const actualizarEstadoClienteSchema = z.object({
 
 export const listarClientesQuerySchema = paginacionSchema.extend({
   busqueda: z.string().max(150).optional(),
+  segmento: z.enum(SEGMENTOS_CLIENTE).optional(),
   activo: z
     .enum(["true", "false"])
     .transform((value) => value === "true")

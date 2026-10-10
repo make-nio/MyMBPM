@@ -6,6 +6,7 @@ type PrismaOrTx = PrismaClient | Prisma.TransactionClient;
 
 type ListarClientesFiltros = {
   busqueda?: string;
+  segmento?: string;
   activo?: boolean;
   limit: number;
   offset: number;
@@ -22,6 +23,7 @@ type CrearClienteInput = {
   localidad?: string;
   provincia?: string;
   observaciones?: string;
+  segmento?: string;
   activo?: boolean;
 };
 
@@ -30,7 +32,8 @@ type ActualizarClienteInput = Partial<CrearClienteInput>;
 export const clientesRepository = {
   listar(filtros: ListarClientesFiltros) {
     const where: Prisma.ClienteWhereInput = {
-      activo: filtros.activo
+      activo: filtros.activo,
+      segmento: filtros.segmento
     };
 
     if (filtros.busqueda) {
