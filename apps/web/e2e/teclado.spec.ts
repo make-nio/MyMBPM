@@ -24,7 +24,7 @@ async function enfocadoDentro(contenedor: Locator) {
   return contenedor.evaluate((elemento) => elemento.contains(document.activeElement));
 }
 
-test("un pedido completo solo con teclado: alta, item, confirmacion y comprobante", async ({ page }) => {
+test("un pedido completo solo con teclado: alta, item, confirmacion y remito", async ({ page }) => {
   const cliente = unico("PRUEBA-ClienteTeclado");
   await crearCliente(cliente);
   const producto = await crearProductoConStock(unico("PRUEBA-ProdTeclado"), 1500, 10);
@@ -96,8 +96,8 @@ test("un pedido completo solo con teclado: alta, item, confirmacion y comprobant
   // "Confirmar pedido" ya no existe: el foco vuelve al panel del pedido, no al principio de la pagina.
   await expect.poll(() => enfocadoDentro(panel)).toBe(true);
 
-  // Comprobante: el enlace se sigue con Enter y la hoja se imprime con Enter.
-  await tabHasta(page, panel.getByRole("link", { name: "Comprobante" }));
+  // Remito: el enlace se sigue con Enter y la hoja se imprime con Enter.
+  await tabHasta(page, panel.getByRole("link", { name: "Remito" }));
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/pedidos\/comprobante\?pedido=/);
   const imprimir = page.getByRole("button", { name: "Imprimir" });

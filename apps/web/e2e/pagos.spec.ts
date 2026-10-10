@@ -4,7 +4,7 @@ import { ADMIN_E2E } from "./entorno";
 import { expect, test, unico } from "./fixtures";
 
 // Pagos de un pedido (#90): se registran con su medio, no superan el saldo, se anulan con motivo
-// (administradores) y calculan el estado de cobro. Se ven en el comprobante y en Reportes.
+// (administradores) y calculan el estado de cobro. Se ven en el remito y en Reportes.
 
 async function pedidoDe(total: number) {
   const nombreCliente = unico("PRUEBA-ClientePagos");
@@ -19,7 +19,7 @@ async function pedidoDe(total: number) {
   return { nombreCliente, pedido };
 }
 
-test("registrar una seña, completar el saldo, anular y verlo en el comprobante", async ({ page }) => {
+test("registrar una seña, completar el saldo, anular y verlo en el remito", async ({ page }) => {
   const { nombreCliente, pedido } = await pedidoDe(1000);
 
   await page.goto("/pedidos");
@@ -65,9 +65,9 @@ test("registrar una seña, completar el saldo, anular y verlo en el comprobante"
   await expect(panel.getByTestId("estado-cobro")).toHaveText("Señado");
   await expect(pagos.getByRole("row").filter({ hasText: "Transferencia" })).toContainText("Anulado: PRUEBA se cargo dos veces");
 
-  // El comprobante muestra lo cobrado y el saldo.
+  // El remito muestra lo cobrado y el saldo.
   await page.goto(`/pedidos/comprobante?pedido=${pedido.idPedido}`);
-  const comprobante = page.getByRole("article", { name: `Comprobante del pedido ${pedido.numeroPedido}` });
+  const comprobante = page.getByRole("article", { name: `Remito del pedido ${pedido.numeroPedido}` });
   await expect(comprobante.getByTestId("comprobante-cobrado")).toHaveText(/700,00/);
   await expect(comprobante.getByTestId("comprobante-saldo")).toHaveText(/300,00/);
   await expect(comprobante).toContainText(nombreCliente);

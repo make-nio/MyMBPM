@@ -243,7 +243,7 @@ export function PanelPedido({ idPedido, onCambio, onAbrirPedido }: PanelPedidoPr
           {detalles.length > 0 ? (
             <>
               <Link className="boton-secundario" href={`/pedidos/comprobante?pedido=${idPedido}`}>
-                Comprobante
+                Remito
               </Link>
               <button className="boton-secundario" onClick={() => modalRepetir.abrir(null)} type="button">
                 Repetir

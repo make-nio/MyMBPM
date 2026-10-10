@@ -54,14 +54,15 @@ const guias: Paso[] = [
     ojo: "Una devolucion no se deshace. Lo devuelto baja lo que falta cobrar del pedido, y si vuelve al stock lo ves en Stock como \"Ingreso devolucion\". Un pago que ya se reintegro no se puede anular. En Reportes, la ganancia del mes no descuenta lo devuelto."
   },
   {
-    titulo: "Darle un comprobante al cliente",
+    titulo: "Hacer el remito de un pedido",
     pasos: [
-      "En el detalle del pedido, toca \"Comprobante\" (aparece cuando el pedido tiene items).",
-      "Se abre una hoja con los datos del cliente, los items, los precios y el total.",
+      "En el detalle del pedido, toca \"Remito\" (aparece cuando el pedido tiene items).",
+      "Se abre el remito: lleva el numero del pedido, los datos del cliente, los items, los precios, el total y lo cobrado. Si el pedido ya se entrego, la fecha de entrega; si hubo devoluciones, cuanto se devolvio de cada item.",
       "Toca \"Imprimir\". Para mandarlo por WhatsApp, en la ventana de impresion elegi \"Guardar como PDF\".",
+      "Abajo hay lugar para que quien recibe firme y ponga aclaracion, DNI y fecha.",
       "La hoja no muestra costos, ganancia ni las observaciones internas: solo las observaciones del cliente."
     ],
-    ojo: "Dice \"Documento no válido como factura\": sirve como constancia del pedido, no como factura."
+    ojo: "Dice \"Documento no válido como factura\": la factura la seguis haciendo vos, aparte. Hay un remito por pedido, con el mismo numero."
   },
   {
     titulo: "Producir",
