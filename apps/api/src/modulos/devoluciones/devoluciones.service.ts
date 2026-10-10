@@ -174,7 +174,20 @@ export const devolucionesService = {
           .add(devueltoAhora.get(detalle.idPedidoDetalle) ?? cero())
           .greaterThanOrEqualTo(detalle.cantidad)
       );
-      await pedidosRepository.actualizar(tx, idPedido, { estadoPedido: volvioTodo ? "DEVUELTO" : "DEVUELTO_PARCIAL" });
+      const estadoNuevo = volvioTodo ? "DEVUELTO" : "DEVUELTO_PARCIAL";
+      await pedidosRepository.actualizar(tx, idPedido, { estadoPedido: estadoNuevo });
+
+      // Tambien es un cambio de estado: va al historial (#99), salvo que siga DEVUELTO_PARCIAL.
+      if (estadoNuevo !== pedido.estadoPedido) {
+        await pedidosRepository.registrarCambioEstado(tx, {
+          idPedido,
+          estadoAnterior: pedido.estadoPedido,
+          estadoNuevo,
+          idUsuario,
+          origen: "PANTALLA",
+          observacion: `Devolucion: ${data.motivo}`
+        });
+      }
 
       await pagosService.recalcularEstadoCobro(tx, idPedido);
     });

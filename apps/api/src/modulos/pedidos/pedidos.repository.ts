@@ -23,6 +23,18 @@ type CrearPedidoInput = {
   observacionesInternas?: string;
   fechaEntrega?: Date | null;
   activo?: boolean;
+  idUsuarioAlta?: bigint;
+};
+
+// Un cambio de estado para HISTORIAL_ESTADO_PEDIDO (#99). Sin estado anterior es el alta.
+export type CambioEstadoInput = {
+  idPedido: bigint;
+  estadoAnterior: string | null;
+  estadoNuevo: string;
+  idUsuario?: bigint;
+  origen?: string;
+  observacion?: string;
+  fecha?: Date;
 };
 
 type ActualizarPedidoInput = Partial<{
@@ -35,6 +47,8 @@ type ActualizarPedidoInput = Partial<{
   total: Prisma.Decimal;
   fechaConfirmacion: Date;
   fechaEntrega: Date | null;
+  fechaEntregaReal: Date;
+  motivoCancelacion: string;
   activo: boolean;
 }>;
 
@@ -84,10 +98,35 @@ export const pedidosRepository = {
         observacionesCliente: input.observacionesCliente,
         observacionesInternas: input.observacionesInternas,
         fechaEntrega: input.fechaEntrega,
+        idUsuarioAlta: input.idUsuarioAlta,
         activo: input.activo ?? true,
         subtotal: new Prisma.Decimal(0),
         total: new Prisma.Decimal(0)
       }
+    });
+  },
+
+  registrarCambioEstado(prismaOrTx: PrismaOrTx, input: CambioEstadoInput) {
+    return prismaOrTx.historialEstadoPedido.create({
+      data: {
+        idPedido: input.idPedido,
+        estadoAnterior: input.estadoAnterior,
+        estadoNuevo: input.estadoNuevo,
+        idUsuario: input.idUsuario,
+        origen: input.origen ?? "PANTALLA",
+        observacion: input.observacion?.slice(0, 500),
+        fecha: input.fecha
+      }
+    });
+  },
+
+  // Los cambios de estado de un pedido, del primero al ultimo, con el nombre de quien los hizo
+  // (nunca el email ni la clave).
+  listarHistorial(prismaOrTx: PrismaOrTx, idPedido: bigint) {
+    return prismaOrTx.historialEstadoPedido.findMany({
+      where: { idPedido },
+      include: { usuario: { select: { nombre: true, apellido: true } } },
+      orderBy: [{ fecha: "asc" }, { idHistorialEstadoPedido: "asc" }]
     });
   },
 

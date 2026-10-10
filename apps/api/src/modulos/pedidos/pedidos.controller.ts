@@ -33,7 +33,7 @@ export const pedidosController = {
   // crear y actualizarEstado devuelven el pedido sin detalles: no traen costos.
   async crear(request: Request, response: Response) {
     const body = validar(crearPedidoSchema, request.body);
-    const pedido = await pedidosService.crear(body);
+    const pedido = await pedidosService.crear(body, request.usuarioAutenticado?.idUsuario);
 
     responderExito(response, pedido, 201);
   },
@@ -45,9 +45,15 @@ export const pedidosController = {
     responderExito(response, await pedidosService.prepararRepeticion(params.id));
   },
 
+  async listarHistorial(request: Request, response: Response) {
+    const params = validar(pedidoParamsSchema, request.params);
+
+    responderExito(response, await pedidosService.listarHistorial(params.id));
+  },
+
   async repetir(request: Request, response: Response) {
     const params = validar(pedidoParamsSchema, request.params);
-    const pedido = await pedidosService.repetir(params.id);
+    const pedido = await pedidosService.repetir(params.id, request.usuarioAutenticado?.idUsuario);
 
     responderExito(response, pedidosService.presentar(pedido, puedeVerCostos(request.usuarioAutenticado)), 201);
   },

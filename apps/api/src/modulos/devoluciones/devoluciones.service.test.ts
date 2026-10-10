@@ -23,7 +23,7 @@ vi.mock("../pagos/pagos.repository", () => ({
   pagosRepository: { bloquearPedido: vi.fn(), listarPorPedido: vi.fn(), crear: vi.fn() }
 }));
 vi.mock("../pagos/pagos.service", () => ({ pagosService: { recalcularEstadoCobro: vi.fn() } }));
-vi.mock("../pedidos/pedidos.repository", () => ({ pedidosRepository: { obtenerPorId: vi.fn(), actualizar: vi.fn() } }));
+vi.mock("../pedidos/pedidos.repository", () => ({ pedidosRepository: { obtenerPorId: vi.fn(), actualizar: vi.fn(), registrarCambioEstado: vi.fn() } }));
 vi.mock("../stock/stock.service", async (original) => {
   const modulo = await original<typeof import("../stock/stock.service")>();
   return { ...modulo, stockService: { registrarIngreso: vi.fn() } };
@@ -185,6 +185,15 @@ describe("devolucionesService.registrar: estado del pedido", () => {
     await devolucionesService.registrar(1n, { lineas: ambasLineas, motivo: "x", claveIdempotencia: CLAVE });
 
     expect(pedidos.actualizar).toHaveBeenCalledWith(tx, 1n, { estadoPedido: "DEVUELTO_PARCIAL" });
+    // Es un cambio de estado: va al historial (#99) con el motivo.
+    expect(pedidos.registrarCambioEstado).toHaveBeenCalledWith(tx, {
+      idPedido: 1n,
+      estadoAnterior: "ENTREGADO",
+      estadoNuevo: "DEVUELTO_PARCIAL",
+      idUsuario: undefined,
+      origen: "PANTALLA",
+      observacion: "Devolucion: x"
+    });
   });
 
   it("devolver todo de una vez deja el pedido DEVUELTO", async () => {
@@ -221,6 +230,8 @@ describe("devolucionesService.registrar: estado del pedido", () => {
     await devolucionesService.registrar(1n, { lineas: [{ idPedidoDetalle: 6n, cantidad: 1 }], motivo: "x", claveIdempotencia: CLAVE });
 
     expect(pedidos.actualizar).toHaveBeenCalledWith(tx, 1n, { estadoPedido: "DEVUELTO_PARCIAL" });
+    // Sigue DEVUELTO_PARCIAL: no hay cambio de estado, no hay evento.
+    expect(pedidos.registrarCambioEstado).not.toHaveBeenCalled();
   });
 
   it("sobre un pedido DEVUELTO no queda nada por devolver (409) y no se toca nada", async () => {

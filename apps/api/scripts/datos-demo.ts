@@ -88,6 +88,7 @@ async function main() {
   const { pedidosService } = await import("../src/modulos/pedidos/pedidos.service");
   const { solicitudesEspecialesService } = await import("../src/modulos/solicitudes-especiales/solicitudes-especiales.service");
   const { usuariosService } = await import("../src/modulos/usuarios/usuarios.service");
+  const { inicioDelDiaArgentina } = await import("../src/compartido/dominio/fecha-argentina");
 
   try {
     if ((await prisma.itemCatalogo.count()) > 0) {
@@ -212,10 +213,11 @@ async function main() {
         origenPedido: elegir(ORIGENES),
         observacionesCliente: azar() > 0.8 ? "Si se puede, en tonos pastel." : undefined,
         fechaEntrega: entrega
-      });
+      }, idUsuario);
 
       // Las fechas del historial (los services usan la del momento).
       await prisma.pedido.update({ where: { idPedido: pedido.idPedido }, data: { fechaAlta: alta } });
+      await prisma.historialEstadoPedido.updateMany({ where: { idPedido: pedido.idPedido, estadoAnterior: null }, data: { fecha: alta } });
 
       for (const producto of new Set(Array.from({ length: entre(1, 3) }, () => elegir(vendibles)))) {
         await pedidosService.agregarDetalle(pedido.idPedido, { idItemCatalogo: items.get(producto)!.id, cantidad: entre(1, 2) });
@@ -238,12 +240,22 @@ async function main() {
           await pedidosService.confirmar(pedido.idPedido, idUsuario);
         }
         await prisma.pedido.update({ where: { idPedido: pedido.idPedido }, data: { fechaConfirmacion: new Date(alta.getTime() + DIA_MS / 2) } });
+        await prisma.historialEstadoPedido.updateMany({
+          where: { idPedido: pedido.idPedido, estadoNuevo: "CONFIRMADO" },
+          data: { fecha: new Date(alta.getTime() + DIA_MS / 2) }
+        });
       }
       if (estado === "EN_PREPARACION" || estado === "LISTO" || estado === "ENTREGADO" || estado === "CANCELADO") {
+        // El cambio de estado, un dia y medio despues del alta (o ahora, si es de hoy).
+        const cuando = new Date(Math.min(alta.getTime() + 1.5 * DIA_MS, ahora));
         await pedidosService.actualizarEstado(pedido.idPedido, {
           estadoPedido: estado,
-          estadoCobro: estado === "ENTREGADO" ? "PAGADO" : estado === "CANCELADO" ? undefined : "SEÑADO"
-        });
+          estadoCobro: estado === "ENTREGADO" ? "PAGADO" : estado === "CANCELADO" ? undefined : "SEÑADO",
+          // Si ya desconto stock, vuelve (la configuracion inicial pregunta).
+          ...(estado === "CANCELADO" ? { motivoCancelacion: "El cliente se arrepintio (datos de demo)", devolverStock: true } : {}),
+          ...(estado === "ENTREGADO" ? { fechaEntregaReal: inicioDelDiaArgentina(cuando) } : {})
+        }, idUsuario);
+        await prisma.historialEstadoPedido.updateMany({ where: { idPedido: pedido.idPedido, estadoNuevo: estado }, data: { fecha: cuando } });
       }
     }
 

@@ -790,6 +790,26 @@
             ],
             "format": "date-time"
           },
+          "fechaEntregaReal": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "motivoCancelacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "idUsuarioAlta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d+$"
+          },
           "activo": {
             "type": "boolean"
           },
@@ -836,6 +856,9 @@
           "fechaAlta",
           "fechaConfirmacion",
           "fechaEntrega",
+          "fechaEntregaReal",
+          "motivoCancelacion",
+          "idUsuarioAlta",
           "activo",
           "fechaModificacion",
           "cliente"
@@ -1526,6 +1549,26 @@
             ],
             "format": "date-time"
           },
+          "fechaEntregaReal": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "motivoCancelacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "idUsuarioAlta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d+$"
+          },
           "activo": {
             "type": "boolean"
           },
@@ -1551,6 +1594,9 @@
           "fechaAlta",
           "fechaConfirmacion",
           "fechaEntrega",
+          "fechaEntregaReal",
+          "motivoCancelacion",
+          "idUsuarioAlta",
           "activo",
           "fechaModificacion",
           "cliente"
@@ -1822,6 +1868,26 @@
             ],
             "format": "date-time"
           },
+          "fechaEntregaReal": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "motivoCancelacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "idUsuarioAlta": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d+$"
+          },
           "activo": {
             "type": "boolean"
           },
@@ -1853,10 +1919,110 @@
           "fechaAlta",
           "fechaConfirmacion",
           "fechaEntrega",
+          "fechaEntregaReal",
+          "motivoCancelacion",
+          "idUsuarioAlta",
           "activo",
           "fechaModificacion",
           "cliente",
           "detalles"
+        ],
+        "additionalProperties": false
+      },
+      "CambioEstadoPedido": {
+        "type": "object",
+        "properties": {
+          "idHistorialEstadoPedido": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "idPedido": {
+            "type": "string",
+            "pattern": "^\\d+$"
+          },
+          "estadoAnterior": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "PENDIENTE",
+              "CONFIRMADO",
+              "EN_PREPARACION",
+              "LISTO",
+              "ENTREGADO",
+              "CANCELADO",
+              "DEVUELTO_PARCIAL",
+              "DEVUELTO"
+            ]
+          },
+          "estadoNuevo": {
+            "type": "string",
+            "enum": [
+              "PENDIENTE",
+              "CONFIRMADO",
+              "EN_PREPARACION",
+              "LISTO",
+              "ENTREGADO",
+              "CANCELADO",
+              "DEVUELTO_PARCIAL",
+              "DEVUELTO"
+            ]
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "idUsuario": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d+$"
+          },
+          "origen": {
+            "type": "string",
+            "enum": [
+              "PANTALLA",
+              "AGENTE"
+            ]
+          },
+          "observacion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "usuario": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "nombre": {
+                "type": "string"
+              },
+              "apellido": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "nombre",
+              "apellido"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "idHistorialEstadoPedido",
+          "idPedido",
+          "estadoAnterior",
+          "estadoNuevo",
+          "fecha",
+          "idUsuario",
+          "origen",
+          "observacion",
+          "usuario"
         ],
         "additionalProperties": false
       },
@@ -8381,6 +8547,26 @@
                           ],
                           "format": "date-time"
                         },
+                        "fechaEntregaReal": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "motivoCancelacion": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "idUsuarioAlta": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^\\d+$"
+                        },
                         "activo": {
                           "type": "boolean"
                         },
@@ -8403,6 +8589,9 @@
                         "fechaAlta",
                         "fechaConfirmacion",
                         "fechaEntrega",
+                        "fechaEntregaReal",
+                        "motivoCancelacion",
+                        "idUsuarioAlta",
                         "activo",
                         "fechaModificacion"
                       ],
@@ -8744,7 +8933,7 @@
     },
     "/api/pedidos/{id}/estado": {
       "patch": {
-        "summary": "Cambia estado, cobro, observaciones internas o fecha de entrega (para confirmar se usa /confirmar); al cancelar un pedido que desconto stock lo devuelve o no segun la configuracion (devolverStock)",
+        "summary": "Cambia estado, cobro, observaciones internas o fecha de entrega prometida (para confirmar se usa /confirmar). Cancelar pide motivoCancelacion y, si el pedido desconto stock, lo devuelve o no segun la configuracion (devolverStock). Entregar guarda fechaEntregaReal (hoy si no viene). Cada cambio de estado queda en el historial",
         "description": "Acceso: autenticado.",
         "tags": [
           "pedidos"
@@ -8797,6 +8986,14 @@
                   },
                   "devolverStock": {
                     "type": "boolean"
+                  },
+                  "motivoCancelacion": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "fechaEntregaReal": {
+                    "type": "string",
+                    "maxLength": 10
                   }
                 }
               }
@@ -8902,6 +9099,26 @@
                           ],
                           "format": "date-time"
                         },
+                        "fechaEntregaReal": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "motivoCancelacion": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "idUsuarioAlta": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^\\d+$"
+                        },
                         "activo": {
                           "type": "boolean"
                         },
@@ -8924,10 +9141,79 @@
                         "fechaAlta",
                         "fechaConfirmacion",
                         "fechaEntrega",
+                        "fechaEntregaReal",
+                        "motivoCancelacion",
+                        "idUsuarioAlta",
                         "activo",
                         "fechaModificacion"
                       ],
                       "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "ok",
+                    "data"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pedidos/{id}/historial": {
+      "get": {
+        "summary": "Linea de tiempo del pedido: cada cambio de estado, cuando, quien y por que",
+        "description": "Acceso: autenticado.",
+        "tags": [
+          "pedidos"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d+$"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exito",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/CambioEstadoPedido"
+                      }
                     }
                   },
                   "required": [

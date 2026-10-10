@@ -89,8 +89,20 @@ test("pedido completo: items, impacto en stock, confirmacion y seguimiento", asy
   await panel.getByLabel("Estado del pedido").selectOption("CANCELADO");
   const devolver = panel.getByRole("group", { name: "¿Devolver al stock los productos que se descontaron?" });
   await expect(devolver.getByLabel("Si, devolverlos")).toBeChecked();
+  // Cancelar pide el motivo (#99): sin motivo no se guarda.
+  await expect(panel.getByRole("button", { name: "Guardar estado" })).toBeDisabled();
+  await panel.getByLabel("Motivo de la cancelacion").fill("PRUEBA el cliente no confirmo");
   await panel.getByRole("button", { name: "Guardar estado" }).click();
   await expect(panel.getByTestId("estado-pedido")).toHaveText("Cancelado");
+  await expect(panel.getByTestId("motivo-cancelacion")).toHaveText("PRUEBA el cliente no confirmo");
+  // La linea de tiempo: alta, confirmacion, en preparacion y cancelacion con su motivo.
+  const historial = panel.getByRole("region", { name: "Historial del pedido" });
+  await expect(historial.getByRole("listitem")).toHaveCount(4);
+  await expect(historial.getByRole("listitem").nth(0)).toContainText("Alta (Pendiente)");
+  await expect(historial.getByRole("listitem").nth(1)).toContainText("Pendiente → Confirmado");
+  await expect(historial.getByRole("listitem").nth(3)).toContainText("En preparacion → Cancelado");
+  await expect(historial.getByRole("listitem").nth(3)).toContainText("PRUEBA el cliente no confirmo");
+  await expect(historial.getByRole("listitem").nth(3)).toContainText(`${ADMIN_E2E.nombre} ${ADMIN_E2E.apellido}`);
   await expect(movimientos.getByRole("row").filter({ hasText: vela.nombre }).filter({ hasText: "Reverso" })).toContainText(
     /3\s*\+2\s*5/
   );
@@ -119,6 +131,52 @@ test("con stock insuficiente avisa y no deja confirmar", async ({ page }) => {
 
   await panel.getByRole("row").filter({ hasText: figura.nombre }).first().getByRole("button", { name: "Quitar" }).click();
   await expect(panel.getByText("Pedido sin items")).toBeVisible();
+});
+
+test("entregar guarda la fecha real (hoy o la que se elige) y queda en el historial", async ({ page }) => {
+  const nombreCliente = unico("PRUEBA-ClienteEntrega");
+  const cliente = await crearCliente(nombreCliente);
+  const vela = await crearProductoConStock(unico("PRUEBA-VelaEntrega"), 100, 10);
+  const pedido = await api<{ idPedido: string; numeroPedido: string }>("POST", "/api/pedidos", {
+    idCliente: cliente.idCliente,
+    origenPedido: "MANUAL"
+  });
+  await api("POST", `/api/pedidos/${pedido.idPedido}/detalles`, { idItemCatalogo: vela.idItemCatalogo, cantidad: 1 });
+  await api("POST", `/api/pedidos/${pedido.idPedido}/confirmar`);
+
+  // Por la API: una fecha futura no; sin fecha, hoy.
+  const manana = new Date(Date.now() + 27 * 3600 * 1000).toISOString().slice(0, 10);
+  await expect(
+    api("PATCH", `/api/pedidos/${pedido.idPedido}/estado`, { estadoPedido: "ENTREGADO", fechaEntregaReal: manana })
+  ).rejects.toThrow(/400/);
+  // Cancelar sin motivo tampoco (400).
+  await expect(api("PATCH", `/api/pedidos/${pedido.idPedido}/estado`, { estadoPedido: "CANCELADO", devolverStock: false })).rejects.toThrow(/400/);
+
+  await page.goto(`/pedidos?pedido=${pedido.idPedido}`);
+  const panel = page.getByRole("region", { name: `Pedido ${pedido.numeroPedido}` });
+  await panel.getByLabel("Estado del pedido").selectOption("ENTREGADO");
+  // Propone hoy (en Argentina) y deja cambiarla.
+  const hoy = new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
+  await expect(panel.getByLabel("Fecha de entrega")).toHaveValue(hoy);
+  await revisarAccesibilidad(page, "entregar un pedido");
+  await panel.getByRole("button", { name: "Guardar estado" }).click();
+  await expect(panel.getByTestId("estado-pedido")).toHaveText("Entregado");
+  const [anio, mes, dia] = hoy.split("-");
+  await expect(panel.getByTestId("entrega-real")).toHaveText(`${dia}/${mes}/${anio}`);
+
+  const historial = panel.getByRole("region", { name: "Historial del pedido" });
+  await expect(historial.getByRole("listitem").last()).toContainText("Confirmado → Entregado");
+  await expect(historial.getByRole("listitem").last()).toContainText(`Entregado el ${dia}/${mes}/${anio}`);
+  const cambios = await api<Array<{ estadoAnterior: string | null; estadoNuevo: string; origen: string }>>(
+    "GET",
+    `/api/pedidos/${pedido.idPedido}/historial`
+  );
+  expect(cambios.map((cambio) => `${cambio.estadoAnterior ?? "-"}>${cambio.estadoNuevo}`)).toEqual([
+    "->PENDIENTE",
+    "PENDIENTE>CONFIRMADO",
+    "CONFIRMADO>ENTREGADO"
+  ]);
+  expect(cambios.every((cambio) => cambio.origen === "PANTALLA")).toBe(true);
 });
 
 test("filtra el listado por estado", async ({ page }) => {

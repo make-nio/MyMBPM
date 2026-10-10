@@ -2,6 +2,7 @@ import { Endpoint, decimal, fecha, id, lista, objeto, z } from "../base";
 import {
   ESTADOS_COBRO,
   ESTADOS_PEDIDO,
+  ORIGENES_CAMBIO_ESTADO,
   ORIGENES_PEDIDO,
   TIPOS_ITEM
 } from "../../compartido/dominio/enums";
@@ -31,7 +32,11 @@ export const camposPedido = {
   total: decimal,
   fechaAlta: fecha,
   fechaConfirmacion: fecha.nullable(),
+  // Prometida. La real (al entregar), el motivo de cancelacion y quien lo cargo son de #99.
   fechaEntrega: fecha.nullable(),
+  fechaEntregaReal: fecha.nullable(),
+  motivoCancelacion: z.string().nullable(),
+  idUsuarioAlta: id.nullable(),
   activo: z.boolean(),
   fechaModificacion: fecha
 };
@@ -110,6 +115,19 @@ const repeticionSchema = objeto({
   total: decimal
 }).openapi("RepeticionPedido");
 
+// Un cambio de estado (#99). Sin estado anterior es el alta. Solo el nombre de quien lo hizo.
+const cambioEstadoSchema = objeto({
+  idHistorialEstadoPedido: id,
+  idPedido: id,
+  estadoAnterior: z.enum(ESTADOS_PEDIDO).nullable(),
+  estadoNuevo: z.enum(ESTADOS_PEDIDO),
+  fecha,
+  idUsuario: id.nullable(),
+  origen: z.enum(ORIGENES_CAMBIO_ESTADO),
+  observacion: z.string().nullable(),
+  usuario: objeto({ nombre: z.string(), apellido: z.string() }).nullable()
+}).openapi("CambioEstadoPedido");
+
 const params = objeto({ id });
 const paramsDetalle = objeto({ id, detalleId: id });
 
@@ -177,11 +195,20 @@ export const endpoints = [
     metodo: "patch",
     ruta: "/api/pedidos/{id}/estado",
     acceso: "autenticado",
-    resumen: "Cambia estado, cobro, observaciones internas o fecha de entrega (para confirmar se usa /confirmar); al cancelar un pedido que desconto stock lo devuelve o no segun la configuracion (devolverStock)",
+    resumen: "Cambia estado, cobro, observaciones internas o fecha de entrega prometida (para confirmar se usa /confirmar). Cancelar pide motivoCancelacion y, si el pedido desconto stock, lo devuelve o no segun la configuracion (devolverStock). Entregar guarda fechaEntregaReal (hoy si no viene). Cada cambio de estado queda en el historial",
     etiqueta,
     params,
     body: actualizarEstadoPedidoSchema,
     respuesta: pedidoSchema
+  },
+  {
+    metodo: "get",
+    ruta: "/api/pedidos/{id}/historial",
+    acceso: "autenticado",
+    resumen: "Linea de tiempo del pedido: cada cambio de estado, cuando, quien y por que",
+    etiqueta,
+    params,
+    respuesta: lista(cambioEstadoSchema)
   },
   {
     metodo: "post",

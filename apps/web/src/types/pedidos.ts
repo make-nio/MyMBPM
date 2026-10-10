@@ -46,6 +46,9 @@ export const TRANSICIONES_ESTADO_PEDIDO: Record<EstadoPedido, readonly EstadoPed
 // Pedidos que llegaron al cliente, con o sin devolucion (espejo de ESTADOS_ENTREGADOS de la API).
 export const ESTADOS_ENTREGADOS: readonly EstadoPedido[] = ["ENTREGADO", "DEVUELTO_PARCIAL", "DEVUELTO"];
 
+// Un cambio de estado del historial del pedido (#99). Sin estado anterior es el alta.
+export type CambioEstadoPedido = RespuestaDe<"get /api/pedidos/{id}/historial">[number];
+
 export type PedidoAltaPayload = CuerpoDe<"post /api/pedidos">;
 export type PedidoEstadoPayload = CuerpoDe<"patch /api/pedidos/{id}/estado">;
 

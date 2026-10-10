@@ -55,7 +55,7 @@ export const solicitudesEspecialesController = {
 
   async convertirEnPedido(request: Request, response: Response) {
     const params = validar(solicitudEspecialParamsSchema, request.params);
-    const pedido = await solicitudesEspecialesService.convertirEnPedido(params.id);
+    const pedido = await solicitudesEspecialesService.convertirEnPedido(params.id, request.usuarioAutenticado?.idUsuario);
 
     responderExito(response, pedido, 201);
   }
