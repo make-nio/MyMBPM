@@ -97,3 +97,40 @@ describe("clientesService.obtenerResumen", () => {
     expect(repo.resumenCompras).not.toHaveBeenCalled();
   });
 });
+
+describe("clientesService: segmento (#100)", () => {
+  it("el alta guarda el segmento elegido y lo deja en el historial", async () => {
+    const creado = { idCliente: 4n, nombre: "Pesca Sur", segmento: "COMERCIO" } as never;
+    repo.crear.mockResolvedValue(creado);
+
+    await clientesService.crear({ nombre: "Pesca Sur", segmento: "COMERCIO" }, 8n);
+
+    expect(repo.crear).toHaveBeenCalledWith({ nombre: "Pesca Sur", segmento: "COMERCIO" }, tx);
+    expect(auditoria.registrarAlta).toHaveBeenCalledWith(tx, expect.objectContaining({ campos: CAMPOS_AUDITADOS_CLIENTE }), creado);
+  });
+
+  it("el cambio de segmento queda en el historial de cambios con el valor anterior y el nuevo", async () => {
+    const antes = { idCliente: 3n, segmento: "CONSUMIDOR" } as never;
+    const despues = { idCliente: 3n, segmento: "REVENDEDOR" } as never;
+    repo.obtenerPorId.mockResolvedValue(antes);
+    repo.actualizar.mockResolvedValue(despues);
+
+    await clientesService.actualizar(3n, { segmento: "REVENDEDOR" }, 8n);
+
+    expect(CAMPOS_AUDITADOS_CLIENTE).toContain("segmento");
+    expect(auditoria.registrarModificacion).toHaveBeenCalledWith(
+      tx,
+      { entidad: "CLIENTE", idEntidad: 3n, idUsuario: 8n, campos: CAMPOS_AUDITADOS_CLIENTE },
+      antes,
+      despues
+    );
+  });
+
+  it("la lista pasa el filtro por segmento al repository", async () => {
+    repo.listar.mockResolvedValue([]);
+
+    await clientesService.listar({ segmento: "COMERCIO", limit: 50, offset: 0 });
+
+    expect(repo.listar).toHaveBeenCalledWith({ segmento: "COMERCIO", limit: 50, offset: 0 });
+  });
+});

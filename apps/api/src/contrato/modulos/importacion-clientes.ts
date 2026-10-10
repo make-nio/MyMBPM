@@ -1,3 +1,4 @@
+import { SEGMENTOS_CLIENTE } from "../../compartido/dominio/enums";
 import { Endpoint, lista, objeto, z } from "../base";
 import { importacionClientesSchema } from "../../modulos/importacion-clientes/importacion-clientes.schemas";
 
@@ -16,6 +17,7 @@ const clienteImportableSchema = objeto({
   localidad: z.string().optional(),
   provincia: z.string().optional(),
   observaciones: z.string().optional(),
+  segmento: z.enum(SEGMENTOS_CLIENTE),
   activo: z.boolean()
 });
 

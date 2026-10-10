@@ -17,6 +17,8 @@ export const filaImportacionClienteSchema = z.object({
   localidad: celda,
   provincia: celda,
   observaciones: celda,
+  // Opcional (#100): vacia = CONSUMIDOR.
+  segmento: celda,
   activo: celda
 });
 

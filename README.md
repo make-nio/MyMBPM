@@ -39,7 +39,7 @@ Pantallas (`apps/web/app/(privado)/`), todas usables desde el celular (375 px):
 | Produccion | Ordenes con sus productos, impacto en insumos antes de iniciar y en productos al finalizar; vista de lista o **tablero** por estado |
 | Stock | Existencias por tipo, "Solo bajo minimo", ajustes con motivo, movimientos con su origen, crear una orden para reponer, exportar CSV |
 | Items catalogo | Items con su receta, costo de la receta, historial de cambios y de precio y costo (administradores), importacion desde CSV (administradores) |
-| Clientes | Alta y edicion, ficha con historial de compras y total, historial de cambios, importacion desde CSV (administradores) |
+| Clientes | Alta y edicion, tipo de cliente (consumidor, comercio o revendedor) con filtro, ficha con historial de compras y total, historial de cambios, importacion desde CSV (administradores) |
 | Categorias, Solicitudes especiales | Alta, edicion y estados; una solicitud se convierte en pedido |
 | Reportes (administradores) | Lo vendido en un mes por item y por cliente, grafico de 12 meses, lo cobrado en el mes por medio de pago, exportar CSV |
 | Usuarios (administradores) | Alta, roles, activar y desactivar, restablecer la clave, cerrar las sesiones de un usuario |

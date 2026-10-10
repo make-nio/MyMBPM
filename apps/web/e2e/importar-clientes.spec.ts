@@ -7,7 +7,9 @@ import { api } from "./api";
 import { URL_WEB } from "./entorno";
 import { expect, test, unico } from "./fixtures";
 
+// Sin la columna Segmento (#100), que es opcional: los archivos viejos siguen sirviendo.
 const ENCABEZADO = "Nombre;Apellido;Documento;Telefono;Email;Instagram;Domicilio;Localidad;Provincia;Observaciones;Activo";
+const PLANTILLA = "Nombre;Apellido;Documento;Telefono;Email;Instagram;Domicilio;Localidad;Provincia;Observaciones;Segmento;Activo";
 
 function archivoCsv(lineas: string[]) {
   return { name: "clientes.csv", mimeType: "text/csv", buffer: Buffer.from(`﻿${lineas.join("\r\n")}\r\n`, "utf8") };
@@ -35,7 +37,7 @@ test("importar clientes desde CSV: plantilla, repetidos, errores por fila y todo
     page.waitForEvent("download"),
     modal.getByRole("button", { name: "Descargar plantilla" }).click()
   ]);
-  expect((await readFile(await descarga.path(), "utf8")).split("\r\n")[0]).toBe(`﻿${ENCABEZADO}`);
+  expect((await readFile(await descarga.path(), "utf8")).split("\r\n")[0]).toBe(`﻿${PLANTILLA}`);
 
   // Un email que ya tiene un cliente, un documento repetido en el archivo y un email invalido.
   await modal.getByLabel("Archivo CSV").setInputFiles(
@@ -134,4 +136,30 @@ test("un operador no ve la importacion de clientes ni la puede usar desde la API
   await expect(pagina.getByRole("heading", { name: "Clientes", exact: true })).toBeVisible();
   await expect(pagina.getByRole("button", { name: "Importar CSV" })).toHaveCount(0);
   await contexto.close();
+});
+
+// Tipo de cliente en la importacion (#100): columna opcional, sin importar mayusculas ni tildes.
+test("importar clientes con la columna Segmento: vacia es Consumidor y un valor raro es error de su fila", async ({ page }) => {
+  const lote = unico("PRUEBA-ImpSeg");
+  const modal = await abrirImportacion(page);
+
+  await modal.getByLabel("Archivo CSV").setInputFiles(
+    archivoCsv([PLANTILLA, `${lote}-Pesca;;;;;;;;;;comércio;Si`, `${lote}-Mayor;;;;;;;;;;Mayorista;Si`])
+  );
+  const vista = modal.getByRole("region", { name: "Vista previa" });
+  await expect(vista.getByTestId("importacion-resumen")).toHaveText("2 filas: 1 para importar, 1 con errores.");
+  await expect(vista.getByRole("row").filter({ hasText: `${lote}-Mayor` })).toContainText(
+    'Segmento: "Mayorista" tiene que ser Consumidor, Comercio o Revendedor'
+  );
+
+  await modal.getByLabel("Archivo CSV").setInputFiles(
+    archivoCsv([PLANTILLA, `${lote}-Pesca;;;;;;;;;;comércio;Si`, `${lote}-Ana;;;;;;;;;;;Si`, `${lote}-Reve;;;;;;;;;;REVENDEDOR;Si`])
+  );
+  await expect(vista.getByTestId("importacion-resumen")).toHaveText("3 filas: 3 para importar.");
+  await modal.getByRole("button", { name: "Importar 3 clientes" }).click();
+  await expect(modal).toBeHidden();
+
+  const clientes = await api<Array<{ nombre: string; segmento: string }>>("GET", `/api/clientes?busqueda=${encodeURIComponent(lote)}&limit=10`);
+  const segmentoDe = (sufijo: string) => clientes.find((cliente) => cliente.nombre === `${lote}-${sufijo}`)?.segmento;
+  expect([segmentoDe("Pesca"), segmentoDe("Ana"), segmentoDe("Reve")]).toEqual(["COMERCIO", "CONSUMIDOR", "REVENDEDOR"]);
 });

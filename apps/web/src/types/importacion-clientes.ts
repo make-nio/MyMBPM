@@ -13,6 +13,7 @@ export type FilaImportacionCliente = Partial<
     | "localidad"
     | "provincia"
     | "observaciones"
+    | "segmento"
     | "activo",
     string
   >

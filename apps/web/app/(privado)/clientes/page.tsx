@@ -24,7 +24,7 @@ import {
   listarClientes,
   obtenerCliente
 } from "../../../src/lib/modulos/clientes";
-import { Cliente } from "../../../src/types/clientes";
+import { Cliente, nombreSegmento, SegmentoCliente, SEGMENTOS_CLIENTE } from "../../../src/types/clientes";
 
 // Paneles, historiales e importacion se ven solo al elegir un registro o abrir su modal: su
 // codigo no entra en el JS inicial de la pantalla, que primero tiene que mostrar la lista.
@@ -61,6 +61,7 @@ export default function ClientesPage() {
   const [busqueda, setBusqueda] = useState("");
   const [busquedaAplicada, setBusquedaAplicada] = useState("");
   const [filtroActivo, setFiltroActivo] = useState<FiltroActivo>("todos");
+  const [filtroSegmento, setFiltroSegmento] = useState<SegmentoCliente | "">("");
   const [idFicha, setIdFicha] = useState<string | null>(null);
   const refFicha = useDesplazarAlDetalle(idFicha);
 
@@ -69,10 +70,11 @@ export default function ClientesPage() {
       listarClientes({
         busqueda: busquedaAplicada || undefined,
         activo: filtroActivo === "todos" ? undefined : filtroActivo === "activos",
+        segmento: filtroSegmento || undefined,
         limit,
         offset
       }),
-    [busquedaAplicada, filtroActivo],
+    [busquedaAplicada, filtroActivo, filtroSegmento],
     "No fue posible cargar los clientes"
   );
   const { items: clientes, cargando, error, recargar } = listado;
@@ -125,6 +127,19 @@ export default function ClientesPage() {
               <option value="activos">Activos</option>
               <option value="inactivos">Inactivos</option>
             </select>
+            <select
+              aria-label="Filtrar por tipo de cliente"
+              className="control-filtro"
+              onChange={(event) => setFiltroSegmento(event.target.value as SegmentoCliente | "")}
+              value={filtroSegmento}
+            >
+              <option value="">Todos los tipos</option>
+              {SEGMENTOS_CLIENTE.map((opcion) => (
+                <option key={opcion.valor} value={opcion.valor}>
+                  {opcion.nombre}
+                </option>
+              ))}
+            </select>
             <button className="boton-secundario" onClick={() => setBusquedaAplicada(busqueda)} type="button">
               Buscar
             </button>
@@ -173,6 +188,10 @@ export default function ClientesPage() {
             {
               header: "Localidad",
               cell: (cliente) => cliente.localidad || "-"
+            },
+            {
+              header: "Tipo",
+              cell: (cliente) => nombreSegmento(cliente.segmento)
             },
             {
               header: "Estado",

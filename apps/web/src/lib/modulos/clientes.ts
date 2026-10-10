@@ -1,8 +1,9 @@
 import { pedirApi } from "../api";
-import { ClientePayload } from "../../types/clientes";
+import { ClientePayload, SegmentoCliente } from "../../types/clientes";
 
 type FiltrosClientes = {
   busqueda?: string;
+  segmento?: SegmentoCliente;
   activo?: boolean;
   limit?: number;
   offset?: number;
@@ -12,6 +13,7 @@ export function listarClientes(filtros: FiltrosClientes = {}) {
   return pedirApi("get /api/clientes", {
     consulta: {
       busqueda: filtros.busqueda,
+      segmento: filtros.segmento,
       activo: filtros.activo,
       limit: filtros.limit ?? 100,
       offset: filtros.offset ?? 0

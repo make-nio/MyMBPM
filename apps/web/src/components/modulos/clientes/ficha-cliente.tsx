@@ -12,7 +12,7 @@ import { useListadoPaginado } from "../../../hooks/use-listado-paginado";
 import { formatearDia, formatearEstado, formatearFecha, formatearMoneda } from "../../../lib/formato";
 import { obtenerResumenCliente } from "../../../lib/modulos/clientes";
 import { listarPedidos } from "../../../lib/modulos/pedidos";
-import { Cliente, ResumenCliente } from "../../../types/clientes";
+import { Cliente, nombreSegmento, ResumenCliente } from "../../../types/clientes";
 import { Pedido } from "../../../types/pedidos";
 
 // Ficha del cliente: sus datos, lo que compro (vendido, sin costos) y su historial de pedidos.
@@ -47,6 +47,9 @@ export function FichaCliente({ cliente }: { cliente: Cliente }) {
             {contacto || "Sin datos de contacto"}
             {domicilio ? ` · ${domicilio}` : ""}
             {cliente.activo ? "" : " · Inactivo"}
+          </p>
+          <p className="texto-secundario texto-secundario--compacto">
+            Tipo de cliente: <strong data-testid="segmento-cliente">{nombreSegmento(cliente.segmento)}</strong>
           </p>
           {errorResumen ? <MensajeError mensaje={errorResumen} /> : null}
           {resumen ? (

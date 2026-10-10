@@ -1,4 +1,5 @@
 import { Endpoint, decimal, fecha, id, lista, objeto, z } from "../base";
+import { SEGMENTOS_CLIENTE } from "../../compartido/dominio/enums";
 import {
   actualizarClienteSchema,
   actualizarEstadoClienteSchema,
@@ -22,6 +23,7 @@ export const clienteSchema = objeto({
   localidad: z.string().nullable(),
   provincia: z.string().nullable(),
   observaciones: z.string().nullable(),
+  segmento: z.enum(SEGMENTOS_CLIENTE),
   fechaAlta: fecha,
   activo: z.boolean(),
   fechaModificacion: fecha

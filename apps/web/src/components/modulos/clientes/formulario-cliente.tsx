@@ -4,12 +4,13 @@ import { FormEvent, useState } from "react";
 
 import { AccionesFormulario } from "../../formularios/acciones-formulario";
 import { CampoCheckbox } from "../../formularios/campo-checkbox";
+import { CampoSelect } from "../../formularios/campo-select";
 import { CampoTextarea } from "../../formularios/campo-textarea";
 import { CampoTexto } from "../../formularios/campo-texto";
 import { MensajeError } from "../../ui/mensaje-error";
 import { useValidacionFormulario } from "../../../hooks/use-validacion-formulario";
 import { formatoEmail, largoMaximo, requerido } from "../../../lib/validacion";
-import { Cliente } from "../../../types/clientes";
+import { Cliente, SegmentoCliente, SEGMENTOS_CLIENTE } from "../../../types/clientes";
 
 type FormularioClienteProps = {
   cliente?: Cliente | null;
@@ -25,6 +26,7 @@ type FormularioClienteProps = {
     localidad?: string;
     provincia?: string;
     observaciones?: string;
+    segmento?: SegmentoCliente;
     activo?: boolean;
   }) => Promise<void>;
 };
@@ -44,6 +46,7 @@ export function FormularioCliente({
   const [localidad, setLocalidad] = useState(cliente?.localidad ?? "");
   const [provincia, setProvincia] = useState(cliente?.provincia ?? "");
   const [observaciones, setObservaciones] = useState(cliente?.observaciones ?? "");
+  const [segmento, setSegmento] = useState<SegmentoCliente>(cliente?.segmento ?? "CONSUMIDOR");
   const [activo, setActivo] = useState(cliente?.activo ?? true);
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,6 +87,7 @@ export function FormularioCliente({
         localidad: localidad || undefined,
         provincia: provincia || undefined,
         observaciones: observaciones || undefined,
+        segmento,
         activo
       });
     } catch (currentError) {
@@ -107,6 +111,13 @@ export function FormularioCliente({
       <CampoTexto error={errorDe("cliente-domicilio", domicilio)} id="cliente-domicilio" label="Domicilio" onChange={setDomicilio} value={domicilio} />
       <CampoTexto error={errorDe("cliente-localidad", localidad)} id="cliente-localidad" label="Localidad" onChange={setLocalidad} value={localidad} />
       <CampoTexto error={errorDe("cliente-provincia", provincia)} id="cliente-provincia" label="Provincia" onChange={setProvincia} value={provincia} />
+      <CampoSelect
+        id="cliente-segmento"
+        label="Tipo de cliente"
+        onChange={(valor) => setSegmento(valor as SegmentoCliente)}
+        options={SEGMENTOS_CLIENTE.map((opcion) => ({ value: opcion.valor, label: opcion.nombre }))}
+        value={segmento}
+      />
       <div className="formulario-modulo__col-span">
         <CampoTextarea
           error={errorDe("cliente-observaciones", observaciones)}

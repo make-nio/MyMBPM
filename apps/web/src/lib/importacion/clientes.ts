@@ -14,6 +14,7 @@ export const COLUMNAS_CLIENTES: Array<ColumnaImportacion<keyof FilaImportacionCl
   { clave: "localidad", nombre: "Localidad" },
   { clave: "provincia", nombre: "Provincia" },
   { clave: "observaciones", nombre: "Observaciones" },
+  { clave: "segmento", nombre: "Segmento" },
   { clave: "activo", nombre: "Activo" }
 ];
 
@@ -21,8 +22,8 @@ export function plantillaClientes() {
   return generarCsv(
     COLUMNAS_CLIENTES.map((columna) => columna.nombre),
     [
-      ["Ana", "Diaz", "20123456", "11 5555-0000", "ana@ejemplo.com", "@anadiaz", "Calle 123", "Quilmes", "Buenos Aires", "Prefiere WhatsApp", "Si"],
-      ["Bruno", "", "", "11 4444-0000", "", "", "", "Bernal", "Buenos Aires", "", "Si"]
+      ["Ana", "Diaz", "20123456", "11 5555-0000", "ana@ejemplo.com", "@anadiaz", "Calle 123", "Quilmes", "Buenos Aires", "Prefiere WhatsApp", "Consumidor", "Si"],
+      ["Bruno", "", "", "11 4444-0000", "", "", "", "Bernal", "Buenos Aires", "", "Comercio", "Si"]
     ]
   );
 }

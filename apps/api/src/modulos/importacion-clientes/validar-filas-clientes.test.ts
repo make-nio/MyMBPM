@@ -77,3 +77,35 @@ describe("validarFilasClientes", () => {
     expect(resumen.conErrores).toBe(0);
   });
 });
+
+// Tipo de cliente en la importacion (#100): columna opcional, sin importar mayusculas ni tildes.
+describe("validarFilasClientes: segmento", () => {
+  const conSegmento = (segmento?: string) =>
+    validarFilasClientes([{ nombre: "Ana", ...(segmento === undefined ? {} : { segmento }) }], vacio()).filas[0];
+
+  it("sin la columna o vacia es CONSUMIDOR", () => {
+    expect(conSegmento()?.cliente?.segmento).toBe("CONSUMIDOR");
+    expect(conSegmento("  ")?.cliente?.segmento).toBe("CONSUMIDOR");
+  });
+
+  it.each([
+    ["Comercio", "COMERCIO"],
+    ["COMERCIO", "COMERCIO"],
+    ["revendedor", "REVENDEDOR"],
+    ["Revendédor", "REVENDEDOR"],
+    [" consumidor ", "CONSUMIDOR"]
+  ])("acepta %s como %s", (valor, esperado) => {
+    expect(conSegmento(valor)).toMatchObject({ errores: [], cliente: { segmento: esperado } });
+  });
+
+  it("un valor que no es de la lista es un error de esa fila", () => {
+    const { filas, resumen } = validarFilasClientes([{ nombre: "Ana" }, { nombre: "Beto", segmento: "Mayorista" }], vacio());
+
+    expect(resumen).toEqual({ total: 2, validas: 1, conErrores: 1 });
+    expect(filas[1]).toMatchObject({
+      numero: 3,
+      cliente: null,
+      errores: ['Segmento: "Mayorista" tiene que ser Consumidor, Comercio o Revendedor']
+    });
+  });
+});

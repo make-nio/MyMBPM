@@ -124,7 +124,7 @@ const guias: Paso[] = [
     titulo: "Cargar clientes desde una planilla (administradores)",
     pasos: [
       "En Clientes, toca \"Importar CSV\" y despues \"Descargar plantilla\".",
-      "Completa una fila por cliente. Solo el nombre es obligatorio; Activo es Si o No.",
+      "Completa una fila por cliente. Solo el nombre es obligatorio; Activo es Si o No; Segmento es Consumidor, Comercio o Revendedor (si queda vacio, Consumidor).",
       "Elegi el archivo en \"Archivo CSV\": vas a ver cuantas filas estan bien y, si alguna tiene un error, cual y por que. Cuando esten todas bien, toca \"Importar\"."
     ],
     ojo: "Se importa todo o nada. Un cliente que ya existe (mismo email, mismo documento, o mismo nombre, apellido y telefono) da error: asi no se duplica."
@@ -144,6 +144,14 @@ const guias: Paso[] = [
       "En Pedidos o en Stock, aplica los filtros que quieras (en Pedidos podes elegir las fechas de alta con \"Alta desde\" y \"hasta\").",
       "Toca \"Exportar CSV\": se descarga un archivo con todo lo filtrado, no solo lo que ves en pantalla.",
       "Abrilo con Excel o Google Sheets: las columnas se separan solas y los numeros quedan como numeros."
+    ]
+  },
+  {
+    titulo: "Tipo de cliente",
+    pasos: [
+      "Cada cliente tiene un tipo: Consumidor, Comercio o Revendedor. Se elige en \"Tipo de cliente\" al cargarlo o editarlo; si no se elige, queda Consumidor.",
+      "En Clientes podes filtrar la lista por tipo, y el tipo se ve en la lista y en la ficha.",
+      "Un cambio de tipo queda en el historial de cambios del cliente."
     ]
   },
   {
